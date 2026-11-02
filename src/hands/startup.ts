@@ -87,6 +87,8 @@ export function createStartup(video: HTMLVideoElement, createFallback: () => Han
     camera = { kind: 'pending' };
     update();
     const failure = await cam.start();
+    // A camera lost during the request has already reported itself as disconnected.
+    if (camera.kind !== 'pending') return;
     camera = failure ? { kind: 'failed', failure } : { kind: 'live' };
     update();
   }

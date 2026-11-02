@@ -26,7 +26,9 @@ export async function loadHandModel(onProgress: (fraction: number | null) => voi
     return { failure: downloadFailure(stall.signal.aborted, navigator.onLine) };
   }
 
-  const fileset = await FilesetResolver.forVisionTasks(WASM_BASE_URL);
+  // Can't reject in 1.2.0, but an uncaught rejection would leave the panel loading forever.
+  const fileset = await FilesetResolver.forVisionTasks(WASM_BASE_URL).catch(() => null);
+  if (!fileset) return { failure: { reason: 'damaged' } };
   // Never pass the overlay canvas: MediaPipe would take a WebGL context on it. It makes its own.
   const create = (delegate: 'GPU' | 'CPU') =>
     GestureRecognizer.createFromOptions(fileset, {

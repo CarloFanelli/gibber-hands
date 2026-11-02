@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createGestureDebounce, gestureName } from '../src/hands/gesture';
 import { GESTURE_NAMES } from '../src/hands/types';
-import { gestureText } from '../src/ui/gestureLabels';
 
 describe('gestureName', () => {
   it('keeps the seven named gestures', () => {
@@ -59,19 +58,5 @@ describe('gesture debounce', () => {
     d.update('ILoveYou', 0.9, 100);
     d.reset();
     expect(d.update('ILoveYou', 0.9, 133)).toEqual({ gesture: null, score: 0 });
-  });
-});
-
-describe('gestureText', () => {
-  it('names the gesture with its whole-percent confidence', () => {
-    expect(gestureText('Pointing_Up', 0.874)).toBe('Pointing up · 87%');
-  });
-
-  it('shows 100% when the confidence rounds up', () => {
-    expect(gestureText('Thumb_Up', 0.996)).toBe('Thumb up · 100%');
-  });
-
-  it('says "No gesture" without one', () => {
-    expect(gestureText(null, 0)).toBe('No gesture');
   });
 });

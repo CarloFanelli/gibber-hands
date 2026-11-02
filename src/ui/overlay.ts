@@ -9,6 +9,8 @@ import type { HandState, Point } from '../hands/types';
 import { createFpsMeter } from './fpsMeter';
 import { gestureText } from './gestureLabels';
 
+const NO_FPS = '— fps';
+
 export interface Overlay {
   draw(s: HandState, landmarks: Point[] | null): void;
   /** Shown only while the tracker runs. */
@@ -20,8 +22,8 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
   const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
   const hint = label('overlay-hint', 'Raise your hand');
   const gesture = label('overlay-gesture', '');
-  const fps = label('overlay-fps', '— fps');
-  const meter = createFpsMeter();
+  const fps = label('overlay-fps', NO_FPS);
+  let meter = createFpsMeter();
   let last: { s: HandState; landmarks: Point[] | null } | null = null;
   let visible = false;
 
@@ -95,7 +97,7 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
     draw(s, landmarks) {
       last = { s, landmarks };
       const reading = meter.tick(s.t);
-      const fpsText = reading === null ? '— fps' : `${reading} fps`;
+      const fpsText = reading === null ? NO_FPS : `${reading} fps`;
       if (fps.textContent !== fpsText) fps.textContent = fpsText;
       hint.hidden = !visible || s.present;
       gesture.hidden = !visible || !s.present;
@@ -105,9 +107,13 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
     setVisible(next) {
       if (next === visible) return;
       visible = next;
+      // The sliders feed draw() too: start from no hand and no reading, not from their last state.
+      last = null;
+      meter = createFpsMeter();
+      fps.textContent = NO_FPS;
       fps.hidden = !visible;
-      hint.hidden = !visible || !!last?.s.present;
-      gesture.hidden = !visible || !last?.s.present;
+      hint.hidden = !visible;
+      gesture.hidden = true;
       render();
     }
   };

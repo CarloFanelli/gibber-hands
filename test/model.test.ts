@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const createFromOptions = vi.fn();
+const forVisionTasks = vi.fn((base: string) =>
+  Promise.resolve({ wasmLoaderPath: `${base}/vision_wasm_internal.js`, wasmBinaryPath: `${base}/vision_wasm_internal.wasm` })
+);
 vi.mock('@mediapipe/tasks-vision', () => ({
-  FilesetResolver: {
-    forVisionTasks: (base: string) =>
-      Promise.resolve({ wasmLoaderPath: `${base}/vision_wasm_internal.js`, wasmBinaryPath: `${base}/vision_wasm_internal.wasm` })
-  },
+  FilesetResolver: { forVisionTasks },
   GestureRecognizer: { createFromOptions }
 }));
 
@@ -54,6 +54,14 @@ describe('loadHandModel', () => {
     createFromOptions.mockRejectedValueOnce(new Error('WebGL unavailable')).mockRejectedValueOnce(new Event('error'));
 
     expect(await loadHandModel(() => {})).toEqual({ failure: { reason: 'blocked', file: 'vision_wasm_internal.js' } });
+  });
+
+  it('reports a runtime that fails to set up instead of loading forever', async () => {
+    vi.stubGlobal('fetch', () => Promise.resolve(modelResponse(8)));
+    forVisionTasks.mockRejectedValueOnce(new Error('setup failed'));
+
+    expect(await loadHandModel(() => {})).toEqual({ failure: { reason: 'damaged' } });
+    expect(createFromOptions).not.toHaveBeenCalled();
   });
 
   it('gives up after 30 s without progress', async () => {
