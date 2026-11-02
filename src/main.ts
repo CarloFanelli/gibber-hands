@@ -11,34 +11,21 @@
  * The "no camera" path uses ui/sliders to produce the same HandState shape,
  * so everything downstream of HandState works identically on a phone.
  */
-import { createTracker } from './hands/tracker';
+import { createStartup } from './hands/startup';
 import { createSynth } from './synth/engine';
-import { mapHandToSynth } from './mapping/handToSynth';
 import { createLayout } from './ui/layout';
-import { createSliderFallback } from './ui/sliders';
+import { createCameraPanel } from './ui/cameraPanel';
 import { loadPresets } from './synth/presets';
 
 async function boot() {
   const ui = createLayout(document.getElementById('app')!);
+  // The camera is requested before any await, so its prompt appears as the page loads.
+  const panel = createCameraPanel(ui.camera.status, () => startup.retryCamera());
+  const startup = createStartup(ui.camera.video, panel.show);
+
   const synth = await createSynth();
   const presets = loadPresets();
   ui.presets.render(presets, (p) => synth.applyPreset(p));
-
-  let source: { onState: (cb: (s: import('./hands/types').HandState) => void) => void };
-
-  try {
-    source = await createTracker(ui.camera.video, ui.camera.canvas);
-  } catch (err) {
-    console.warn('Webcam unavailable, falling back to sliders', err);
-    source = createSliderFallback(ui.camera.root);
-  }
-
-  source.onState((state) => {
-    const params = mapHandToSynth(state);
-    synth.update(params);
-    ui.liveCode.show(synth.currentCode());
-    ui.overlay.draw(state);
-  });
 }
 
 boot().catch((e) => {
