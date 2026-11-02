@@ -12,16 +12,17 @@
  * so everything downstream of HandState works identically on a phone.
  */
 import { createStartup } from './hands/startup';
+import { mapHandToSynth } from './mapping/handToSynth';
 import { createSynth } from './synth/engine';
+import { createAudioPanel } from './ui/audioPanel';
 import { createLayout } from './ui/layout';
 import { createCameraPanel } from './ui/cameraPanel';
 import { createOverlay } from './ui/overlay';
 import { createSliderFallback } from './ui/sliders';
-import { loadPresets } from './synth/presets';
 
-async function boot() {
+function boot() {
   const ui = createLayout(document.getElementById('app')!);
-  // Camera and hand model start before any await, so the prompt and the download begin as the page loads.
+  // Camera and hand model start first, so the prompt and the download begin as the page loads.
   const startup = createStartup(ui.camera.video, () => createSliderFallback(ui.camera.status));
   const panel = createCameraPanel(ui.camera.status, startup);
   const overlay = createOverlay(ui.camera.root, ui.camera.video, ui.camera.canvas);
@@ -29,14 +30,20 @@ async function boot() {
     panel.show(status);
     overlay.setVisible(status.tracking);
   });
-  startup.onHand(overlay.draw);
 
-  const synth = await createSynth();
-  const presets = loadPresets();
-  ui.presets.render(presets, (p) => synth.applyPreset(p));
+  const synth = createSynth();
+  const audio = createAudioPanel(ui.instrument, synth);
+  synth.onStatus(audio.show);
+  // The only hand listener: a second onHand() call would replace this one.
+  startup.onHand((s, landmarks) => {
+    overlay.draw(s, landmarks);
+    synth.update(mapHandToSynth(s));
+  });
 }
 
-boot().catch((e) => {
+try {
+  boot();
+} catch (e) {
   console.error(e);
   document.body.innerHTML = `<pre>Boot failed: ${String(e)}</pre>`;
-});
+}

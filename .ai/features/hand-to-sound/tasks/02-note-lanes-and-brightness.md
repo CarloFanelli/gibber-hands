@@ -56,3 +56,7 @@ Task 01 made the sound and its volume. This task makes the position of the palm 
 - Lowest note with the darkest cutoff → still clearly audible: A3 (220 Hz) sits just above the 200 Hz cutoff and is only a few dB quieter (REQ-14 · from code)
 - Highest cutoff with resonance at full volume → peak stays at or below −3 dBFS, no self-oscillation (REQ-14)
 - Horizontal slider at 0 or 1 → lane 1 or lane 8 (REQ-17, REQ-4)
+
+## Notes from implementation
+
+- **Impacts Task 02**: from task 01, the volume is a Web Audio gain after the reverb, not a slide in Gibber's worklet. The voice in the worklet has no slides yet: pitch and cutoff are plain inputs, so the 40 ms pitch slide and the 15 ms cutoff ramp still go into its graph (`voiceGraph` in `src/synth/engine.ts`). Its source runs inside the worklet, so it can't use outside constants. Its cutoff input is a fraction of the Nyquist frequency. Measured with the task 01 voice, A3 with the cutoff at 200 Hz is about 4 dB quieter in RMS than with it at 1131 Hz.

@@ -39,3 +39,7 @@ The snippet makes the instrument's state readable as code, which is the point of
 - Snippet copied while silent → plays silence; a comment line in the snippet says how to raise the volume (REQ-16)
 - Snippet uses functions missing from the playground's Gibber → must not happen; review pastes the snippet into gibber.cc to check (REQ-16)
 - Network → N/A: the app never contacts gibber.cc; the snippet is plain text (REQ-16)
+
+## Notes from implementation
+
+- **Impacts Task 03**: from task 01, the sound is a sawtooth into Gibberish's ladder filter (model 1, Q 0.5), then Freeverb (wet1 0.3, wet2 0, dry 0.7), then an output gain of 1.4 × the volume. The reverb is linear, so a steady snippet can put that gain on the synth instead.

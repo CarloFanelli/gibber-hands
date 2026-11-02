@@ -1,5 +1,5 @@
 # Task Progress - hand-to-sound
 
-01-squeeze-to-play: TODO
+01-squeeze-to-play: DONE
 02-note-lanes-and-brightness: TODO
 03-live-code-snippet: TODO

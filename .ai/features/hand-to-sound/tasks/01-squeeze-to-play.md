@@ -61,3 +61,8 @@ None
 - Hand lost at full volume → fades over 100 ms, no click (REQ-13)
 - Hand back within 150 ms → no fade: the tracker still reports the hand present (REQ-13)
 - Hand lost while audio is stopped → nothing happens (REQ-13)
+
+## Notes from implementation
+
+- **Known limitation**: starting the audio adds about 460 MB to the tab's memory. Gibber allocates a fixed 20-minute sample buffer on the page and in its audio worklet, and its start function doesn't let the size be set. Measured in headless Chromium: the renderer process grows from about 167 MB to 620–636 MB. Memory and the 25 fps target with audio on still need checking by hand on both reference laptops. /dev, 2026-11-02.
+- **Known limitation**: only Chromium was tested, scripted in headless mode. The checks covered start by mouse, keyboard and touch; double clicks; the volume curve; the fist and Stop fades; resume; peak level; clicks; a blocked or slow worklet download; and a browser without audio worklets. Firefox, Safari and Edge, and judging by ear, are manual checks. The 100 ms fade on a lost hand is covered by the mapping tests only, because the sliders can't lose the hand. /dev, 2026-11-02.
