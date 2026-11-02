@@ -3,7 +3,8 @@
  * This is the only file that runs MediaPipe on frames; its types never leave hands/.
  */
 import { GestureRecognizer } from '@mediapipe/tasks-vision';
-import { palmCenter, toPlayerSpace } from './geometry';
+import { palmCenter, pinches, toPlayerSpace } from './geometry';
+import { createGestureDebounce, gestureName } from './gesture';
 import { createPresence } from './presence';
 import { createPointFilter } from './smoothing';
 import { EMPTY_HAND, type HandState, type Point } from './types';
@@ -20,6 +21,7 @@ export const HAND_CONNECTIONS: [number, number][] = GestureRecognizer.HAND_CONNE
 export function createTracker(video: HTMLVideoElement, recognizer: GestureRecognizer): HandSource {
   const presence = createPresence();
   const smoothing = createPointFilter();
+  const gesture = createGestureDebounce();
   let cb: ((s: HandState, landmarks: Point[] | null) => void) | null = null;
   let state: HandState = EMPTY_HAND;
   let points: Point[] | null = null;
@@ -41,14 +43,26 @@ export function createTracker(video: HTMLVideoElement, recognizer: GestureRecogn
     const status = presence.update(seen ? (result.handedness[0]?.[0]?.categoryName ?? '') : null, now);
 
     if (status === 'gone') {
+      gesture.reset();
       points = null;
       state = { ...EMPTY_HAND, t: now };
     } else if (status === 'held' || !seen) {
       state = { ...state, t: now };
     } else {
       if (status === 'new') smoothing.reset();
+      const previous = status === 'new' ? EMPTY_HAND : state;
+      const top = result.gestures[0]?.[0];
+      const shown = gesture.update(gestureName(top?.categoryName ?? ''), top?.score ?? 0, now);
       points = seen;
-      state = { ...state, present: true, palm: smoothing.filter(palmCenter(seen), now), t: now };
+      state = {
+        present: true,
+        palm: smoothing.filter(palmCenter(seen), now),
+        // An edge-on hand is too thin to measure: keep the last pinch values.
+        ...(pinches(seen, video.videoHeight / video.videoWidth) ?? { pinch: previous.pinch, pinchMiddle: previous.pinchMiddle }),
+        gesture: shown.gesture,
+        gestureScore: shown.score,
+        t: now
+      };
     }
     emit();
   }
@@ -57,6 +71,7 @@ export function createTracker(video: HTMLVideoElement, recognizer: GestureRecogn
   function onVisibility() {
     if (!document.hidden) return;
     presence.reset();
+    gesture.reset();
     points = null;
     state = { ...EMPTY_HAND, t: performance.now() };
     emit();

@@ -42,3 +42,7 @@ In milestone 2 the pinch drives the volume and a closed fist mutes, so both must
 - Two gestures alternating every 50 ms → the current gesture is kept (REQ-11)
 - Hand lost for 150 ms → the gesture becomes none (REQ-7, REQ-11)
 - Confidence rounds up to 100 → shows "100%" (REQ-14)
+
+## Notes from implementation
+
+- **Known limitation**: the 40 cm / 80 cm check was approximated by running the real model on four hand photos drawn at full and half size. Thumb-to-index pinch stayed within 3–5%, but middle pinch on the pointing-up photo moved 20% (0.30 to 0.24), from landmark noise on the smaller hand, not from the formula (scale-invariant in the unit tests). Middle pinch at 80 cm still needs a check with a real hand before milestone 2 relies on it. /dev, 2026-11-02.

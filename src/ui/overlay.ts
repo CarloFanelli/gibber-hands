@@ -1,11 +1,13 @@
 /**
  * Draws what the tracker sees over the video: 21 landmarks, their connections and the palm center,
- * plus the "Raise your hand" hint and the frame rate. Landmarks arrive already mirrored, so nothing
- * here flips them; they are placed inside the letterboxed video's rectangle.
+ * plus the gesture with its confidence, the "Raise your hand" hint and the frame rate.
+ * Landmarks arrive already mirrored, so nothing here flips them; they are placed inside the
+ * letterboxed video's rectangle.
  */
 import { HAND_CONNECTIONS } from '../hands/tracker';
 import type { HandState, Point } from '../hands/types';
 import { createFpsMeter } from './fpsMeter';
+import { gestureText } from './gestureLabels';
 
 export interface Overlay {
   draw(s: HandState, landmarks: Point[] | null): void;
@@ -17,6 +19,7 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
   const ctx = canvas.getContext('2d')!;
   const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
   const hint = label('overlay-hint', 'Raise your hand');
+  const gesture = label('overlay-gesture', '');
   const fps = label('overlay-fps', '— fps');
   const meter = createFpsMeter();
   let last: { s: HandState; landmarks: Point[] | null } | null = null;
@@ -95,6 +98,8 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
       const fpsText = reading === null ? '— fps' : `${reading} fps`;
       if (fps.textContent !== fpsText) fps.textContent = fpsText;
       hint.hidden = !visible || s.present;
+      gesture.hidden = !visible || !s.present;
+      gesture.textContent = gestureText(s.gesture, s.gestureScore);
       render();
     },
     setVisible(next) {
@@ -102,6 +107,7 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
       visible = next;
       fps.hidden = !visible;
       hint.hidden = !visible || !!last?.s.present;
+      gesture.hidden = !visible || !last?.s.present;
       render();
     }
   };

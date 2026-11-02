@@ -5,7 +5,8 @@ export interface Point {
 }
 
 /** The seven gestures MediaPipe's Gesture Recognizer names. */
-export type GestureName = 'Closed_Fist' | 'Open_Palm' | 'Pointing_Up' | 'Thumb_Down' | 'Thumb_Up' | 'Victory' | 'ILoveYou';
+export const GESTURE_NAMES = ['Closed_Fist', 'Open_Palm', 'Pointing_Up', 'Thumb_Down', 'Thumb_Up', 'Victory', 'ILoveYou'] as const;
+export type GestureName = (typeof GESTURE_NAMES)[number];
 
 /** Normalized hand state. Everything downstream depends only on this shape. */
 export interface HandState {
@@ -17,9 +18,9 @@ export interface HandState {
   gestureScore: number;
   /** Palm center: wrist and four knuckles averaged. 0.5/0.5 when no hand is present. */
   palm: Point;
-  /** Distance thumb tip ↔ index tip, normalized 0..1 (0 = pinched). */
+  /** Thumb tip ↔ index tip distance divided by hand size, 0..1 (0 = touching). */
   pinch: number;
-  /** Distance thumb tip ↔ middle tip, normalized 0..1. Secondary control. */
+  /** Thumb tip ↔ middle tip distance divided by hand size, 0..1. Secondary control. */
   pinchMiddle: number;
   /** Timestamp (performance.now()). */
   t: number;
