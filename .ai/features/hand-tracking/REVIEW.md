@@ -1,14 +1,14 @@
 ---
 feature: hand-tracking
-status: DRAFT
+status: APPROVED
 reviewed: 2026-11-02
-head: c95b60b6b1cb2f34f94bdcbdb4a38a59c10b7e61
+head: cf76677c05088c01cbc060df89e940bb1c3a1d97
 ---
 
 # Review — hand-tracking
 
-**Scope**: 29 files (primary — diff since base `0c17c9f2`; 10 workflow artifacts under `.ai/` excluded)
-**Findings**: 0 must-fix · 1 should-fix · 4 nit
+**Scope**: 7 files (re-verification — delta since the review of `c95b60b6`; 1 workflow artifact under `.ai/` excluded)
+**Findings**: 0 must-fix · 0 should-fix · 0 nit
 
 ## Findings
 
