@@ -15,13 +15,20 @@ import { createStartup } from './hands/startup';
 import { createSynth } from './synth/engine';
 import { createLayout } from './ui/layout';
 import { createCameraPanel } from './ui/cameraPanel';
+import { createOverlay } from './ui/overlay';
 import { loadPresets } from './synth/presets';
 
 async function boot() {
   const ui = createLayout(document.getElementById('app')!);
   // Camera and hand model start before any await, so the prompt and the download begin as the page loads.
   const startup = createStartup(ui.camera.video);
-  startup.onStatus(createCameraPanel(ui.camera.status, startup).show);
+  const panel = createCameraPanel(ui.camera.status, startup);
+  const overlay = createOverlay(ui.camera.root, ui.camera.video, ui.camera.canvas);
+  startup.onStatus((status) => {
+    panel.show(status);
+    overlay.setVisible(status.tracking);
+  });
+  startup.onHand(overlay.draw);
 
   const synth = await createSynth();
   const presets = loadPresets();

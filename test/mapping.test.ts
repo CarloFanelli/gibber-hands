@@ -7,15 +7,15 @@ describe('mapHandToSynth', () => {
     expect(mapHandToSynth(EMPTY_HAND).mute).toBe(true);
   });
 
-  it('maps index.x across the scale', () => {
-    const left = mapHandToSynth({ ...EMPTY_HAND, present: true, index: { x: 0, y: 0.5 } });
-    const right = mapHandToSynth({ ...EMPTY_HAND, present: true, index: { x: 0.999, y: 0.5 } });
+  it('maps palm.x across the scale', () => {
+    const left = mapHandToSynth({ ...EMPTY_HAND, present: true, palm: { x: 0, y: 0.5 } });
+    const right = mapHandToSynth({ ...EMPTY_HAND, present: true, palm: { x: 0.999, y: 0.5 } });
     expect(left.noteIndex).toBe(0);
     expect(right.noteIndex).toBe(SCALE_LENGTH - 1);
   });
 
   it('closed fist mutes', () => {
-    const p = mapHandToSynth({ ...EMPTY_HAND, present: true, index: { x: 0.5, y: 0.5 }, gesture: 'Closed_Fist' });
+    const p = mapHandToSynth({ ...EMPTY_HAND, present: true, palm: { x: 0.5, y: 0.5 }, gesture: 'Closed_Fist' });
     expect(p.mute).toBe(true);
   });
 });

@@ -2,6 +2,6 @@
 
 01-camera-view: DONE
 02-hand-model-loading: DONE
-03-tracked-hand-overlay: TODO
+03-tracked-hand-overlay: DONE
 04-pinch-and-gestures: TODO
 05-slider-fallback: TODO

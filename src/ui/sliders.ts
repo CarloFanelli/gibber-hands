@@ -9,7 +9,7 @@ import { EMPTY_HAND } from '../hands/types';
 import type { HandSource } from '../hands/tracker';
 
 export function createSliderFallback(root: HTMLElement): HandSource {
-  let cb: ((s: HandState) => void) | null = null;
+  let cb: ((s: HandState, landmarks: null) => void) | null = null;
   root.innerHTML = `<p class="hint">No webcam — use the sliders.</p>`; // TODO add inputs
   void EMPTY_HAND;
   return {

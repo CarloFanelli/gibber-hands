@@ -9,14 +9,12 @@
  *  - keyboard shortcuts: 1–6 select preset, M mute, Space hold, ? shows the shortcut sheet
  *  - mobile: panels stack vertically; camera panel shows sliders when no webcam
  */
-import type { HandState } from '../hands/types';
 import type { Preset } from '../synth/presets';
 
 export interface Layout {
   camera: { root: HTMLElement; video: HTMLVideoElement; canvas: HTMLCanvasElement; status: HTMLElement };
   presets: { render(list: Preset[], onPick: (p: Preset) => void): void };
   liveCode: { show(code: string): void };
-  overlay: { draw(s: HandState): void };
 }
 
 export function createLayout(root: HTMLElement): Layout {
@@ -54,12 +52,6 @@ export function createLayout(root: HTMLElement): Layout {
         }
       }
     },
-    liveCode: { show: (code) => { codeEl.textContent = code; } },
-    overlay: {
-      draw(s) {
-        // TODO (milestone 1): draw landmarks + gesture label on `canvas`, mirrored like the video.
-        void s;
-      }
-    }
+    liveCode: { show: (code) => { codeEl.textContent = code; } }
   };
 }

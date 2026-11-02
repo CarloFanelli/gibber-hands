@@ -62,3 +62,7 @@ This is the first moment the instrument sees the player, and the overlay is how 
 - Less than 1 s since tracking started → shows "— fps" (REQ-15)
 - Tab hidden, then shown → the readout restarts from "— fps" (REQ-15)
 - Tab switched away while a hand is tracked → presence turns false at once; tracking resumes on return (REQ-7 · from code)
+
+## Notes from implementation
+
+- **Known limitation**: the frame-rate target (≥ 25 fps in Chrome on both reference laptops) could not be measured here. Headless Chromium under WSL has only software WebGL: MediaPipe's GPU path starts there but takes about 450 ms per frame, against about 50 ms on the processor (measured on this i5-1240P), so tracking ran at 2–3 fps. It must be checked by hand in desktop Chrome with hardware acceleration on both laptops. /dev, 2026-11-02.

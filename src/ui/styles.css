@@ -25,4 +25,7 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 .retry:disabled { opacity: 0.5; cursor: default; }
 .panel-code pre { margin: 0; padding: 16px; font: 13px/1.5 ui-monospace, monospace; color: var(--accent); white-space: pre-wrap; }
 .hint { color: var(--muted); padding: 16px; }
+.overlay-label { position: absolute; margin: 0; padding: 4px 10px; border-radius: 6px; background: rgb(11 15 20 / 0.7); font-size: 14px; pointer-events: none; }
+.overlay-hint { top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 18px; }
+.overlay-fps { top: 8px; right: 8px; color: var(--muted); font-variant-numeric: tabular-nums; }
 @media (max-width: 720px) { #app { flex-direction: column; } .panel { border-right: 0; border-bottom: 1px solid #1f2937; } }
