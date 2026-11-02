@@ -1,0 +1,19 @@
+:root {
+  --bg: #0b0f14;
+  --panel: #121820;
+  --fg: #e6edf3;
+  --accent: #7dd3fc;
+  --muted: #8b98a5;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font-family: system-ui, sans-serif; }
+#app { position: relative; display: flex; height: 100%; }
+.panel { position: relative; flex: 1 1 0; min-width: 160px; background: var(--panel); border-right: 1px solid #1f2937; overflow: hidden; }
+.panel-camera video, .panel-camera canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+.panel-instrument { display: flex; flex-direction: column; gap: 12px; padding: 16px; }
+.preset { padding: 10px 14px; border: 1px solid #334155; border-radius: 8px; background: transparent; color: var(--fg); cursor: grab; }
+.preset:hover { border-color: var(--accent); }
+#start { padding: 10px 14px; border-radius: 8px; border: 0; background: var(--accent); color: #0b0f14; font-weight: 600; cursor: pointer; }
+.panel-code pre { margin: 0; padding: 16px; font: 13px/1.5 ui-monospace, monospace; color: var(--accent); white-space: pre-wrap; }
+.hint { color: var(--muted); padding: 16px; }
+@media (max-width: 720px) { #app { flex-direction: column; } .panel { border-right: 0; border-bottom: 1px solid #1f2937; } }
