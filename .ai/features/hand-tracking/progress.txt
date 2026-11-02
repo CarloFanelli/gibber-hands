@@ -1,1 +1,7 @@
 # Task Progress - hand-tracking
+
+01-camera-view: TODO
+02-hand-model-loading: TODO
+03-tracked-hand-overlay: TODO
+04-pinch-and-gestures: TODO
+05-slider-fallback: TODO
