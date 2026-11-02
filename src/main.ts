@@ -19,9 +19,9 @@ import { loadPresets } from './synth/presets';
 
 async function boot() {
   const ui = createLayout(document.getElementById('app')!);
-  // The camera is requested before any await, so its prompt appears as the page loads.
-  const panel = createCameraPanel(ui.camera.status, () => startup.retryCamera());
-  const startup = createStartup(ui.camera.video, panel.show);
+  // Camera and hand model start before any await, so the prompt and the download begin as the page loads.
+  const startup = createStartup(ui.camera.video);
+  startup.onStatus(createCameraPanel(ui.camera.status, startup).show);
 
   const synth = await createSynth();
   const presets = loadPresets();

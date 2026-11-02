@@ -44,3 +44,7 @@ A first visit downloads about 12 MB: the 8.4 MB hand model plus the MediaPipe ru
 - Model file corrupted or wrong format → "Hand model is damaged" (REQ-5)
 - Browser without WebAssembly → "This browser can't run hand tracking", no Try again (REQ-5)
 - Graphics acceleration unavailable → the model falls back to the processor without a message (REQ-5)
+
+## Notes from implementation
+
+- **Known limitation**: the 30 s stall check covers the hand model download only. The runtime files (about 3.3 MB compressed) are fetched by MediaPipe's own loader, which reports no progress, so a stall there can't be told apart from a slow connection; a failed runtime fetch is still reported and names the file. /dev, 2026-11-02.
