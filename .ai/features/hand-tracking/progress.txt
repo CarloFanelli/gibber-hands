@@ -4,4 +4,4 @@
 02-hand-model-loading: DONE
 03-tracked-hand-overlay: DONE
 04-pinch-and-gestures: DONE
-05-slider-fallback: TODO
+05-slider-fallback: DONE
