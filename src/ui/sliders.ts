@@ -5,7 +5,16 @@
 import { gestureName } from '../hands/gesture';
 import type { HandSource } from '../hands/tracker';
 import { GESTURE_NAMES, type GestureName, type HandState } from '../hands/types';
+import { NOTE_LANES } from '../mapping/handToSynth';
 import { GESTURE_LABELS } from './gestureLabels';
+
+export interface SliderFallback extends HandSource {
+  /**
+   * Shows the name of the note lane being played beside the left–right slider. The lane comes from the
+   * mapping, which holds it across small slider steps, so the name always matches what plays.
+   */
+  showNote(lane: number | null): void;
+}
 
 interface SliderValues {
   x: number;
@@ -38,11 +47,13 @@ const SLIDERS: { key: Exclude<keyof SliderValues, 'gesture'>; label: string }[] 
 ];
 
 /** Mounts the controls in their own container inside `root`; stop() removes them. */
-export function createSliderFallback(root: HTMLElement): HandSource {
+export function createSliderFallback(root: HTMLElement): SliderFallback {
   let cb: ((s: HandState, landmarks: null) => void) | null = null;
   const values: SliderValues = { ...INITIAL_SLIDERS };
   const container = document.createElement('div');
   container.className = 'sliders';
+  const note = document.createElement('output');
+  note.className = 'slider-note';
 
   for (const { key, label } of SLIDERS) {
     const input = document.createElement('input');
@@ -51,7 +62,7 @@ export function createSliderFallback(root: HTMLElement): HandSource {
       values[key] = input.valueAsNumber;
       emit();
     });
-    container.append(field(label, input));
+    container.append(field(label, input, key === 'x' ? note : undefined));
   }
 
   const select = document.createElement('select');
@@ -75,12 +86,19 @@ export function createSliderFallback(root: HTMLElement): HandSource {
     stop() {
       cb = null;
       container.remove();
+    },
+    showNote(lane) {
+      note.textContent = lane === null ? '' : NOTE_LANES[lane]!.name;
     }
   };
 }
 
-function field(text: string, control: HTMLElement) {
+/** A labelled control; `readout` shows at the end of the caption line. */
+function field(text: string, control: HTMLElement, readout?: HTMLElement) {
+  const caption = document.createElement('span');
+  caption.append(text);
+  if (readout) caption.append(readout);
   const label = document.createElement('label');
-  label.append(text, control);
+  label.append(caption, control);
   return label;
 }

@@ -27,3 +27,7 @@
 ### B-7 · open
 - **What**: If the middle pinch varies by more than 15% between 40 cm and 80 cm with a real hand, measure hand size from several palm segments instead of one, so small, distant hands give steadier values.
 - **From**: hand-tracking (dev task 04, 2026-11-02)
+
+### B-8 · open
+- **What**: Cut the memory that starting the audio adds to the tab, about 460 MB measured in headless Chromium. Gibber reserves a fixed 20-minute sound buffer on the page and in its audio worklet, and its start function can't make it smaller. A fix means patching or vendoring that part of Gibber's bundle.
+- **From**: hand-to-sound (dev task 01, 2026-11-02)

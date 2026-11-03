@@ -5,6 +5,7 @@
 import type { CameraFailure } from '../hands/camera';
 import type { ModelFailure } from '../hands/modelSource';
 import type { Startup, StartupStatus } from '../hands/startup';
+import { statusCard } from './statusCard';
 
 const CAMERA_FAILURE_TEXT: Record<Exclude<CameraFailure['reason'], 'other'>, string> = {
   insecure: 'Page not secure — open the https link',
@@ -66,21 +67,4 @@ export function createCameraPanel(root: HTMLElement, startup: Pick<Startup, 'ret
       }
     }
   };
-}
-
-/** A card with a live message and a Try again button, hidden until a failure shows it. */
-function statusCard(root: HTMLElement, onRetry: () => void) {
-  const card = document.createElement('div');
-  card.className = 'status-card';
-  const message = document.createElement('p');
-  message.setAttribute('role', 'status');
-  const retry = document.createElement('button');
-  retry.type = 'button';
-  retry.className = 'retry';
-  retry.textContent = 'Try again';
-  retry.hidden = true;
-  retry.addEventListener('click', onRetry);
-  card.append(message, retry);
-  root.append(card);
-  return { card, message, retry };
 }
