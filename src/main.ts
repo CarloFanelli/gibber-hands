@@ -17,6 +17,8 @@
  *
  * A first visit is guided: ui/statusLine says what is on, and ui/stepHints shows the next step over the
  * camera view until a first sound has lasted a second, which browser storage remembers.
+ *
+ * ui/shortcuts maps keys to the same actions as the controls: presets, audio, the code panel and ui/helpSheet.
  */
 import { createStartup, type StartupStatus } from './hands/startup';
 import { EMPTY_HAND, type HandState } from './hands/types';
@@ -27,11 +29,13 @@ import { gibberSnippet } from './synth/snippet';
 import { createAudioPanel } from './ui/audioPanel';
 import { createLayout } from './ui/layout';
 import { createCameraPanel } from './ui/cameraPanel';
+import { createHelpSheet } from './ui/helpSheet';
 import { createOverlay } from './ui/overlay';
 import { createPresetList } from './ui/presetList';
 import { createSliderFallback, type SliderFallback } from './ui/sliders';
 import { cameraMode, createStatusLine } from './ui/statusLine';
 import { createStepHints, firstSoundTimer, nextStep } from './ui/stepHints';
+import { listenForShortcuts } from './ui/shortcuts';
 import { readStored, writeStored } from './ui/storage';
 import { throttle } from './ui/throttle';
 
@@ -118,6 +122,14 @@ function boot() {
     playHand();
   }
   usePreset();
+
+  const help = createHelpSheet(document.body);
+  listenForShortcuts((action) => {
+    if (action.kind === 'preset') selectPreset(action.index);
+    else if (action.kind === 'audio') audio.startOrStop();
+    else if (action.kind === 'code') ui.toggleCodePanel();
+    else help.toggle();
+  });
 
   // The only hand listener: a second onHand() call would replace this one.
   startup.onHand((s, landmarks) => {

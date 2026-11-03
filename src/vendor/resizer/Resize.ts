@@ -15,6 +15,8 @@
  *     proportions when the window is resized.
  *  7. An element hidden when sizes are first saved keeps its CSS percentage, instead of being saved at 0.
  *  8. The console.log of the options is removed.
+ *  9. Keyboard: Tab reaches each handle (a focusable separator that says where it stands), and the left and
+ *     right arrow keys move it one step, through the same start, limits and end as a drag, sizes saved.
  */
 import Resizer from "./Resizer.js";
 
@@ -26,6 +28,9 @@ interface ResizeOptions {
 }
 
 type SavedSize = { id: string, percW: number };
+
+/** How far one arrow key press moves a handle, in px (fix 9). */
+const KEY_STEP_PX = 24;
 
 class Resize {
   private resizableElements: HTMLElement[];
@@ -120,17 +125,45 @@ class Resize {
     let trueResizable: HTMLElement[] | null = null;
 
     resizer.onmousedown = dragMouseDown;
+    resizer.tabIndex = 0;
+    resizer.setAttribute('role', 'separator');
+    resizer.setAttribute('aria-orientation', 'vertical');
+    resizer.setAttribute('aria-label', 'Resize panels');
+    resizer.onkeydown = keyMove;
+    sayPosition();
 
     function percentOfParent(el: HTMLElement): number {
       return (el.getBoundingClientRect().width * 100) / el.parentElement!.getBoundingClientRect().width;
     }
 
+    /** The left element's share of the two, from 0 to 100, for screen readers. */
+    function sayPosition() {
+      const left = resizer.previousElementSibling!.getBoundingClientRect().width;
+      const right = resizer.nextElementSibling!.getBoundingClientRect().width;
+      if (left + right > 0) resizer.setAttribute('aria-valuenow', String(Math.round(left * 100 / (left + right))));
+    }
+
+    function keyMove(e: KeyboardEvent) {
+      const step = e.key === 'ArrowLeft' ? -KEY_STEP_PX : e.key === 'ArrowRight' ? KEY_STEP_PX : 0;
+      if (step === 0) return;
+      e.preventDefault();
+      const x = resizer.getBoundingClientRect().x;
+      startMove(x);
+      moveTo(x + step);
+      closemoveResizer();
+    }
+
     function dragMouseDown(e: MouseEvent) {
       e.preventDefault();
+      startMove(e.clientX);
+      document.onmouseup = closemoveResizer;
+      document.onmousemove = elementDrag;
+    }
 
+    function startMove(x: number) {
       trueResizable = check(resizableElement);
 
-      mouseXStart = e.clientX;
+      mouseXStart = x;
       const resizerH = resizer.getBoundingClientRect().height;
       resizer.style.position = 'absolute';
       resizer.style.height = resizerH + 'px';
@@ -143,9 +176,6 @@ class Resize {
       leftDivInitialWidth = leftDiv.getBoundingClientRect().width;
       rightDivMinWidth = parseFloat(getComputedStyle(rightDiv).minWidth) || 0;
       leftDivMinWidth = parseFloat(getComputedStyle(leftDiv).minWidth) || 0;
-
-      document.onmouseup = closemoveResizer;
-      document.onmousemove = elementDrag;
     }
 
     function elementDrag(e: MouseEvent) {
@@ -154,9 +184,12 @@ class Resize {
         closemoveResizer();
         return;
       }
+      moveTo(e.clientX);
+    }
 
+    function moveTo(x: number) {
       const mouseDelta = Math.min(
-        Math.max(e.clientX - (mouseXStart as number), leftDivMinWidth - (leftDivInitialWidth as number)),
+        Math.max(x - (mouseXStart as number), leftDivMinWidth - (leftDivInitialWidth as number)),
         (rightDivInitialWidth as number) - rightDivMinWidth
       );
       resizer.style.left = ((mouseXStart as number) + mouseDelta) + "px";
@@ -179,6 +212,7 @@ class Resize {
       resizer.style.position = '';
       resizer.style.height = '';
       resizer.style.left = '';
+      sayPosition();
     }
 
     function saveSize() {

@@ -1,7 +1,7 @@
 /**
  * Three resizable panels side by side: camera | instrument (audio controls) | live code. Resizer adds the
- * drag handles and remembers the sizes; a button in the instrument panel hides or shows the code panel,
- * for this visit only. Narrow windows stack the panels (styles.css).
+ * drag handles and remembers the sizes; a button in the instrument panel, or the C key, hides or shows the
+ * code panel, for this visit only. Narrow windows stack the panels (styles.css).
  */
 import Resize from '../vendor/resizer/Resize';
 
@@ -12,6 +12,8 @@ export interface Layout {
   camera: { root: HTMLElement; video: HTMLVideoElement; canvas: HTMLCanvasElement; status: HTMLElement };
   instrument: HTMLElement;
   liveCode: { show(code: string): void };
+  /** Hides the code panel, or shows it, as its button does. */
+  toggleCodePanel(): void;
 }
 
 export function createLayout(root: HTMLElement): Layout {
@@ -44,12 +46,14 @@ export function createLayout(root: HTMLElement): Layout {
     codeToggle.textContent = shown ? 'Hide code' : 'Show code';
     codeToggle.setAttribute('aria-expanded', String(shown));
   }
+  const toggleCodePanel = () => showCodePanel(codePanel.classList.contains(HIDDEN_PANEL));
   showCodePanel(true);
-  codeToggle.addEventListener('click', () => showCodePanel(codePanel.classList.contains(HIDDEN_PANEL)));
+  codeToggle.addEventListener('click', toggleCodePanel);
 
   return {
     camera: { root: root.querySelector('#panel-camera')!, video, canvas, status: root.querySelector('#camera-status')! },
     instrument: root.querySelector('.instrument-controls')!,
-    liveCode: { show: (code) => { codeEl.textContent = code; } }
+    liveCode: { show: (code) => { codeEl.textContent = code; } },
+    toggleCodePanel
   };
 }

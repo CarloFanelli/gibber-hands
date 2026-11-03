@@ -36,3 +36,7 @@ The snippet already updates live (hand-to-sound). This task makes it usable outs
 - Snippet longer than the panel → wraps, no horizontal scroll (REQ-20)
 - Text the colouring doesn't recognize → default colour (REQ-20)
 - Link clicked while playing with the camera → this tab is hidden, so the hand counts as gone and the sound fades; audio stays on and plays again on return. With the sliders it keeps playing (REQ-19 · from code)
+
+## Notes from implementation
+
+- **Impacts Task 06**: from task 05, the help sheet (`src/ui/helpSheet.ts`) lists every control. Add "Copy" and "Open gibber.cc" to its "Mouse and touch" list. The shortcuts already leave Space to a focused button or link, so these two need nothing in `src/ui/shortcuts.ts`.

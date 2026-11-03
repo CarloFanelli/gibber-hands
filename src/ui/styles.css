@@ -9,6 +9,8 @@
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font-family: system-ui, sans-serif; }
+/* One focus outline for every control, shown when the keyboard moves focus. */
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 #app { position: relative; display: flex; height: 100%; }
 /* Widths are the flex basis, so the widths Resizer sets apply. Grow factors match the default widths: with
    nothing saved and the code panel hidden, camera and instrument share its space 45:25. */
@@ -34,10 +36,11 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 .slider-note { color: var(--fg); font-weight: 600; }
 .sliders input { width: 100%; height: 44px; margin: 0; accent-color: var(--accent); }
 .sliders select { min-height: 44px; padding: 0 10px; border: 1px solid #334155; border-radius: 8px; background: var(--panel); color: var(--fg); font: inherit; }
-.status-card { display: flex; flex-direction: column; align-items: center; gap: 10px; max-width: 36ch; padding: 14px 18px; border-radius: 8px; background: rgb(11 15 20 / 0.85); text-align: center; pointer-events: auto; }
+.status-card { display: flex; flex-direction: column; align-items: center; gap: 10px; max-width: 36ch; padding: 14px 18px; border-radius: 8px; background: rgb(11 15 20 / 0.9); text-align: center; pointer-events: auto; }
 .status-card p { margin: 0; }
 .status-hint { color: var(--muted); font-size: 14px; }
-.camera-privacy { position: absolute; left: 0; bottom: 0; margin: 0; padding: 6px 10px; border-top-right-radius: 6px; background: rgb(11 15 20 / 0.7); font-size: 12px; color: var(--muted); }
+/* The labels over the video: dark enough behind muted text for 4.5:1 even over a white wall. */
+.camera-privacy { position: absolute; left: 0; bottom: 0; margin: 0; padding: 6px 10px; border-top-right-radius: 6px; background: rgb(11 15 20 / 0.9); font-size: 12px; color: var(--muted); }
 .panel-instrument { display: flex; flex-direction: column; justify-content: space-between; gap: 12px; padding: 16px; overflow-y: auto; container-type: inline-size; }
 .instrument-controls { display: flex; flex-direction: column; gap: 12px; }
 .now-playing { display: grid; padding: 8px 10px; border: 1px dashed #334155; border-radius: 8px; }
@@ -60,7 +63,7 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 .preset-character, .preset-scale { grid-column: 2; font-size: 13px; color: var(--muted); }
 /* A narrow instrument panel keeps each preset's name and scale; names wrap. */
 @container (max-width: 219px) { .preset-character { display: none; } }
-.code-toggle { align-self: flex-start; min-height: 44px; padding: 10px 14px; border-radius: 8px; border: 1px solid #334155; background: transparent; color: var(--fg); font: inherit; cursor: pointer; }
+.code-toggle, .help-close { align-self: flex-start; min-height: 44px; padding: 10px 14px; border-radius: 8px; border: 1px solid #334155; background: transparent; color: var(--fg); font: inherit; cursor: pointer; }
 .audio-toggle, .retry { min-height: 44px; padding: 10px 14px; border-radius: 8px; border: 0; background: var(--accent); color: #0b0f14; font-weight: 600; cursor: pointer; }
 .audio-toggle:disabled, .retry:disabled { opacity: 0.5; cursor: default; }
 /* Until audio first starts, the button that starts it is the largest control in the panel, preset cards included. */
@@ -69,7 +72,7 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 .status-line { margin: 0; font-size: 13px; color: var(--muted); }
 .panel-code pre { margin: 0; padding: 16px; font: 13px/1.5 ui-monospace, monospace; color: var(--accent); white-space: pre-wrap; }
 .hint { color: var(--muted); padding: 16px; }
-.overlay-label { position: absolute; margin: 0; padding: 4px 10px; border-radius: 6px; background: rgb(11 15 20 / 0.7); font-size: 14px; pointer-events: none; }
+.overlay-label { position: absolute; margin: 0; padding: 4px 10px; border-radius: 6px; background: rgb(11 15 20 / 0.9); font-size: 14px; pointer-events: none; }
 .overlay-hint { top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 18px; }
 .overlay-gesture { top: 8px; left: 8px; font-weight: 600; }
 .overlay-fps { top: 8px; right: 8px; color: var(--muted); font-variant-numeric: tabular-nums; }
@@ -89,6 +92,21 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 @container camera (max-width: 319.98px) {
   .step-hint { padding: 8px; }
   .step-hint-words { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+}
+/* The help sheet: a modal dialog over the page, scrolling inside when the window is short. */
+.help-sheet { width: min(560px, 100% - 32px); padding: 20px 24px; border: 1px solid #334155; border-radius: 12px; background: var(--panel); color: var(--fg); }
+.help-sheet::backdrop { background: rgb(0 0 0 / 0.6); }
+.help-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.help-sheet h2 { margin: 0; font-size: 20px; }
+.help-sheet h3 { margin: 16px 0 6px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.help-sheet dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0; }
+.help-sheet dt { font-weight: 600; }
+.help-sheet dd { margin: 0; }
+.help-sheet kbd { display: inline-block; min-width: 1.6em; padding: 0 6px; border: 1px solid #334155; border-radius: 4px; font: 13px/1.5 ui-monospace, monospace; text-align: center; }
+@media (max-width: 479.98px) {
+  .help-sheet { padding: 16px; }
+  .help-sheet dl { grid-template-columns: 1fr; gap: 2px; }
+  .help-sheet dd + dt { margin-top: 8px; }
 }
 /* Stacked: equal heights at full width. Saved widths stay stored for the next wide window. */
 @media (max-width: 719.98px) {

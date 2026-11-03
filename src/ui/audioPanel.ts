@@ -16,6 +16,8 @@ const PROMINENT = 'prominent';
 
 export interface AudioPanel {
   show(status: EngineStatus): void;
+  /** Presses the button that starts or stops audio, Try again after a failure, if it can be pressed now. */
+  startOrStop(): void;
 }
 
 export function createAudioPanel(root: HTMLElement, engine: Pick<SynthEngine, 'start' | 'stop'>): AudioPanel {
@@ -49,6 +51,10 @@ export function createAudioPanel(root: HTMLElement, engine: Pick<SynthEngine, 's
       } else if (retrying) {
         failure.retry.disabled = true;
       }
+    },
+    startOrStop() {
+      const button = failure.card.hidden ? toggle : failure.retry;
+      if (!button.hidden && !button.disabled) button.click();
     }
   };
 }

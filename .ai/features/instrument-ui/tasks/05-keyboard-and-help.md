@@ -42,3 +42,17 @@ The shortcuts drive controls the earlier tasks built: the presets, the audio but
 ## Notes from implementation
 
 - **Impacts Task 05**: from task 01, the layout does not return a code-panel toggle yet, because nothing outside it called one. The button's handler in `src/ui/layout.ts` (`showCodePanel`) hides or shows the panel and keeps the button's text and `aria-expanded` in step; return a toggle built on it for the C key, so the key and the button stay in agreement.
+- **Known limitation**: only Chromium was tested, scripted in headless mode. The checks covered:
+  - each shortcut;
+  - keys 1, 2, 3 within 9 ms, ending on preset 3;
+  - Space on a focused preset card;
+  - C and 1 in the gesture menu;
+  - Ctrl+C;
+  - held keys;
+  - "?" twice, Escape, and Space on the help sheet's Close button;
+  - Space pressing "Try again" after an audio failure;
+  - the full Tab order with its focus outlines;
+  - the arrow keys on the bars between panels, to their limits and after a reload;
+  - the help sheet at 390 px.
+
+  No screen reader was tried. Contrast was checked by calculation for every text colour on its background, and for the labels on the camera view also over a white image. /dev, 2026-11-03.

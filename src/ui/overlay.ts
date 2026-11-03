@@ -137,10 +137,19 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
     ctx.font = '600 14px system-ui, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'bottom';
+    // A dark outline keeps the names readable over a bright background.
+    ctx.save();
+    ctx.lineWidth = 4;
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = 'rgb(11 15 20 / 0.9)';
     laneNames.forEach((name, i) => {
+      const x = zone.x + (i + 0.5) * laneWidth;
+      const y = zone.y + zone.h - 6;
+      ctx.strokeText(name, x, y);
       ctx.fillStyle = i === played ? accent : 'rgb(255 255 255 / 0.75)';
-      ctx.fillText(name, zone.x + (i + 0.5) * laneWidth, zone.y + zone.h - 6);
+      ctx.fillText(name, x, y);
     });
+    ctx.restore();
   }
 
   return {
