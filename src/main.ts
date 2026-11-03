@@ -13,6 +13,7 @@
  * so everything downstream of HandState works identically on a phone.
  */
 import { createStartup } from './hands/startup';
+import { EMPTY_HAND } from './hands/types';
 import { mapHandToSynth, type SynthParams } from './mapping/handToSynth';
 import { createSynth } from './synth/engine';
 import { gibberSnippet } from './synth/snippet';
@@ -42,6 +43,8 @@ function boot() {
   const audio = createAudioPanel(ui.instrument, synth);
   synth.onStatus(audio.show);
   const showCode = throttle((p: SynthParams) => ui.liveCode.show(gibberSnippet(p)), LIVE_CODE_PERIOD_MS);
+  // Hand states start only once tracking or the sliders run: until then, show the silent sound.
+  showCode(mapHandToSynth(EMPTY_HAND, null));
   // The only hand listener: a second onHand() call would replace this one.
   let sound: SynthParams | null = null;
   startup.onHand((s, landmarks) => {

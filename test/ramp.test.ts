@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { rampTimeConstant, slideSamples } from '../src/synth/ramp';
+import { CUTOFF_RAMP_MS, PITCH_SLIDE_MS, rampTimeConstant, slideSamples } from '../src/synth/ramp';
 
 /** Share of the step still left `ms` after an exponential ramp with time constant `tau` (seconds) began. */
 const leftAfter = (ms: number, tau: number) => Math.exp(-ms / 1000 / tau);
@@ -18,8 +18,12 @@ describe('slideSamples', () => {
   /** Share of the step a one-pole slide of `n` samples still has left after `samples` samples. */
   const leftAfterSamples = (samples: number, n: number) => (1 - 1 / n) ** samples;
 
+  it('slides a note over 40 ms and ramps the cutoff over 15 ms', () => {
+    expect([PITCH_SLIDE_MS, CUTOFF_RAMP_MS]).toEqual([40, 15]);
+  });
+
   it('comes within 1% of the target in the given time, not before', () => {
-    for (const ms of [15, 40]) {
+    for (const ms of [CUTOFF_RAMP_MS, PITCH_SLIDE_MS]) {
       const n = slideSamples(ms, 48_000);
       const samples = (ms / 1000) * 48_000;
       expect(leftAfterSamples(samples, n)).toBeCloseTo(0.01, 10);
