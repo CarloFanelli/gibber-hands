@@ -40,10 +40,20 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 .camera-privacy { position: absolute; left: 0; bottom: 0; margin: 0; padding: 6px 10px; border-top-right-radius: 6px; background: rgb(11 15 20 / 0.7); font-size: 12px; color: var(--muted); }
 .panel-instrument { display: flex; flex-direction: column; justify-content: space-between; gap: 12px; padding: 16px; overflow-y: auto; container-type: inline-size; }
 .instrument-controls { display: flex; flex-direction: column; gap: 12px; }
-.presets { display: grid; gap: 6px; }
-.preset { display: grid; grid-template-columns: auto 1fr; column-gap: 10px; align-items: baseline; padding: 6px 10px; border: 1px solid #334155; border-radius: 8px; background: transparent; color: var(--fg); font: inherit; text-align: left; cursor: pointer; }
+.now-playing { display: grid; padding: 8px 10px; border: 1px dashed #334155; border-radius: 8px; }
+.now-playing-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.now-playing-name { font-weight: 600; }
+.now-playing-scale { font-size: 13px; color: var(--muted); }
+.now-playing.drop-ready { border-color: var(--accent); }
+.now-playing.drop-over { border-style: solid; border-color: var(--accent); background: rgb(125 211 252 / 0.12); }
+/* The cards are in block flow, not a grid: a grid would start a dragged card from its corner, not its place. */
+.preset-cell + .preset-cell { padding-top: 6px; }
+.preset { display: grid; grid-template-columns: auto 1fr; column-gap: 10px; align-items: baseline; width: 100%; padding: 6px 10px; border: 1px solid #334155; border-radius: 8px; background: transparent; color: var(--fg); font: inherit; text-align: left; cursor: pointer; user-select: none; }
 .preset:hover { border-color: #64748b; }
 .preset[aria-pressed="true"] { border-color: var(--accent); background: rgb(125 211 252 / 0.12); }
+.preset.preset-dragging { z-index: 1; background: var(--panel); box-shadow: 0 6px 20px rgb(0 0 0 / 0.5); }
+/* The faded copy drag-kit leaves after a pressed card sits on top of it: a release there must still click the card. */
+.preset + .preset { pointer-events: none; }
 .preset-key { grid-row: span 2; color: var(--muted); font-variant-numeric: tabular-nums; }
 .preset[aria-pressed="true"] .preset-key { color: var(--accent); }
 .preset-name { font-weight: 600; }
