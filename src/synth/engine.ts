@@ -13,6 +13,7 @@ import workletUrl from 'gibber.audio.lib/dist/gibberish_worklet.js?url';
 import type { SynthParams } from '../mapping/handToSynth';
 import { EngineDownloadError, audioSupported, engineFailure, type EngineFailure } from './engineFailure';
 import { CUTOFF_RAMP_MS, PITCH_SLIDE_MS, TOGGLE_RAMP_MS, rampTimeConstant, slideSamples } from './ramp';
+import { FULL_VOLUME, RESONANCE, REVERB } from './sound';
 
 export type EngineStatus = { kind: 'off' | 'starting' | 'on' } | { kind: 'failed'; failure: EngineFailure };
 
@@ -31,15 +32,6 @@ export interface SynthEngine {
 const DOWNLOAD_TIMEOUT_MS = 15_000;
 /** Gibber's start reports no errors: one that takes longer than this has failed. */
 const INIT_TIMEOUT_MS = 10_000;
-/**
- * Output gain at full volume. Measured over every note and cutoff: the loudest, C4 at 6.4 kHz, peaks
- * at about −6 dBFS, 3 dB under the −3 dBFS limit.
- */
-const FULL_VOLUME = 1.4;
-/** Filter resonance in Gibberish's ladder model (0..1): clearly resonant, well short of self-oscillation. */
-const RESONANCE = 0.5;
-/** Gibberish's Freeverb: `wet1` is the reverb, `wet2` the other channel's reverb, `dry` the voice itself. */
-const REVERB = { wet1: 0.3, wet2: 0, dry: 0.7 };
 
 /** The worklet's global Gibberish, as voiceGraph sees it. */
 declare const Gibberish: {

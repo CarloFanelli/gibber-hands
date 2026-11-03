@@ -15,11 +15,16 @@
 import { createStartup } from './hands/startup';
 import { mapHandToSynth, type SynthParams } from './mapping/handToSynth';
 import { createSynth } from './synth/engine';
+import { gibberSnippet } from './synth/snippet';
 import { createAudioPanel } from './ui/audioPanel';
 import { createLayout } from './ui/layout';
 import { createCameraPanel } from './ui/cameraPanel';
 import { createOverlay } from './ui/overlay';
 import { createSliderFallback, type SliderFallback } from './ui/sliders';
+import { throttle } from './ui/throttle';
+
+/** The live code panel updates at most this often, in ms. */
+const LIVE_CODE_PERIOD_MS = 100;
 
 function boot() {
   const ui = createLayout(document.getElementById('app')!);
@@ -36,6 +41,7 @@ function boot() {
   const synth = createSynth();
   const audio = createAudioPanel(ui.instrument, synth);
   synth.onStatus(audio.show);
+  const showCode = throttle((p: SynthParams) => ui.liveCode.show(gibberSnippet(p)), LIVE_CODE_PERIOD_MS);
   // The only hand listener: a second onHand() call would replace this one.
   let sound: SynthParams | null = null;
   startup.onHand((s, landmarks) => {
@@ -43,6 +49,7 @@ function boot() {
     overlay.draw(s, landmarks, sound.lane);
     sliders?.showNote(sound.lane);
     synth.update(sound);
+    showCode(sound);
   });
 }
 

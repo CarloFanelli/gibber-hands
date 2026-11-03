@@ -2,4 +2,4 @@
 
 01-squeeze-to-play: DONE
 02-note-lanes-and-brightness: DONE
-03-live-code-snippet: TODO
+03-live-code-snippet: DONE
