@@ -38,3 +38,7 @@ The shortcuts drive controls the earlier tasks built: the presets, the audio but
 - Space pressed while a button has focus → the focused button acts; the shortcut doesn't also fire (REQ-17)
 - Key held down (auto-repeat) → acts once per press (REQ-17)
 - Keyboard layout where "?" needs Shift → works with Shift (REQ-17)
+
+## Notes from implementation
+
+- **Impacts Task 05**: from task 01, the layout does not return a code-panel toggle yet, because nothing outside it called one. The button's handler in `src/ui/layout.ts` (`showCodePanel`) hides or shows the panel and keeps the button's text and `aria-expanded` in step; return a toggle built on it for the C key, so the key and the button stay in agreement.

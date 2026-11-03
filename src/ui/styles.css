@@ -10,7 +10,17 @@
 [hidden] { display: none !important; }
 html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font-family: system-ui, sans-serif; }
 #app { position: relative; display: flex; height: 100%; }
-.panel { position: relative; flex: 1 1 0; min-width: 160px; background: var(--panel); border-right: 1px solid #1f2937; overflow: hidden; }
+/* Widths are the flex basis, so the widths Resizer sets apply. Grow factors match the default widths: with
+   nothing saved and the code panel hidden, camera and instrument share its space 45:25. */
+.panel { position: relative; flex: 1 1 auto; min-width: 160px; background: var(--panel); overflow: hidden; }
+.panel-camera { width: 45%; flex-grow: 45; }
+.panel-instrument { width: 25%; flex-grow: 25; }
+.panel-code { width: 30%; flex-grow: 30; }
+.panel.panel-hidden { display: none; }
+/* Negative margins: the handle takes no room in the row, so the widths add up to 100% and grabbing it moves nothing. */
+.resize-handle { position: relative; z-index: 1; flex: none; width: 6px; margin: 0 -3px; background: #1f2937; cursor: col-resize; }
+.resize-handle:hover { background: var(--accent); }
+.resize-handle:has(+ .panel-hidden) { display: none; }
 .panel-camera video, .panel-camera canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 /* The only CSS mirror: the overlay is mirrored in the hand coordinates instead. Contain = letterbox, never crop. */
 .panel-camera video { object-fit: contain; transform: scaleX(-1); background: #000; }
@@ -28,7 +38,9 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 .status-card p { margin: 0; }
 .status-hint { color: var(--muted); font-size: 14px; }
 .camera-privacy { position: absolute; left: 0; bottom: 0; margin: 0; padding: 6px 10px; border-top-right-radius: 6px; background: rgb(11 15 20 / 0.7); font-size: 12px; color: var(--muted); }
-.panel-instrument { display: flex; flex-direction: column; gap: 12px; padding: 16px; }
+.panel-instrument { display: flex; flex-direction: column; justify-content: space-between; gap: 12px; padding: 16px; }
+.instrument-controls { display: flex; flex-direction: column; gap: 12px; }
+.code-toggle { align-self: flex-start; min-height: 44px; padding: 10px 14px; border-radius: 8px; border: 1px solid #334155; background: transparent; color: var(--fg); font: inherit; cursor: pointer; }
 .audio-toggle, .retry { min-height: 44px; padding: 10px 14px; border-radius: 8px; border: 0; background: var(--accent); color: #0b0f14; font-weight: 600; cursor: pointer; }
 .audio-toggle:disabled, .retry:disabled { opacity: 0.5; cursor: default; }
 .panel-code pre { margin: 0; padding: 16px; font: 13px/1.5 ui-monospace, monospace; color: var(--accent); white-space: pre-wrap; }
@@ -37,4 +49,9 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 .overlay-hint { top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 18px; }
 .overlay-gesture { top: 8px; left: 8px; font-weight: 600; }
 .overlay-fps { top: 8px; right: 8px; color: var(--muted); font-variant-numeric: tabular-nums; }
-@media (max-width: 720px) { #app { flex-direction: column; } .panel { border-right: 0; border-bottom: 1px solid #1f2937; } }
+/* Stacked: equal heights at full width. Saved widths stay stored for the next wide window. */
+@media (max-width: 719.98px) {
+  #app { flex-direction: column; }
+  .panel { flex: 1 1 0; width: auto !important; border-bottom: 1px solid #1f2937; }
+  .resize-handle { display: none; }
+}

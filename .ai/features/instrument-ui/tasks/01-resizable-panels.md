@@ -44,3 +44,8 @@ None
 - Window exactly 720 px wide → side by side (REQ-4)
 - Window crosses 720 px (phone rotated, window resized) → the layout switches without a reload; saved desktop sizes are untouched (REQ-4, REQ-2)
 - Keyboard only → the resize handles work with the mouse only; keyboard users keep the current sizes (REQ-1 · from code)
+
+## Notes from implementation
+
+- **Known limitation**: the 25 fps target while a panel is resized, with audio on, was not measured. With a fake camera, headless Chromium tracks at about 1 fps even when nothing moves, so it says nothing about the reference laptops. The overlay's canvas follows the panel through a ResizeObserver, which reports at most once per frame, so a drag reallocates it at most once per frame. Measure it by hand on both laptops. Only Chromium was tested, scripted in headless mode. That run covered defaults, a drag, the 160 px stop, a release outside the window, a window resize, reload, hide and show, the code panel hidden and then reloaded, unreadable and mismatched saved sizes, blocked storage, 700 px and exactly 720 px, and crossing 720 px. Firefox, Safari and Edge are manual checks. /dev, 2026-11-03.
+- **Known limitation**: the code panel's share after a drag made while it was hidden comes from the 2024 behaviour. The hidden panel keeps its saved share, while the visible panels are saved as shares of the row without it, so showing it again brings it back a little narrower: 23% instead of 30% after one drag from the defaults. Its share is no longer saved as 0, which made it come back at the 160 px minimum. /dev, 2026-11-03.
