@@ -1,7 +1,7 @@
 # Task Progress - instrument-ui
 
 01-resizable-panels: DONE
-02-six-presets: TODO
+02-six-presets: DONE
 03-drag-to-now-playing: TODO
 04-first-visit-guidance: TODO
 05-keyboard-and-help: TODO

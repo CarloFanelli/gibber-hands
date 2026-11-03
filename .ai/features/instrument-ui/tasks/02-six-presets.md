@@ -49,3 +49,9 @@ Milestone 2 built one sound, which becomes preset 1, Saw Lead. Every preset is a
 - Preset switched while a note plays → labels update at once; the same lane plays the new preset's note (REQ-10)
 - Slider fallback active → the note name beside the horizontal slider uses the current preset's notes (REQ-10)
 - Snippet for any preset → shows that preset's sound; pasted into gibber.cc, it plays the same note, brightness and volume (REQ-8 · from code)
+
+## Notes from implementation
+
+- **Known limitation**: the loudness match is measured, not heard. Each preset's gain was set so that every note lane, at five brightness levels, peaks at or below −4.8 dBFS. The average level at the middle brightness is within 0.7 dB across the six presets, and within 2.9 dB at the brightest. The level is plain RMS, with no weighting for how loud the ear finds each pitch, so Deep Bass may sound quieter than it measures. Timbre, resonance and delay settings are tuned by ear and still need a listen on real speakers. Only Chromium was tested, scripted in headless mode. /dev, 2026-11-03.
+- **Known limitation**: the crossfade glides over 60 ms inside the audio worklet. Measured from the moment the click was sent, the old sound is 40 dB down after 64–93 ms, and the new one within 6 dB of its level after 41–61 ms. Those times include the message's trip to the worklet and the 43 ms analysis window. No click was found at any switch. /dev, 2026-11-03.
+- **Known limitation**: a preset that rests closes the way into its reverb or delay as well as its output, so its effect empties while another preset plays. Coming back to it within a second or two can still let a faint rest of that effect through: about 39 dB under the new note after 1.6 s. /dev, 2026-11-03.

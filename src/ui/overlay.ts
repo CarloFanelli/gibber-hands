@@ -6,7 +6,7 @@
  */
 import { HAND_CONNECTIONS } from '../hands/tracker';
 import type { HandState, Point } from '../hands/types';
-import { NOTE_LANES, PLAYING_ZONE } from '../mapping/handToSynth';
+import { LANE_COUNT, PLAYING_ZONE } from '../mapping/handToSynth';
 import { createFpsMeter } from './fpsMeter';
 import { gestureText } from './gestureLabels';
 
@@ -21,6 +21,8 @@ export interface Overlay {
   draw(s: HandState, landmarks: Point[] | null, lane: number | null): void;
   /** Shown only while the tracker runs. */
   setVisible(visible: boolean): void;
+  /** Names the note lanes, left to right: the current preset's notes. */
+  setLanes(names: readonly string[]): void;
 }
 
 export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canvas: HTMLCanvasElement): Overlay {
@@ -32,6 +34,7 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
   let meter = createFpsMeter();
   let last: { s: HandState; landmarks: Point[] | null; lane: number | null } | null = null;
   let visible = false;
+  let laneNames: readonly string[] = [];
 
   // Canvas pixels follow the panel size and the screen density, so lines stay sharp and aligned.
   new ResizeObserver(() => {
@@ -107,7 +110,7 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
   function drawLanes(r: Rect, played: number | null) {
     const size = PLAYING_ZONE.end - PLAYING_ZONE.start;
     const zone = { x: r.x + PLAYING_ZONE.start * r.w, y: r.y + PLAYING_ZONE.start * r.h, w: size * r.w, h: size * r.h };
-    const laneWidth = zone.w / NOTE_LANES.length;
+    const laneWidth = zone.w / LANE_COUNT;
 
     if (played !== null) {
       ctx.globalAlpha = 0.25;
@@ -119,7 +122,7 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
     // One path, stroked once, so the borders two lanes share are no brighter than the outer ones.
     ctx.beginPath();
     ctx.rect(zone.x, zone.y, zone.w, zone.h);
-    for (let i = 1; i < NOTE_LANES.length; i++) {
+    for (let i = 1; i < LANE_COUNT; i++) {
       ctx.moveTo(zone.x + i * laneWidth, zone.y);
       ctx.lineTo(zone.x + i * laneWidth, zone.y + zone.h);
     }
@@ -131,9 +134,9 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
     ctx.font = '600 14px system-ui, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'bottom';
-    NOTE_LANES.forEach((note, i) => {
+    laneNames.forEach((name, i) => {
       ctx.fillStyle = i === played ? accent : 'rgb(255 255 255 / 0.75)';
-      ctx.fillText(note.name, zone.x + (i + 0.5) * laneWidth, zone.y + zone.h - 6);
+      ctx.fillText(name, zone.x + (i + 0.5) * laneWidth, zone.y + zone.h - 6);
     });
   }
 
@@ -158,6 +161,10 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
       fps.hidden = !visible;
       hint.hidden = !visible;
       gesture.hidden = true;
+      render();
+    },
+    setLanes(names) {
+      laneNames = names;
       render();
     }
   };

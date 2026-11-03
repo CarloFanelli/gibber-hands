@@ -5,15 +5,14 @@
 import { gestureName } from '../hands/gesture';
 import type { HandSource } from '../hands/tracker';
 import { GESTURE_NAMES, type GestureName, type HandState } from '../hands/types';
-import { NOTE_LANES } from '../mapping/handToSynth';
 import { GESTURE_LABELS } from './gestureLabels';
 
 export interface SliderFallback extends HandSource {
   /**
-   * Shows the name of the note lane being played beside the left–right slider. The lane comes from the
-   * mapping, which holds it across small slider steps, so the name always matches what plays.
+   * Shows the note being played beside the left–right slider, or nothing. It comes from the mapping, which
+   * holds the note lane across small slider steps, so the name always matches what plays.
    */
-  showNote(lane: number | null): void;
+  showNote(name: string | null): void;
 }
 
 interface SliderValues {
@@ -87,8 +86,8 @@ export function createSliderFallback(root: HTMLElement): SliderFallback {
       cb = null;
       container.remove();
     },
-    showNote(lane) {
-      note.textContent = lane === null ? '' : NOTE_LANES[lane]!.name;
+    showNote(name) {
+      note.textContent = name ?? '';
     }
   };
 }
