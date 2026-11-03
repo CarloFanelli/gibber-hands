@@ -40,3 +40,15 @@ The snippet already updates live (hand-to-sound). This task makes it usable outs
 ## Notes from implementation
 
 - **Impacts Task 06**: from task 05, the help sheet (`src/ui/helpSheet.ts`) lists every control. Add "Copy" and "Open gibber.cc" to its "Mouse and touch" list. The shortcuts already leave Space to a focused button or link, so these two need nothing in `src/ui/shortcuts.ts`.
+- **Known limitation**: only Chromium was tested, scripted in headless mode. The checks covered:
+  - Copy, with "Copied" still there at 1.4 s and gone at 2.2 s;
+  - five Copy presses while the sliders moved, each copying the snippet on screen at that press;
+  - a missing clipboard, as outside a secure context, and a refused one: both show "Copy failed — text selected" and select the snippet;
+  - the selected snippet holding still for a second while the sliders moved, then updating after a click elsewhere;
+  - part of the snippet selected with the mouse, also holding still;
+  - the link opening the playground in a new tab with no access back to this one, while this tab stayed on "Audio on";
+  - no sideways scroll with the code panel at 160 px or at 390 px stacked;
+  - C pressed with focus on Copy, which moves focus to "Show code";
+  - the snippet shown at boot, before tracking.
+
+  The camera case, where the hidden tab makes the hand count as gone, was not tried with a real hand: it rests on the tracker's existing handling of a hidden tab. Firefox and Safari clipboard behaviour was not tried. /dev, 2026-11-03.

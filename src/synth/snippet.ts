@@ -12,6 +12,8 @@ import { reverbMix, type Oscillator, type Preset } from './presets';
 
 /** Gibber's constructor for each oscillator shape; the snippet names its variable after the shape. */
 const STOCK_OSCILLATOR: Record<Oscillator['shape'], string> = { saw: 'Saw', triangle: 'Triangle', square: 'Square', pwm: 'PWM' };
+/** Every stock Gibber constructor a snippet can call. */
+export const STOCK_NAMES: readonly string[] = [...Object.values(STOCK_OSCILLATOR), 'Filter24Moog', 'Reverb', 'Delay'];
 
 export function gibberSnippet(p: SynthParams, preset: Preset): string {
   const frequency = round(p.frequency, 2);

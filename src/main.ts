@@ -30,6 +30,7 @@ import { createAudioPanel } from './ui/audioPanel';
 import { createLayout } from './ui/layout';
 import { createCameraPanel } from './ui/cameraPanel';
 import { createHelpSheet } from './ui/helpSheet';
+import { createLiveCode } from './ui/liveCode';
 import { createOverlay } from './ui/overlay';
 import { createPresetList } from './ui/presetList';
 import { createSliderFallback, type SliderFallback } from './ui/sliders';
@@ -60,7 +61,8 @@ function boot() {
   const audio = createAudioPanel(ui.instrument, synth);
   let preset = presetIndex(readStored(PRESET_KEY));
   const presets = createPresetList(ui.instrument, selectPreset);
-  const showCode = throttle((p: SynthParams) => ui.liveCode.show(gibberSnippet(p, PRESETS[preset]!)), LIVE_CODE_PERIOD_MS);
+  const liveCode = createLiveCode(ui.code);
+  const showCode = throttle((p: SynthParams) => liveCode.show(gibberSnippet(p, PRESETS[preset]!)), LIVE_CODE_PERIOD_MS);
 
   // Hand states start only once tracking or the sliders run: until then, the empty hand plays silence.
   let hand: HandState = EMPTY_HAND;

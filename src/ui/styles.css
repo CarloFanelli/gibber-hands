@@ -63,14 +63,22 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 .preset-character, .preset-scale { grid-column: 2; font-size: 13px; color: var(--muted); }
 /* A narrow instrument panel keeps each preset's name and scale; names wrap. */
 @container (max-width: 219px) { .preset-character { display: none; } }
-.code-toggle, .help-close { align-self: flex-start; min-height: 44px; padding: 10px 14px; border-radius: 8px; border: 1px solid #334155; background: transparent; color: var(--fg); font: inherit; cursor: pointer; }
+.code-toggle, .help-close, .code-copy, .code-open { align-self: flex-start; min-height: 44px; padding: 10px 14px; border-radius: 8px; border: 1px solid #334155; background: transparent; color: var(--fg); font: inherit; cursor: pointer; }
 .audio-toggle, .retry { min-height: 44px; padding: 10px 14px; border-radius: 8px; border: 0; background: var(--accent); color: #0b0f14; font-weight: 600; cursor: pointer; }
 .audio-toggle:disabled, .retry:disabled { opacity: 0.5; cursor: default; }
 /* Until audio first starts, the button that starts it is the largest control in the panel, preset cards included. */
 .audio-toggle.prominent, .retry.prominent { min-height: 88px; font-size: 20px; box-shadow: 0 0 0 3px rgb(125 211 252 / 0.35); }
 .retry.prominent { align-self: stretch; }
 .status-line { margin: 0; font-size: 13px; color: var(--muted); }
-.panel-code pre { margin: 0; padding: 16px; font: 13px/1.5 ui-monospace, monospace; color: var(--accent); white-space: pre-wrap; }
+/* The code panel: its tools on top, the snippet scrolling under them, wrapped so it never scrolls sideways. */
+.panel-code { display: flex; flex-direction: column; }
+.code-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 16px 16px 0; }
+.code-open { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
+.code-note { font-size: 13px; color: var(--muted); }
+.panel-code pre { flex: 1 1 auto; margin: 0; padding: 16px; overflow-y: auto; font: 13px/1.5 ui-monospace, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+.code-keyword { color: var(--accent); }
+.code-number { color: #fcd34d; }
+.code-comment { color: var(--muted); font-style: italic; }
 .hint { color: var(--muted); padding: 16px; }
 .overlay-label { position: absolute; margin: 0; padding: 4px 10px; border-radius: 6px; background: rgb(11 15 20 / 0.9); font-size: 14px; pointer-events: none; }
 .overlay-hint { top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 18px; }

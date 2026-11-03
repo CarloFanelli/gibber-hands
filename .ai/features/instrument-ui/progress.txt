@@ -5,4 +5,4 @@
 03-drag-to-now-playing: DONE
 04-first-visit-guidance: DONE
 05-keyboard-and-help: DONE
-06-code-panel-tools: TODO
+06-code-panel-tools: DONE

@@ -36,6 +36,9 @@ const CONTENT = `
     <dt>Start audio / Stop audio</dt><dd>Starts the sound, or silences it</dd>
     <dt>A preset card</dt><dd>Click or tap to pick it, or drag it onto “Now playing”</dd>
     <dt>Hide code / Show code</dt><dd>Hides or shows the code panel</dd>
+    <dt>Copy</dt><dd>Copies the code; if the browser blocks it, selects the code to copy by hand</dd>
+    <dt>Open gibber.cc</dt><dd>Opens the Gibber playground in a new tab, to paste the code and run it</dd>
+    <dt>Selecting the code</dt><dd>Keeps it still until you click elsewhere</dd>
     <dt>The bars between panels</dt><dd>Drag to resize the panels; the sizes are remembered</dd>
     <dt>Sliders, without a camera</dt><dd>Stand in for your hand: palm center, pinches and gesture</dd>
   </dl>

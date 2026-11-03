@@ -11,7 +11,7 @@ const HIDDEN_PANEL = 'panel-hidden';
 export interface Layout {
   camera: { root: HTMLElement; video: HTMLVideoElement; canvas: HTMLCanvasElement; status: HTMLElement };
   instrument: HTMLElement;
-  liveCode: { show(code: string): void };
+  code: HTMLElement;
   /** Hides the code panel, or shows it, as its button does. */
   toggleCodePanel(): void;
 }
@@ -28,20 +28,19 @@ export function createLayout(root: HTMLElement): Layout {
       <div class="instrument-controls"></div>
       <button type="button" class="code-toggle" aria-controls="panel-code"></button>
     </section>
-    <section class="panel panel-code" id="panel-code">
-      <pre id="livecode"></pre>
-    </section>
+    <section class="panel panel-code" id="panel-code"></section>
   `;
   const panels = [...root.querySelectorAll<HTMLElement>('.panel')];
   const codePanel = root.querySelector<HTMLElement>('#panel-code')!;
   const codeToggle = root.querySelector<HTMLButtonElement>('.code-toggle')!;
   const video = root.querySelector<HTMLVideoElement>('#cam')!;
   const canvas = root.querySelector<HTMLCanvasElement>('#overlay')!;
-  const codeEl = root.querySelector<HTMLElement>('#livecode')!;
 
   new Resize({ resizableElements: panels, resizerClassList: 'resize-handle', saveName: 'gibber-hands', classToCheck: HIDDEN_PANEL });
 
   function showCodePanel(shown: boolean) {
+    // The C key can hide the panel under a focused Copy button: focus would fall back to the page.
+    if (!shown && codePanel.contains(document.activeElement)) codeToggle.focus();
     codePanel.classList.toggle(HIDDEN_PANEL, !shown);
     codeToggle.textContent = shown ? 'Hide code' : 'Show code';
     codeToggle.setAttribute('aria-expanded', String(shown));
@@ -53,7 +52,7 @@ export function createLayout(root: HTMLElement): Layout {
   return {
     camera: { root: root.querySelector('#panel-camera')!, video, canvas, status: root.querySelector('#camera-status')! },
     instrument: root.querySelector('.instrument-controls')!,
-    liveCode: { show: (code) => { codeEl.textContent = code; } },
+    code: codePanel,
     toggleCodePanel
   };
 }
