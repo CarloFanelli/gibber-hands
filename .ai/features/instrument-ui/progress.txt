@@ -3,6 +3,6 @@
 01-resizable-panels: DONE
 02-six-presets: DONE
 03-drag-to-now-playing: DONE
-04-first-visit-guidance: TODO
+04-first-visit-guidance: DONE
 05-keyboard-and-help: TODO
 06-code-panel-tools: TODO

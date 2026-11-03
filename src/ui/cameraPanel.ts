@@ -26,6 +26,8 @@ const UNBLOCK_HINT = 'To unblock it, click the camera icon in the address bar, a
 
 export interface CameraPanel {
   show(status: StartupStatus): void;
+  /** Hides "Allow camera access to play" while a step hint says it. */
+  hidePrompt(hidden: boolean): void;
 }
 
 export function createCameraPanel(root: HTMLElement, startup: Pick<Startup, 'retryCamera' | 'retryModel'>): CameraPanel {
@@ -35,36 +37,46 @@ export function createCameraPanel(root: HTMLElement, startup: Pick<Startup, 'ret
   hint.textContent = UNBLOCK_HINT;
   camera.message.after(hint);
   const model = statusCard(root, () => startup.retryModel());
+  let last: StartupStatus | null = null;
+  let promptHidden = false;
+
+  function show(status: StartupStatus) {
+    last = status;
+    const cam = status.camera;
+    camera.card.hidden = cam.kind === 'live' || (cam.kind === 'pending' && promptHidden);
+    hint.hidden = !(cam.kind === 'failed' && cam.failure.reason === 'blocked');
+    if (cam.kind === 'pending') {
+      camera.message.textContent = 'Allow camera access to play';
+      // Shown only after a failure: stays visible but disabled until the new request settles.
+      camera.retry.disabled = true;
+    } else if (cam.kind === 'failed') {
+      const f = cam.failure;
+      camera.message.textContent = f.reason === 'other' ? `Camera couldn't start (${f.errorName})` : CAMERA_FAILURE_TEXT[f.reason];
+      camera.retry.hidden = false;
+      camera.retry.disabled = false;
+    }
+
+    const mod = status.model;
+    model.card.hidden = mod.kind === 'ready';
+    if (mod.kind === 'loading') {
+      model.message.textContent =
+        mod.progress === null ? 'Loading hand model…' : `Loading hand model… ${Math.floor(mod.progress * 100)}%`;
+      model.retry.disabled = true;
+    } else if (mod.kind === 'failed') {
+      const f = mod.failure;
+      model.message.textContent =
+        f.reason === 'blocked' ? `Hand tracking unavailable: couldn't load ${f.file}` : MODEL_FAILURE_TEXT[f.reason];
+      model.retry.hidden = f.reason === 'unsupported';
+      model.retry.disabled = false;
+    }
+  }
 
   return {
-    show(status) {
-      const cam = status.camera;
-      camera.card.hidden = cam.kind === 'live';
-      hint.hidden = !(cam.kind === 'failed' && cam.failure.reason === 'blocked');
-      if (cam.kind === 'pending') {
-        camera.message.textContent = 'Allow camera access to play';
-        // Shown only after a failure: stays visible but disabled until the new request settles.
-        camera.retry.disabled = true;
-      } else if (cam.kind === 'failed') {
-        const f = cam.failure;
-        camera.message.textContent = f.reason === 'other' ? `Camera couldn't start (${f.errorName})` : CAMERA_FAILURE_TEXT[f.reason];
-        camera.retry.hidden = false;
-        camera.retry.disabled = false;
-      }
-
-      const mod = status.model;
-      model.card.hidden = mod.kind === 'ready';
-      if (mod.kind === 'loading') {
-        model.message.textContent =
-          mod.progress === null ? 'Loading hand model…' : `Loading hand model… ${Math.floor(mod.progress * 100)}%`;
-        model.retry.disabled = true;
-      } else if (mod.kind === 'failed') {
-        const f = mod.failure;
-        model.message.textContent =
-          f.reason === 'blocked' ? `Hand tracking unavailable: couldn't load ${f.file}` : MODEL_FAILURE_TEXT[f.reason];
-        model.retry.hidden = f.reason === 'unsupported';
-        model.retry.disabled = false;
-      }
+    show,
+    hidePrompt(hidden) {
+      if (hidden === promptHidden) return;
+      promptHidden = hidden;
+      if (last) show(last);
     }
   };
 }

@@ -23,6 +23,8 @@ export interface Overlay {
   setVisible(visible: boolean): void;
   /** Names the note lanes, left to right: the current preset's notes. */
   setLanes(names: readonly string[]): void;
+  /** Hides the "Raise your hand" label while a step hint says it. */
+  hideRaiseHand(hidden: boolean): void;
 }
 
 export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canvas: HTMLCanvasElement): Overlay {
@@ -35,6 +37,7 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
   let last: { s: HandState; landmarks: Point[] | null; lane: number | null } | null = null;
   let visible = false;
   let laneNames: readonly string[] = [];
+  let raiseHandHidden = false;
 
   // Canvas pixels follow the panel size and the screen density, so lines stay sharp and aligned.
   new ResizeObserver(() => {
@@ -146,7 +149,7 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
       const reading = meter.tick(s.t);
       const fpsText = reading === null ? NO_FPS : `${reading} fps`;
       if (fps.textContent !== fpsText) fps.textContent = fpsText;
-      hint.hidden = !visible || s.present;
+      hint.hidden = !visible || s.present || raiseHandHidden;
       gesture.hidden = !visible || !s.present;
       gesture.textContent = gestureText(s.gesture, s.gestureScore);
       render();
@@ -159,13 +162,18 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
       meter = createFpsMeter();
       fps.textContent = NO_FPS;
       fps.hidden = !visible;
-      hint.hidden = !visible;
+      hint.hidden = !visible || raiseHandHidden;
       gesture.hidden = true;
       render();
     },
     setLanes(names) {
       laneNames = names;
       render();
+    },
+    hideRaiseHand(hidden) {
+      if (hidden === raiseHandHidden) return;
+      raiseHandHidden = hidden;
+      hint.hidden = !visible || hidden || (last?.s.present ?? false);
     }
   };
 }

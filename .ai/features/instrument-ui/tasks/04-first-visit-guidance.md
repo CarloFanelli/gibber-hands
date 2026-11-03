@@ -47,3 +47,8 @@ This is the milestone's purpose: a stranger makes a sound within 30 seconds with
 - Browser storage blocked → step hints show on every visit until the first sound (REQ-15)
 - First sound made with the sliders → counts as done (REQ-15)
 - A step hint shows a step the camera view already prompts ("Allow camera access to play", "Raise your hand") → the older message is hidden while the step hint shows; once step hints are done for good, the older messages work as before (REQ-13 · from code)
+
+## Notes from implementation
+
+- **Known limitation**: the check with three first-time visitors (two of three make a sound within 30 seconds without help) is a manual test still to run. Only Chromium was tested, scripted in headless mode: the slider path through the first second of sound, a reload, blocked storage, a camera prompt left open, a live fake camera with no hand in it, an audio engine failure, a 300 px camera panel, reduced motion, a 160 px instrument panel, and a slider dragged through a step hint. A real hand, so the "Squeeze to play" hint and the hint's return when the hand leaves, was checked only by the unit tests of the hint rule. /dev, 2026-11-03.
+- **Known limitation**: while the camera is live but the hand model is still loading, the step hint already says "Raise your hand", above the loading message. A hand raised early is picked up as soon as the model is ready. After an audio failure the step hint still says "Start audio", while the button reads "Try again". /dev, 2026-11-03.
