@@ -5,25 +5,27 @@
  * keep this file free of logic so the data flow stays readable:
  *
  *   webcam frame ──► hands/tracker ──► HandState ──► mapping ──► SynthParams ──► synth/engine
- *                                        │                                            │
- *                                        └──► ui/overlay (landmarks, gesture label)   └──► ui/liveCode (Gibber code shown live)
+ *                                        │                          │ note lane       │
+ *                                        └──► ui/overlay ◄──────────┘                 └──► ui/liveCode (Gibber code shown live)
+ *                                             (landmarks, gesture label, note lanes)
  *
  * The "no camera" path uses ui/sliders to produce the same HandState shape,
  * so everything downstream of HandState works identically on a phone.
  */
 import { createStartup } from './hands/startup';
-import { mapHandToSynth } from './mapping/handToSynth';
+import { mapHandToSynth, type SynthParams } from './mapping/handToSynth';
 import { createSynth } from './synth/engine';
 import { createAudioPanel } from './ui/audioPanel';
 import { createLayout } from './ui/layout';
 import { createCameraPanel } from './ui/cameraPanel';
 import { createOverlay } from './ui/overlay';
-import { createSliderFallback } from './ui/sliders';
+import { createSliderFallback, type SliderFallback } from './ui/sliders';
 
 function boot() {
   const ui = createLayout(document.getElementById('app')!);
   // Camera and hand model start first, so the prompt and the download begin as the page loads.
-  const startup = createStartup(ui.camera.video, () => createSliderFallback(ui.camera.status));
+  let sliders: SliderFallback | null = null;
+  const startup = createStartup(ui.camera.video, () => (sliders = createSliderFallback(ui.camera.status)));
   const panel = createCameraPanel(ui.camera.status, startup);
   const overlay = createOverlay(ui.camera.root, ui.camera.video, ui.camera.canvas);
   startup.onStatus((status) => {
@@ -35,9 +37,12 @@ function boot() {
   const audio = createAudioPanel(ui.instrument, synth);
   synth.onStatus(audio.show);
   // The only hand listener: a second onHand() call would replace this one.
+  let sound: SynthParams | null = null;
   startup.onHand((s, landmarks) => {
-    overlay.draw(s, landmarks);
-    synth.update(mapHandToSynth(s));
+    sound = mapHandToSynth(s, sound);
+    overlay.draw(s, landmarks, sound.lane);
+    sliders?.showNote(sound.lane);
+    synth.update(sound);
   });
 }
 

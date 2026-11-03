@@ -20,6 +20,8 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 .camera-status:has(.sliders) { pointer-events: auto; }
 .sliders { display: grid; gap: 6px; width: min(100%, 360px); padding: 12px 18px; border-radius: 8px; background: rgb(11 15 20 / 0.85); }
 .sliders label { display: grid; font-size: 14px; color: var(--muted); }
+.sliders label > span { display: flex; justify-content: space-between; }
+.slider-note { color: var(--fg); font-weight: 600; }
 .sliders input { width: 100%; height: 44px; margin: 0; accent-color: var(--accent); }
 .sliders select { min-height: 44px; padding: 0 10px; border: 1px solid #334155; border-radius: 8px; background: var(--panel); color: var(--fg); font: inherit; }
 .status-card { display: flex; flex-direction: column; align-items: center; gap: 10px; max-width: 36ch; padding: 14px 18px; border-radius: 8px; background: rgb(11 15 20 / 0.85); text-align: center; pointer-events: auto; }

@@ -43,3 +43,4 @@ The snippet makes the instrument's state readable as code, which is the point of
 ## Notes from implementation
 
 - **Impacts Task 03**: from task 01, the sound is a sawtooth into Gibberish's ladder filter (model 1, Q 0.5), then Freeverb (wet1 0.3, wet2 0, dry 0.7), then an output gain of 1.4 × the volume. The reverb is linear, so a steady snippet can put that gain on the synth instead.
+- **Impacts Task 03**: from task 02, the mapping now takes its previous result, which the note lane's hysteresis needs, and `src/main.ts` keeps that result in `sound`. Build the snippet from that same value instead of calling the mapping a second time. The result also carries the played note lane (`lane`, null without a hand), and the mapping exports each lane's note name (`NOTE_LANES`), if the snippet names the note. The voice now glides pitch (40 ms, only while sound plays) and cutoff (15 ms). A steady snippet doesn't need either glide.

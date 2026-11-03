@@ -1,8 +1,8 @@
 /**
  * The audio engine, and the only file that imports Gibber.
  *
- * One voice built in Gibber's audio worklet (a sawtooth into a resonant low-pass filter), then Gibber's
- * reverb at a fixed 30% mix, then the volume. The volume sits after the reverb, so silence silences the
+ * One voice built in Gibber's audio worklet (a sawtooth into a resonant low-pass filter, both gliding to
+ * new settings), then Gibber's reverb at a fixed 30% mix, then the volume. The volume sits after the reverb, so silence silences the
  * reverb's tail too. It is a Web Audio gain with exponential ramps: Gibber itself changes a setting in
  * one jump, which clicks.
  *
@@ -12,7 +12,7 @@ import Gibber, { type Gibberish } from 'gibber.audio.lib/dist/gibber.audio.js';
 import workletUrl from 'gibber.audio.lib/dist/gibberish_worklet.js?url';
 import type { SynthParams } from '../mapping/handToSynth';
 import { EngineDownloadError, audioSupported, engineFailure, type EngineFailure } from './engineFailure';
-import { TOGGLE_RAMP_MS, rampTimeConstant } from './ramp';
+import { CUTOFF_RAMP_MS, PITCH_SLIDE_MS, TOGGLE_RAMP_MS, rampTimeConstant, slideSamples } from './ramp';
 
 export type EngineStatus = { kind: 'off' | 'starting' | 'on' } | { kind: 'failed'; failure: EngineFailure };
 
@@ -43,7 +43,7 @@ const REVERB = { wet1: 0.3, wet2: 0, dry: 0.7 };
 
 /** The worklet's global Gibberish, as voiceGraph sees it. */
 declare const Gibberish: {
-  genish: { in(name: string): unknown };
+  genish: { in(name: string): unknown; slide(input: unknown, up: unknown, down: unknown): unknown };
   oscillators: { factory(type: 'saw', frequency: unknown, antialias: boolean): unknown };
   filters: { factory(input: unknown, cutoff: unknown, saturation: number, props: { filterModel: number }): unknown };
 };
@@ -54,10 +54,15 @@ declare const Gibberish: {
  */
 function voiceGraph() {
   const g = Gibberish.genish;
-  const saw = Gibberish.oscillators.factory('saw', g.in('frequency'), false);
+  // A setting glides to each new value over its `…Slide` input, a length in samples (1 jumps at once).
+  const glide = (name: string) => {
+    const samples = g.in(name + 'Slide');
+    return g.slide(g.in(name), samples, samples);
+  };
+  const saw = Gibberish.oscillators.factory('saw', glide('frequency'), false);
   // Filter model 1 is Gibberish's 24 dB ladder (Moog) filter, as in its stock Synth. Its resonance is the
   // `Q` input, and its cutoff a fraction of the Nyquist frequency.
-  return Gibberish.filters.factory(saw, g.in('cutoff'), 0, { filterModel: 1 });
+  return Gibberish.filters.factory(saw, glide('cutoff'), 0, { filterModel: 1 });
 }
 
 interface Engine {
@@ -145,7 +150,13 @@ async function bootEngine(ctx: AudioContext): Promise<Engine> {
   const Voice = G.utilities.Make({
     name: 'HandVoice',
     type: 'Ugen',
-    properties: { frequency: 440, cutoff: 0.05, Q: RESONANCE },
+    properties: {
+      frequency: 440,
+      frequencySlide: 1,
+      cutoff: 0.05,
+      cutoffSlide: slideSamples(CUTOFF_RAMP_MS, ctx.sampleRate),
+      Q: RESONANCE
+    },
     constructor: voiceGraph
   });
   const voice = Voice();
@@ -156,7 +167,12 @@ async function bootEngine(ctx: AudioContext): Promise<Engine> {
   return {
     play(p, rampMs) {
       const amp = p ? p.amp : 0;
-      if (p && p.frequency !== sent.frequency) voice.frequency = p.frequency;
+      if (p && p.frequency !== sent.frequency) {
+        // Only a note being heard slides to the next one. From silence (fingers apart, Stop, the first
+        // start), the new note starts at once instead of gliding in from the old one.
+        voice.frequencySlide = slideSamples(sent.amp > 0 ? PITCH_SLIDE_MS : 0, ctx.sampleRate);
+        voice.frequency = p.frequency;
+      }
       if (p && p.cutoff !== sent.cutoff) voice.cutoff = p.cutoff / nyquist;
       if (amp !== sent.amp || rampMs !== sent.rampMs) {
         const now = ctx.currentTime;

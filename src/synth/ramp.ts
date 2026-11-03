@@ -11,3 +11,17 @@ const SETTLED = 0.01;
 export function rampTimeConstant(ms: number): number {
   return ms / 1000 / Math.log(1 / SETTLED);
 }
+
+/** A note change slides over this long while sound plays, in ms. Tuned by ear. */
+export const PITCH_SLIDE_MS = 40;
+/** Cutoff changes ramp over this long, in ms. Tuned by ear. */
+export const CUTOFF_RAMP_MS = 15;
+
+/**
+ * Length, in samples, of a Gibberish slide that comes within 1% of its target in `ms`. The slide moves
+ * 1/length of the remaining way each sample, so 1 jumps at once.
+ */
+export function slideSamples(ms: number, sampleRate: number): number {
+  const samples = (ms / 1000) * sampleRate;
+  return Math.max(1, 1 / (1 - SETTLED ** (1 / samples)));
+}
