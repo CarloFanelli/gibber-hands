@@ -4,6 +4,10 @@
 The distance from the wrist to the middle-finger knuckle. Pinch values are divided by it, so they don't depend on how far the hand is from the camera.
 _Avoid_: hand scale, palm length
 
+### Lead hand
+The hand that always plays notes: the player's right hand, or the left one after the swap control. It never switches to **Shape mode**.
+_Avoid_: main hand, melody hand, playing hand (the **Second hand** plays notes too)
+
 ### Note lane
 One of the 8 vertical strips that divide the **Playing zone** from left to right. The lane under the **Palm center** picks the note.
 _Avoid_: zone (reserved for the playing zone), key, column
@@ -19,6 +23,14 @@ _Avoid_: patch (Gibber's name for a synth's built-in settings), instrument (the 
 ### Playing zone
 The central 80% of the camera view, horizontally and vertically, where hand movement sets the note and the brightness. Outside it, values stay at the nearest edge.
 _Avoid_: control square (handMouse's name for the same idea), active area
+
+### Second hand
+The player's other hand. It plays notes like the **Lead hand** until the Victory sign switches it to **Shape mode**, and back on the next sign.
+_Avoid_: left hand (wrong after a swap), control hand, free hand
+
+### Shape mode
+The **Second hand**'s mode in which it plays no note: holding its squeeze raises every note one octave, and its height sets the reverb or echo amount.
+_Avoid_: effects mode, control mode
 
 ### Step hint
 A short prompt over the camera view for the first step the visitor hasn't done yet. It disappears once the step is done.
