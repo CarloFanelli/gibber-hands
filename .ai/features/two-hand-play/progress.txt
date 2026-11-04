@@ -4,5 +4,5 @@
 02-two-notes-at-once: DONE
 03-octave-squeeze: DONE
 04-effect-by-height: DONE
-05-slider-shape-controls: TODO
-06-second-hand-guidance: TODO
+05-slider-shape-controls: DONE
+06-second-hand-guidance: IN_PROGRESS

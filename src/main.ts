@@ -16,7 +16,8 @@
  * reverb or echo amount.
  *
  * The "no camera" path uses ui/sliders to produce the same HandPair shape, with the sliders as the lead
- * hand, so everything downstream works identically on a phone.
+ * hand and their shape controls as the second hand, always in shape mode, so everything downstream works
+ * identically on a phone.
  *
  * ui/presetList picks the preset: its notes go to the mapping and the overlay, its sound to the engine
  * and the live code. The choice is remembered in browser storage.
@@ -43,7 +44,7 @@ import { createLeadHandSwitch } from './ui/leadHandSwitch';
 import { createLiveCode } from './ui/liveCode';
 import { createOverlay } from './ui/overlay';
 import { createPresetList } from './ui/presetList';
-import { createSliderFallback, type SliderFallback } from './ui/sliders';
+import { SLIDERS_SECOND_HAND, createSliderFallback, type SliderFallback } from './ui/sliders';
 import { cameraMode, createStatusLine } from './ui/statusLine';
 import { createStepHints, firstSoundTimer, nextStep } from './ui/stepHints';
 import { listenForShortcuts } from './ui/shortcuts';
@@ -99,11 +100,12 @@ function boot() {
     const { lanes, effect: presetEffect } = PRESETS[preset]!;
     const secondSide = otherSide(lead);
     second = followSecondHand(second, pair[secondSide].state);
-    raised = octaveRaised(raised, pair[secondSide].state, second);
+    const shaping = cameraMode(startupStatus) === 'sliders' ? SLIDERS_SECOND_HAND : second;
+    raised = octaveRaised(raised, pair[secondSide].state, shaping);
     const octave = raised ? 1 : 0;
     const previous = sounds;
     const map = (side: Side): SynthParams => {
-      const state = side === secondSide ? asPlayed(pair[side].state, second) : pair[side].state;
+      const state = side === secondSide ? asPlayed(pair[side].state, shaping) : pair[side].state;
       return mapHandToSynth(state, previous?.[side] ?? null, lanes, octave);
     };
     const next: Sounds = { right: map('right'), left: map('left') };
@@ -114,7 +116,7 @@ function boot() {
     }
     const leading = next[lead];
     sliders?.showNote(leading.lane === null ? null : raiseOctave(lanes[leading.lane]!.name, octave));
-    const played = { sounds: next, effect: effectAmount(pair[secondSide].state, second, presetEffect.mix) };
+    const played = { sounds: next, effect: effectAmount(pair[secondSide].state, shaping, presetEffect.mix) };
     synth.update(next, played.effect);
     showCode(played);
     guide();
