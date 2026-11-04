@@ -6,7 +6,7 @@ import { highlight } from '../src/ui/highlight';
 
 const playing: SynthParams = { lane: 4, frequency: 392, cutoff: 1131, amp: 0.8, ampRampMs: 15 };
 const silent: SynthParams = { ...playing, amp: 0 };
-const snippets = PRESETS.flatMap((preset) => [gibberSnippet(playing, preset), gibberSnippet(silent, preset)]);
+const snippets = PRESETS.flatMap((preset) => [gibberSnippet([playing, playing], preset), gibberSnippet([silent], preset)]);
 
 describe('highlight', () => {
   it('colours stock constructors as keywords and numbers as numbers, the rest in the default colour', () => {

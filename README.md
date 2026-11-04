@@ -22,12 +22,12 @@ Pick one of six presets (click, drag it onto "Now playing", or keys 1–6), pres
 ## How it works
 
 ```
-webcam ─► hands/tracker ─► HandState ─► mapping/handToSynth ─► SynthParams ─► synth/engine (Gibber)
+webcam ─► hands/tracker ─► HandPair  ─► mapping/handToSynth ─► SynthParams ─► synth/engine (Gibber)
                                │                                                      │
                                └─► ui (overlay, sliders fallback, panels, live code) ◄─┘
 ```
 
-`HandState` is the single contract between vision and audio, so the slider fallback and the webcam are interchangeable. The mapping is a pure, unit-tested function.
+`HandPair`, a `HandState` for each hand, is the single contract between vision and audio, so the slider fallback and the webcam are interchangeable. The mapping is a pure, unit-tested function.
 
 ## Where it comes from
 

@@ -1,21 +1,23 @@
 /**
  * The audio engine, and the only file that imports Gibber.
  *
- * One voice per preset, built in Gibber's audio worklet: its oscillator into a resonant low-pass filter,
- * both gliding to new settings, then the preset's reverb or delay, then the preset's level. Only the
- * current preset's level is up; a switch glides one down and the other up, a crossfade that also ends the
- * old preset's echoes. A resting voice still runs, so its way into the effect closes too: otherwise the
- * effect would fill with its old note and replay it when the preset comes back. After all of them comes
- * the volume, so silence silences every tail too. It is a Web Audio gain with exponential ramps: Gibber
- * itself changes a setting in one jump, which clicks.
+ * Each hand, right and left, has one voice per preset, built in Gibber's audio worklet: its oscillator into
+ * a resonant low-pass filter, both gliding to new settings, then the preset's reverb or delay, then the
+ * preset's level. Only the current preset's level is up; a switch glides one down and the other up, a
+ * crossfade that also ends the old preset's echoes. A resting voice still runs, so its way into the effect
+ * closes too: otherwise the effect would fill with its old note and replay it when the preset comes back.
+ * After all of a hand's voices comes its volume, so its silence silences its tails too, whatever the other
+ * hand plays. Every setting glides in the worklet: Gibber itself changes a setting in one jump, which clicks.
+ * Two loud hands can add up past full scale: a limiter after the worklet keeps their peaks down.
  *
  * Browsers allow audio only from a user gesture: start() must be called from the click handler.
  */
 import Gibber, { type Gibberish, type GibberishUgen } from 'gibber.audio.lib/dist/gibber.audio.js';
 import workletUrl from 'gibber.audio.lib/dist/gibberish_worklet.js?url';
+import { SIDES, type Side } from '../hands/types';
 import type { SynthParams } from '../mapping/handToSynth';
 import { EngineDownloadError, audioSupported, engineFailure, type EngineFailure } from './engineFailure';
-import { CROSSFADE_MS, CUTOFF_RAMP_MS, PITCH_SLIDE_MS, TOGGLE_RAMP_MS, rampTimeConstant, slideSamples } from './ramp';
+import { CROSSFADE_MS, CUTOFF_RAMP_MS, PITCH_SLIDE_MS, TOGGLE_RAMP_MS, slideSamples } from './ramp';
 import { PRESETS, delaySamples, reverbMix, type Oscillator, type Preset } from './presets';
 
 export type EngineStatus = { kind: 'off' | 'starting' | 'on' } | { kind: 'failed'; failure: EngineFailure };
@@ -27,8 +29,8 @@ export interface SynthEngine {
   start(): void;
   /** Fades everything to silence; start() resumes. */
   stop(): void;
-  /** The sound the hand asks for, heard while the engine is on. */
-  update(p: SynthParams): void;
+  /** The sound each hand asks for, heard while the engine is on. */
+  update(sounds: Sounds): void;
   /** Crossfades to preset `index` (a PRESETS index), or starts on it if the engine isn't running yet. */
   setPreset(index: number): void;
 }
@@ -37,6 +39,9 @@ export interface SynthEngine {
 const DOWNLOAD_TIMEOUT_MS = 15_000;
 /** Gibber's start reports no errors: one that takes longer than this has failed. */
 const INIT_TIMEOUT_MS = 10_000;
+/** The limiter's threshold, just above one hand's loudest peak (−4.8 dBFS), so one hand passes unchanged. */
+const LIMIT_DB = -4.5;
+const LIMIT_RATIO = 20;
 
 /** The worklet's global Gibberish, as the graphs below see it. */
 declare const Gibberish: {
@@ -64,8 +69,8 @@ function voiceGraph(shape: Oscillator['shape']) {
 }
 
 /**
- * A level that glides to each new value like the voice's settings: a voice's way into its effect, or a
- * preset's output. Runs in the worklet too.
+ * A level that glides to each new value like the voice's settings: a voice's way into its effect, a
+ * preset's output, or a hand's volume. Runs in the worklet too.
  */
 function levelGraph() {
   const g = Gibberish.genish;
@@ -74,16 +79,22 @@ function levelGraph() {
 }
 
 interface Engine {
-  /** Moves the current preset's sound to `p` (silence when null), the volume ramping over `rampMs`. */
-  play(p: SynthParams | null, rampMs: number): void;
+  /**
+   * Moves each side's sound of the current preset to what its hand asks for (silence when null), each
+   * volume ramping over its own ramp time, or over `rampMs` when given (Start and Stop).
+   */
+  play(sounds: Sounds | null, rampMs?: number): void;
   setPreset(index: number): void;
 }
+
+/** What each hand asks for, by side. */
+export type Sounds = Record<Side, SynthParams>;
 
 export function createSynth(): SynthEngine {
   let status: EngineStatus = { kind: 'off' };
   let listener: ((s: EngineStatus) => void) | null = null;
   let engine: Engine | null = null;
-  let wanted: SynthParams | null = null;
+  let wanted: Sounds | null = null;
   let preset = 0;
 
   function setStatus(s: EngineStatus) {
@@ -135,9 +146,9 @@ export function createSynth(): SynthEngine {
       engine.play(null, TOGGLE_RAMP_MS);
       setStatus({ kind: 'off' });
     },
-    update(p) {
-      wanted = p;
-      if (status.kind === 'on') engine?.play(p, p.ampRampMs);
+    update(sounds) {
+      wanted = sounds;
+      if (status.kind === 'on') engine?.play(sounds);
     },
     setPreset(index) {
       preset = index;
@@ -159,9 +170,11 @@ async function bootEngine(ctx: AudioContext, initialPreset: number): Promise<Eng
   await timeout(ready, INIT_TIMEOUT_MS);
   URL.revokeObjectURL(workletPath);
 
-  const volume = new GainNode(ctx, { gain: 0 });
+  // The limiter acts only above one hand's loudest peak; its own make-up gain is taken back off after it.
+  const limiter = new DynamicsCompressorNode(ctx, { threshold: LIMIT_DB, knee: 0, ratio: LIMIT_RATIO, attack: 0.001, release: 0.1 });
+  const makeUp = new GainNode(ctx, { gain: 10 ** (-limiterMakeUpDb(LIMIT_DB, LIMIT_RATIO) / 20) });
   G.worklet.disconnect();
-  G.worklet.connect(volume).connect(ctx.destination);
+  G.worklet.connect(limiter).connect(makeUp).connect(ctx.destination);
 
   const rate = ctx.sampleRate;
   // Make runs a graph's constructor from its source text, without arguments: one per shape, the shape baked in.
@@ -192,60 +205,86 @@ async function bootEngine(ctx: AudioContext, initialPreset: number): Promise<Eng
     constructor: levelGraph
   });
 
-  const voices = PRESETS.map((preset) => {
-    const sound = voiceType(preset.oscillator)({ Q: preset.resonance, ...pulseWidth(preset.oscillator) });
-    const send = Level();
-    const level = Level();
-    G.binops.Mul(effect(G, preset, G.binops.Mul(sound, send), rate), level).connect();
-    // What was last sent to this voice; NaN until it plays, so its first note and brightness jump.
-    return { preset, sound, send, level, frequency: NaN, cutoff: NaN, rising: false };
-  });
+  // Each side has a voice per preset and its own volume after all of them.
+  const buildSide = () => {
+    const volume = Level();
+    const voices = PRESETS.map((preset) => {
+      const sound = voiceType(preset.oscillator)({ Q: preset.resonance, ...pulseWidth(preset.oscillator) });
+      const send = Level();
+      const level = Level();
+      G.binops.Mul(G.binops.Mul(effect(G, preset, G.binops.Mul(sound, send), rate), level), volume).connect();
+      // What was last sent to this voice; NaN until it plays, so its first note and brightness jump.
+      return { preset, sound, send, level, frequency: NaN, cutoff: NaN, rising: false };
+    });
+    return { volume, voices, sent: { amp: NaN, rampMs: NaN } };
+  };
+  const sides: Record<Side, ReturnType<typeof buildSide>> = { right: buildSide(), left: buildSide() };
 
   const nyquist = rate / 2;
-  let active = voices[initialPreset]!;
-  active.rising = true;
-  let sent = { amp: NaN, rampMs: NaN };
+  let current = initialPreset;
+  for (const side of SIDES) sides[side].voices[current]!.rising = true;
+
+  function playSide(side: Side, p: SynthParams | null, rampMs: number) {
+    const { volume, voices, sent } = sides[side];
+    const voice = voices[current]!;
+    const amp = p ? p.amp : 0;
+    if (p && p.frequency !== voice.frequency) {
+      // Only a note being heard slides to the next one. From silence (fingers apart, Stop, the first
+      // start), and on the voice a preset switch brings in, the new note starts at once instead of
+      // gliding in from an old one.
+      const heard = sent.amp > 0 && !Number.isNaN(voice.frequency);
+      voice.sound.frequencySlide = slideSamples(heard ? PITCH_SLIDE_MS : 0, rate);
+      voice.sound.frequency = p.frequency;
+      voice.frequency = p.frequency;
+    }
+    if (p && p.cutoff !== voice.cutoff) {
+      voice.sound.cutoffSlide = slideSamples(Number.isNaN(voice.cutoff) ? 0 : CUTOFF_RAMP_MS, rate);
+      voice.sound.cutoff = p.cutoff / nyquist;
+      voice.cutoff = p.cutoff;
+    }
+    // Only once a hand is in view, and after its note and brightness: until then the voice holds a note
+    // no hand chose (or the worklet may render between two messages), and a way into the effect opened
+    // first would fill the effect with it, to be heard when the hand plays.
+    if (p && p.lane !== null && voice.rising) {
+      voice.send.level = 1;
+      voice.level.level = voice.preset.gain;
+      voice.rising = false;
+    }
+    if (amp !== sent.amp || rampMs !== sent.rampMs) {
+      volume.levelSlide = slideSamples(rampMs, rate);
+      volume.level = amp;
+    }
+    sides[side].sent = { amp, rampMs };
+  }
+
   return {
-    play(p, rampMs) {
-      const amp = p ? p.amp : 0;
-      if (p && p.frequency !== active.frequency) {
-        // Only a note being heard slides to the next one. From silence (fingers apart, Stop, the first
-        // start), and on the voice a preset switch brings in, the new note starts at once instead of
-        // gliding in from an old one.
-        const heard = sent.amp > 0 && !Number.isNaN(active.frequency);
-        active.sound.frequencySlide = slideSamples(heard ? PITCH_SLIDE_MS : 0, rate);
-        active.sound.frequency = p.frequency;
-        active.frequency = p.frequency;
+    play(sounds, rampMs) {
+      for (const side of SIDES) {
+        const p = sounds ? sounds[side] : null;
+        playSide(side, p, rampMs ?? p?.ampRampMs ?? 0);
       }
-      if (p && p.cutoff !== active.cutoff) {
-        active.sound.cutoffSlide = slideSamples(Number.isNaN(active.cutoff) ? 0 : CUTOFF_RAMP_MS, rate);
-        active.sound.cutoff = p.cutoff / nyquist;
-        active.cutoff = p.cutoff;
-      }
-      if (p && active.rising) {
-        // Only now, after its note and brightness: the worklet may render between two messages, and a
-        // level sent first would let the voice's old note through for one block.
-        active.send.level = 1;
-        active.level.level = active.preset.gain;
-        active.rising = false;
-      }
-      if (amp !== sent.amp || rampMs !== sent.rampMs) {
-        const now = ctx.currentTime;
-        volume.gain.cancelScheduledValues(now);
-        volume.gain.setTargetAtTime(amp, now, rampTimeConstant(rampMs));
-      }
-      sent = { amp, rampMs };
     },
     setPreset(index) {
-      const next = voices[index]!;
-      if (next === active) return;
-      active.send.level = active.level.level = 0;
-      active.rising = false;
-      next.frequency = next.cutoff = NaN;
-      next.rising = true;
-      active = next;
+      if (index === current) return;
+      for (const side of SIDES) {
+        const old = sides[side].voices[current]!;
+        const next = sides[side].voices[index]!;
+        old.send.level = old.level.level = 0;
+        old.rising = false;
+        next.frequency = next.cutoff = NaN;
+        next.rising = true;
+      }
+      current = index;
     }
   };
+}
+
+/**
+ * The level a DynamicsCompressorNode adds to everything, in dB: the Web Audio specification raises its
+ * output by 0.6 times the reduction it applies to a full-scale signal.
+ */
+function limiterMakeUpDb(thresholdDb: number, ratio: number): number {
+  return 0.6 * -thresholdDb * (1 - 1 / ratio);
 }
 
 /** The pulse wave's width setting; other shapes have none. */

@@ -1,5 +1,5 @@
 /**
- * Draws over the video: the note lanes with the played one highlighted, what the tracker sees of each
+ * Draws over the video: the note lanes with the played ones highlighted, what the tracker sees of each
  * hand (21 landmarks, their connections and the palm center), each hand's gesture with its confidence on
  * its own side, the "Raise your hand" hint and the frame rate. Landmarks and lanes are in the player's mirrored view already, so
  * nothing here flips them; they are placed inside the letterboxed video's rectangle.
@@ -17,8 +17,8 @@ const NAMES_MIN_WIDTH = 320;
 type Rect = { x: number; y: number; w: number; h: number };
 
 export interface Overlay {
-  /** `lane` is the note lane being played, highlighted; null highlights none. */
-  draw(pair: HandPair, lane: number | null): void;
+  /** `played` are the note lanes being played, highlighted. */
+  draw(pair: HandPair, played: readonly number[]): void;
   /** Shown only while the tracker runs. */
   setVisible(visible: boolean): void;
   /** Names the note lanes, left to right: the current preset's notes. */
@@ -37,7 +37,7 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
     left: label('overlay-gesture overlay-gesture-left', '')
   };
   let meter = createFpsMeter();
-  let last: { pair: HandPair; lane: number | null } | null = null;
+  let last: { pair: HandPair; played: readonly number[] } | null = null;
   let visible = false;
   let laneNames: readonly string[] = [];
   let raiseHandHidden = false;
@@ -80,7 +80,7 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
     const r = videoRect();
     ctx.setTransform(canvas.width / canvas.clientWidth, 0, 0, canvas.height / canvas.clientHeight, 0, 0);
     // The lanes show with no hand too, so the player sees where to play before raising one.
-    drawLanes(r, last?.lane ?? null);
+    drawLanes(r, last?.played ?? []);
     for (const side of SIDES) {
       const hand = last?.pair[side];
       if (hand) drawHand(r, hand);
@@ -123,17 +123,16 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
   }
 
   /** The note lanes across the playing zone, each named at its foot. */
-  function drawLanes(r: Rect, played: number | null) {
+  function drawLanes(r: Rect, played: readonly number[]) {
     const size = PLAYING_ZONE.end - PLAYING_ZONE.start;
     const zone = { x: r.x + PLAYING_ZONE.start * r.w, y: r.y + PLAYING_ZONE.start * r.h, w: size * r.w, h: size * r.h };
     const laneWidth = zone.w / LANE_COUNT;
 
-    if (played !== null) {
-      ctx.globalAlpha = 0.25;
-      ctx.fillStyle = accent;
-      ctx.fillRect(zone.x + played * laneWidth, zone.y, laneWidth, zone.h);
-      ctx.globalAlpha = 1;
-    }
+    // Two hands in one lane light it once, no brighter.
+    ctx.globalAlpha = 0.25;
+    ctx.fillStyle = accent;
+    for (const lane of new Set(played)) ctx.fillRect(zone.x + lane * laneWidth, zone.y, laneWidth, zone.h);
+    ctx.globalAlpha = 1;
 
     // One path, stroked once, so the borders two lanes share are no brighter than the outer ones.
     ctx.beginPath();
@@ -159,15 +158,15 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
       const x = zone.x + (i + 0.5) * laneWidth;
       const y = zone.y + zone.h - 6;
       ctx.strokeText(name, x, y);
-      ctx.fillStyle = i === played ? accent : 'rgb(255 255 255 / 0.75)';
+      ctx.fillStyle = played.includes(i) ? accent : 'rgb(255 255 255 / 0.75)';
       ctx.fillText(name, x, y);
     });
     ctx.restore();
   }
 
   return {
-    draw(pair, lane) {
-      last = { pair, lane };
+    draw(pair, played) {
+      last = { pair, played };
       const reading = meter.tick(pair.right.state.t);
       const fpsText = reading === null ? NO_FPS : `${reading} fps`;
       if (fps.textContent !== fpsText) fps.textContent = fpsText;

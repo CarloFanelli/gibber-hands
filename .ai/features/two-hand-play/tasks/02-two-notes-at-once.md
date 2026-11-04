@@ -42,3 +42,8 @@ This closes the gap Task 01 leaves and is what the player asked for first: playi
 - Two hands in different lanes → both lanes lit (REQ-16)
 - Two notes sounding → the snippet holds both voices; one note gives today's single voice (REQ-17)
 - No note sounding → the snippet is as today: silent, with the line that makes it sound (REQ-17)
+
+## Notes from implementation
+
+- **Known limitation**: the frame rate with two hands and audio on is still unmeasured on the reference laptops. In headless Chromium on an i5-1240P, the 12 voices raised Chromium's processor load from 0.39 to 0.43 cores, and two hands sounded without a break. /dev, 2026-11-04.
+- **Known limitation**: the two-voice live code was run against stand-ins for Gibber's stock objects, not pasted at gibber.cc. It uses only the stock calls the single voice already used. /dev, 2026-11-04.

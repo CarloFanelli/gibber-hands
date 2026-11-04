@@ -1,7 +1,7 @@
 # Task Progress - two-hand-play
 
 01-both-hands-tracked: DONE
-02-two-notes-at-once: TODO
+02-two-notes-at-once: DONE
 03-octave-squeeze: TODO
 04-effect-by-height: TODO
 05-slider-shape-controls: TODO

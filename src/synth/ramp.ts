@@ -7,11 +7,6 @@ export const TOGGLE_RAMP_MS = 30;
 /** An exponential ramp never lands on its target: it counts as there once within 1% of it. */
 const SETTLED = 0.01;
 
-/** Time constant, in seconds, of an exponential ramp that comes within 1% of its target in `ms`. */
-export function rampTimeConstant(ms: number): number {
-  return ms / 1000 / Math.log(1 / SETTLED);
-}
-
 /** A note change slides over this long while sound plays, in ms. Tuned by ear. */
 export const PITCH_SLIDE_MS = 40;
 /** Cutoff changes ramp over this long, in ms. Tuned by ear. */
