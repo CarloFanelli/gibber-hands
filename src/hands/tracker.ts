@@ -1,35 +1,37 @@
 /**
- * Video frames + MediaPipe GestureRecognizer → one HandState per new video frame.
+ * Video frames + MediaPipe GestureRecognizer → one HandPair per new video frame: up to two hands, by side.
  * This is the only file that runs MediaPipe on frames; its types never leave hands/.
  */
 import { GestureRecognizer } from '@mediapipe/tasks-vision';
 import { palmCenter, pinches, toPlayerSpace } from './geometry';
 import { createGestureDebounce, gestureName } from './gesture';
-import { createPresence } from './presence';
+import { createHandSlots } from './handSlots';
 import { createPointFilter } from './smoothing';
-import { EMPTY_HAND, type HandState, type Point } from './types';
+import { EMPTY_HAND, SIDES, emptyPair, type HandPair, type Side, type TrackedHand } from './types';
 
 export interface HandSource {
-  /** `landmarks` are the 21 points in the player's view, or null without a tracked hand (always null from sliders). */
-  onState(cb: (s: HandState, landmarks: Point[] | null) => void): void;
+  onState(cb: (pair: HandPair) => void): void;
   stop(): void;
 }
 
 /** Pairs of landmark indices joined when drawing a hand. */
 export const HAND_CONNECTIONS: [number, number][] = GestureRecognizer.HAND_CONNECTIONS.map((c) => [c.start, c.end]);
 
+/** One side's own filters, so each hand is smoothed and its gesture confirmed on its own. */
+function createSideTrack() {
+  const hand: TrackedHand = { state: EMPTY_HAND, landmarks: null };
+  return { smoothing: createPointFilter(), gesture: createGestureDebounce(), hand };
+}
+
 export function createTracker(video: HTMLVideoElement, recognizer: GestureRecognizer): HandSource {
-  const presence = createPresence();
-  const smoothing = createPointFilter();
-  const gesture = createGestureDebounce();
-  let cb: ((s: HandState, landmarks: Point[] | null) => void) | null = null;
-  let state: HandState = EMPTY_HAND;
-  let points: Point[] | null = null;
+  const slots = createHandSlots();
+  const tracks: Record<Side, ReturnType<typeof createSideTrack>> = { right: createSideTrack(), left: createSideTrack() };
+  let cb: ((pair: HandPair) => void) | null = null;
   // MediaPipe rejects a timestamp that doesn't strictly increase.
   let lastTimestamp = Number.NEGATIVE_INFINITY;
 
   function emit() {
-    cb?.(state, points);
+    cb?.({ right: tracks.right.hand, left: tracks.left.hand });
   }
 
   // Called once per new video frame: a frame is never processed twice, and frames the tracker has
@@ -38,42 +40,52 @@ export function createTracker(video: HTMLVideoElement, recognizer: GestureRecogn
     frame = video.requestVideoFrameCallback(onFrame);
     lastTimestamp = Math.max(now, lastTimestamp + 1);
     const result = recognizer.recognizeForVideo(video, lastTimestamp);
-    const raw = result.landmarks[0];
-    const seen = raw ? toPlayerSpace(raw) : null;
-    const status = presence.update(seen ? (result.handedness[0]?.[0]?.categoryName ?? '') : null, now);
+    // Landmarks, reading and gesture of one hand share its index in the result's lists.
+    const seen = result.landmarks.flatMap((raw, i) => {
+      const points = toPlayerSpace(raw);
+      return points ? [{ points, palm: palmCenter(points), label: result.handedness[i]?.[0]?.categoryName ?? '', top: result.gestures[i]?.[0] }] : [];
+    });
+    const sides = slots.update(seen, now);
 
-    if (status === 'gone') {
-      gesture.reset();
-      points = null;
-      state = { ...EMPTY_HAND, t: now };
-    } else if (status === 'held' || !seen) {
-      state = { ...state, t: now };
-    } else {
-      if (status === 'new') smoothing.reset();
-      const previous = status === 'new' ? EMPTY_HAND : state;
-      const top = result.gestures[0]?.[0];
-      const shown = gesture.update(gestureName(top?.categoryName ?? ''), top?.score ?? 0, now);
-      points = seen;
-      state = {
-        present: true,
-        palm: smoothing.filter(palmCenter(seen), now),
-        // An edge-on hand is too thin to measure: keep the last pinch values.
-        ...(pinches(seen, video.videoHeight / video.videoWidth) ?? { pinch: previous.pinch, pinchMiddle: previous.pinchMiddle }),
-        gesture: shown.gesture,
-        gestureScore: shown.score,
-        t: now
-      };
+    for (const side of SIDES) {
+      const track = tracks[side];
+      const status = sides[side];
+      const hand = status.kind === 'new' || status.kind === 'tracked' ? seen[status.index] : undefined;
+      if (status.kind === 'gone') {
+        track.gesture.reset();
+        track.hand = { state: { ...EMPTY_HAND, t: now }, landmarks: null };
+      } else if (!hand) {
+        track.hand = { state: { ...track.hand.state, t: now }, landmarks: track.hand.landmarks };
+      } else {
+        if (status.kind === 'new') track.smoothing.reset();
+        const previous = status.kind === 'new' ? EMPTY_HAND : track.hand.state;
+        const shown = track.gesture.update(gestureName(hand.top?.categoryName ?? ''), hand.top?.score ?? 0, now);
+        track.hand = {
+          state: {
+            present: true,
+            palm: track.smoothing.filter(hand.palm, now),
+            // An edge-on hand is too thin to measure: keep the last pinch values.
+            ...(pinches(hand.points, video.videoHeight / video.videoWidth) ?? { pinch: previous.pinch, pinchMiddle: previous.pinchMiddle }),
+            gesture: shown.gesture,
+            gestureScore: shown.score,
+            t: now
+          },
+          landmarks: hand.points
+        };
+      }
     }
     emit();
   }
 
-  // A hidden tab delivers no frames, so a held hand would never be released: drop it at once.
+  // A hidden tab delivers no frames, so a held hand would never be released: drop both at once.
   function onVisibility() {
     if (!document.hidden) return;
-    presence.reset();
-    gesture.reset();
-    points = null;
-    state = { ...EMPTY_HAND, t: performance.now() };
+    slots.reset();
+    const empty = emptyPair(performance.now());
+    for (const side of SIDES) {
+      tracks[side].gesture.reset();
+      tracks[side].hand = empty[side];
+    }
     emit();
   }
 

@@ -53,7 +53,7 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 .preset-cell + .preset-cell { padding-top: 6px; }
 .preset { display: grid; grid-template-columns: auto 1fr; column-gap: 10px; align-items: baseline; width: 100%; padding: 6px 10px; border: 1px solid #334155; border-radius: 8px; background: transparent; color: var(--fg); font: inherit; text-align: left; cursor: pointer; user-select: none; }
 .preset:hover { border-color: #64748b; }
-.preset[aria-pressed="true"] { border-color: var(--accent); background: rgb(125 211 252 / 0.12); }
+.preset[aria-pressed="true"], .lead-hand[aria-pressed="true"] { border-color: var(--accent); background: rgb(125 211 252 / 0.12); }
 .preset.preset-dragging { z-index: 1; background: var(--panel); box-shadow: 0 6px 20px rgb(0 0 0 / 0.5); }
 /* The faded copy drag-kit leaves after a pressed card sits on top of it: a release there must still click the card. */
 .preset + .preset { pointer-events: none; }
@@ -63,7 +63,7 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 .preset-character, .preset-scale { grid-column: 2; font-size: 13px; color: var(--muted); }
 /* A narrow instrument panel keeps each preset's name and scale; names wrap. */
 @container (max-width: 219px) { .preset-character { display: none; } }
-.code-toggle, .help-close, .code-copy, .code-open { align-self: flex-start; min-height: 44px; padding: 10px 14px; border-radius: 8px; border: 1px solid #334155; background: transparent; color: var(--fg); font: inherit; cursor: pointer; }
+.code-toggle, .help-close, .code-copy, .code-open, .lead-hand { align-self: flex-start; min-height: 44px; padding: 10px 14px; border-radius: 8px; border: 1px solid #334155; background: transparent; color: var(--fg); font: inherit; cursor: pointer; }
 .audio-toggle, .retry { min-height: 44px; padding: 10px 14px; border-radius: 8px; border: 0; background: var(--accent); color: #0b0f14; font-weight: 600; cursor: pointer; }
 .audio-toggle:disabled, .retry:disabled { opacity: 0.5; cursor: default; }
 /* Until audio first starts, the button that starts it is the largest control in the panel, preset cards included. */
@@ -81,10 +81,14 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 .code-comment { color: var(--muted); font-style: italic; }
 .overlay-label { position: absolute; margin: 0; padding: 4px 10px; border-radius: 6px; background: rgb(11 15 20 / 0.9); font-size: 14px; pointer-events: none; }
 .overlay-hint { top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 18px; }
-.overlay-gesture { top: 8px; left: 8px; font-weight: 600; }
+/* Each hand's gesture on its own side: the right hand's under the frame rate. */
+.overlay-gesture { font-weight: 600; }
+.overlay-gesture-left { top: 8px; left: 8px; }
+.overlay-gesture-right { top: 40px; right: 8px; }
 .overlay-fps { top: 8px; right: 8px; color: var(--muted); font-variant-numeric: tabular-nums; }
 /* Step hints: under the top labels, never in the way of the sliders below. */
 .step-hint { position: absolute; top: 44px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; max-width: calc(100% - 24px); margin: 0; padding: 8px 14px; border-radius: 10px; background: rgb(11 15 20 / 0.85); font-size: 18px; font-weight: 600; white-space: nowrap; pointer-events: none; }
+.panel-camera:has(.overlay-gesture-right:not([hidden])) .step-hint { top: 76px; }
 .step-hint-icon { flex: none; width: 36px; height: 36px; color: var(--accent); }
 .step-hint[data-step="hand"] .step-hint-icon { animation: hint-rise 1.4s ease-in-out infinite; }
 .step-hint[data-step="pinch-slider"] .step-hint-icon { animation: hint-lower 1.4s ease-in-out infinite; }

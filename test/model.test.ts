@@ -26,7 +26,7 @@ describe('loadHandModel', () => {
     vi.useRealTimers();
   });
 
-  it('creates a one-hand video recognizer from the downloaded bytes, without a canvas', async () => {
+  it('creates a two-hand video recognizer from the downloaded bytes, without a canvas', async () => {
     vi.stubGlobal('fetch', () => Promise.resolve(modelResponse(64)));
     createFromOptions.mockResolvedValue('recognizer');
     const progress: (number | null)[] = [];
@@ -34,7 +34,7 @@ describe('loadHandModel', () => {
     expect(await loadHandModel((p) => progress.push(p))).toEqual({ recognizer: 'recognizer' });
 
     const options = createFromOptions.mock.calls[0]![1];
-    expect(options).toMatchObject({ runningMode: 'VIDEO', numHands: 1, baseOptions: { delegate: 'GPU' } });
+    expect(options).toMatchObject({ runningMode: 'VIDEO', numHands: 2, baseOptions: { delegate: 'GPU' } });
     expect(options.baseOptions.modelAssetBuffer).toBeInstanceOf(Uint8Array);
     expect(options.baseOptions.modelAssetBuffer.byteLength).toBe(64);
     expect(options).not.toHaveProperty('canvas');

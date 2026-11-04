@@ -34,7 +34,7 @@ export async function loadHandModel(onProgress: (fraction: number | null) => voi
     GestureRecognizer.createFromOptions(fileset, {
       baseOptions: { modelAssetBuffer: model, delegate },
       runningMode: 'VIDEO',
-      numHands: 1
+      numHands: 2
     });
   try {
     // A graphics failure is silent: only the processor attempt's error explains what went wrong.

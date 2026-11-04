@@ -4,13 +4,17 @@
  * Wiring only. Each module below owns one concern and exposes a tiny interface;
  * keep this file free of logic so the data flow stays readable:
  *
- *   webcam frame ──► hands/tracker ──► HandState ──► mapping ──► SynthParams ──► synth/engine
+ *   webcam frame ──► hands/tracker ──► HandPair ──► mapping ──► SynthParams ──► synth/engine
  *                                        │                          │ note lane       │
  *                                        └──► ui/overlay ◄──────────┘                 └──► ui/liveCode (Gibber code shown live)
- *                                             (landmarks, gesture label, note lanes)
+ *                                             (landmarks, gesture labels, note lanes)
  *
- * The "no camera" path uses ui/sliders to produce the same HandState shape,
- * so everything downstream of HandState works identically on a phone.
+ * A HandPair holds a HandState per side, right and left; mapping/roles says which side is the lead hand,
+ * and ui/leadHandSwitch swaps the roles, remembered in browser storage. One note plays: the lead hand's,
+ * or the second hand's while it is alone.
+ *
+ * The "no camera" path uses ui/sliders to produce the same HandPair shape, with the sliders as the lead
+ * hand, so everything downstream works identically on a phone.
  *
  * ui/presetList picks the preset: its notes go to the mapping and the overlay, its sound to the engine
  * and the live code. The choice is remembered in browser storage.
@@ -21,8 +25,9 @@
  * ui/shortcuts maps keys to the same actions as the controls: presets, audio, the code panel and ui/helpSheet.
  */
 import { createStartup, type StartupStatus } from './hands/startup';
-import { EMPTY_HAND, type HandState } from './hands/types';
+import { EMPTY_HAND, emptyPair, type HandPair, type HandState } from './hands/types';
 import { mapHandToSynth, type SynthParams } from './mapping/handToSynth';
+import { leadSide, roles } from './mapping/roles';
 import { createSynth, type EngineStatus } from './synth/engine';
 import { PRESETS, presetIndex } from './synth/presets';
 import { gibberSnippet } from './synth/snippet';
@@ -30,6 +35,7 @@ import { createAudioPanel } from './ui/audioPanel';
 import { createLayout } from './ui/layout';
 import { createCameraPanel } from './ui/cameraPanel';
 import { createHelpSheet } from './ui/helpSheet';
+import { createLeadHandSwitch } from './ui/leadHandSwitch';
 import { createLiveCode } from './ui/liveCode';
 import { createOverlay } from './ui/overlay';
 import { createPresetList } from './ui/presetList';
@@ -46,12 +52,15 @@ const LIVE_CODE_PERIOD_MS = 100;
 const PRESET_KEY = 'gibber-hands-preset';
 /** Browser storage key set once step hints are done for good. */
 const HINTS_DONE_KEY = 'gibber-hands-hints-done';
+/** Browser storage key of the lead side, "left" once the roles are swapped. */
+const LEAD_HAND_KEY = 'gibber-hands-lead-hand';
 
 function boot() {
   const ui = createLayout(document.getElementById('app')!);
   // Camera and hand model start first, so the prompt and the download begin as the page loads.
   let sliders: SliderFallback | null = null;
-  const startup = createStartup(ui.camera.video, () => (sliders = createSliderFallback(ui.camera.status)));
+  let lead = leadSide(readStored(LEAD_HAND_KEY));
+  const startup = createStartup(ui.camera.video, () => (sliders = createSliderFallback(ui.camera.status, lead)));
   const panel = createCameraPanel(ui.camera.status, startup);
   const overlay = createOverlay(ui.camera.root, ui.camera.video, ui.camera.canvas);
   const hints = createStepHints(ui.camera.root);
@@ -64,12 +73,15 @@ function boot() {
   const liveCode = createLiveCode(ui.code);
   const showCode = throttle((p: SynthParams) => liveCode.show(gibberSnippet(p, PRESETS[preset]!)), LIVE_CODE_PERIOD_MS);
 
-  // Hand states start only once tracking or the sliders run: until then, the empty hand plays silence.
+  // Hand pairs start only once tracking or the sliders run: until then, no hand plays silence.
+  let pair: HandPair = emptyPair(0);
   let hand: HandState = EMPTY_HAND;
   let sound: SynthParams | null = null;
-  /** Maps the last hand state with the current preset's notes, and plays it. */
+  /** Maps the playing hand of the last pair with the current preset's notes, and plays it. */
   function playHand(): SynthParams {
     const lanes = PRESETS[preset]!.lanes;
+    const hands = roles(pair, lead);
+    hand = hands.lead.state.present ? hands.lead.state : hands.second.state;
     sound = mapHandToSynth(hand, sound, lanes);
     sliders?.showNote(sound.lane === null ? null : lanes[sound.lane]!.name);
     synth.update(sound);
@@ -125,6 +137,12 @@ function boot() {
   }
   usePreset();
 
+  createLeadHandSwitch(ui.instrument, lead, (side) => {
+    lead = side;
+    writeStored(LEAD_HAND_KEY, side);
+    sliders?.setLeadSide(side);
+  });
+
   const help = createHelpSheet(document.body);
   listenForShortcuts((action) => {
     if (action.kind === 'preset') selectPreset(action.index);
@@ -134,9 +152,9 @@ function boot() {
   });
 
   // The only hand listener: a second onHand() call would replace this one.
-  startup.onHand((s, landmarks) => {
-    hand = s;
-    overlay.draw(s, landmarks, playHand().lane);
+  startup.onHand((next) => {
+    pair = next;
+    overlay.draw(pair, playHand().lane);
   });
 }
 

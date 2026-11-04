@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CameraFailure } from '../src/hands/camera';
 import type { StartupStatus } from '../src/hands/startup';
-import { EMPTY_HAND, type HandState, type Point } from '../src/hands/types';
+import { EMPTY_HAND, emptyPair, type HandPair } from '../src/hands/types';
 
-type Listener = (s: HandState, landmarks: Point[] | null) => void;
+type Listener = (pair: HandPair) => void;
 
 /** A hand source the test emits from and checks for stop(). */
 function fakeSource() {
@@ -73,9 +73,9 @@ function start() {
     return fallback;
   });
   const statuses: StartupStatus[] = [];
-  const hands: [HandState, Point[] | null][] = [];
+  const hands: HandPair[] = [];
   startup.onStatus((s) => statuses.push(s));
-  startup.onHand((s, landmarks) => hands.push([s, landmarks]));
+  startup.onHand((pair) => hands.push(pair));
   return { startup, fallbacks, hands, status: () => statuses.at(-1)! };
 }
 
@@ -159,7 +159,7 @@ describe('createStartup', () => {
     await settle();
     expect(fallbacks).toHaveLength(1);
     const sliders = fallbacks[0]!;
-    sliders.listener!({ ...EMPTY_HAND, present: true }, null);
+    sliders.listener!(emptyPair(0));
     expect(hands).toHaveLength(1);
 
     // A working camera without a hand model keeps the sliders.
@@ -177,7 +177,7 @@ describe('createStartup', () => {
     expect(sliders.stop.mock.invocationCallOrder[0]!).toBeLessThan(createTracker.mock.invocationCallOrder[0]!);
   });
 
-  it('sends an empty reading and brings back the sliders when the camera is lost', async () => {
+  it('sends no hand on either side and brings back the sliders when the camera is lost', async () => {
     const camera = nextCameraRequest();
     const model = nextModelLoad();
     const { fallbacks, hands, status } = start();
@@ -185,16 +185,17 @@ describe('createStartup', () => {
     model.resolve({ recognizer });
     await settle();
     const tracker = trackers[0]!;
-    const seen = { ...EMPTY_HAND, present: true, t: 1 };
-    tracker.listener!(seen, []);
+    const seen: HandPair = { ...emptyPair(1), right: { state: { ...EMPTY_HAND, present: true, t: 1 }, landmarks: [] } };
+    tracker.listener!(seen);
 
     cameraEnded();
 
     expect(tracker.stop).toHaveBeenCalledOnce();
-    expect(hands).toEqual([
-      [seen, []],
-      [expect.objectContaining({ present: false }), null]
-    ]);
+    expect(hands).toHaveLength(2);
+    expect(hands[0]).toBe(seen);
+    for (const side of ['right', 'left'] as const) {
+      expect(hands[1]![side]).toEqual({ state: expect.objectContaining({ present: false }), landmarks: null });
+    }
     expect(status()).toMatchObject({ camera: { kind: 'failed', failure: { reason: 'disconnected' } }, tracking: false });
     expect(fallbacks).toHaveLength(1);
   });

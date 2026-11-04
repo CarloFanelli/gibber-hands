@@ -1,10 +1,10 @@
 /**
  * Fallback without a camera or a hand model: four 0..1 sliders and a gesture menu that emit the same
- * HandState the tracker would. Native controls, so keyboard and touch work without extra code.
+ * HandState the tracker would, as the lead hand. Native controls, so keyboard and touch work without extra code.
  */
 import { gestureName } from '../hands/gesture';
 import type { HandSource } from '../hands/tracker';
-import { GESTURE_NAMES, type GestureName, type HandState } from '../hands/types';
+import { GESTURE_NAMES, emptyPair, type GestureName, type HandPair, type HandState, type Side } from '../hands/types';
 import { GESTURE_LABELS } from './gestureLabels';
 
 export interface SliderFallback extends HandSource {
@@ -13,6 +13,8 @@ export interface SliderFallback extends HandSource {
    * holds the note lane across small slider steps, so the name always matches what plays.
    */
   showNote(name: string | null): void;
+  /** Moves the sliders' hand to the lead side after the roles are swapped. */
+  setLeadSide(side: Side): void;
 }
 
 interface SliderValues {
@@ -38,6 +40,11 @@ export function sliderHandState(v: SliderValues, t: number): HandState {
   };
 }
 
+/** The sliders' hand on the lead side, no hand on the other: the sliders always play as the lead hand. */
+export function sliderPair(v: SliderValues, lead: Side, t: number): HandPair {
+  return { ...emptyPair(t), [lead]: { state: sliderHandState(v, t), landmarks: null } };
+}
+
 const SLIDERS: { key: Exclude<keyof SliderValues, 'gesture'>; label: string }[] = [
   { key: 'x', label: 'Palm center left–right' },
   { key: 'y', label: 'Palm center up–down' },
@@ -46,8 +53,9 @@ const SLIDERS: { key: Exclude<keyof SliderValues, 'gesture'>; label: string }[] 
 ];
 
 /** Mounts the controls in their own container inside `root`; stop() removes them. */
-export function createSliderFallback(root: HTMLElement): SliderFallback {
-  let cb: ((s: HandState, landmarks: null) => void) | null = null;
+export function createSliderFallback(root: HTMLElement, leadSide: Side): SliderFallback {
+  let cb: ((pair: HandPair) => void) | null = null;
+  let lead = leadSide;
   const values: SliderValues = { ...INITIAL_SLIDERS };
   const container = document.createElement('div');
   container.className = 'sliders';
@@ -74,7 +82,7 @@ export function createSliderFallback(root: HTMLElement): SliderFallback {
   root.append(container);
 
   function emit() {
-    cb?.(sliderHandState(values, performance.now()), null);
+    cb?.(sliderPair(values, lead, performance.now()));
   }
 
   return {
@@ -88,6 +96,10 @@ export function createSliderFallback(root: HTMLElement): SliderFallback {
     },
     showNote(name) {
       note.textContent = name ?? '';
+    },
+    setLeadSide(side) {
+      lead = side;
+      emit();
     }
   };
 }

@@ -43,3 +43,8 @@ None
 - Browser storage blocked, or the saved choice unreadable → the right hand leads every visit, no error (REQ-3)
 - Two hands in view → each hand's gesture label shows on its own side: the left hand's at the top left, the right hand's at the top right under the frame rate (REQ-1 · from code)
 - No camera (sliders), roles swapped → the sliders still play as the lead hand (REQ-3 · from code)
+
+## Notes from implementation
+
+- **Known limitation**: the frame rate with two hands and audio on was not measured on the two reference laptops: headless Chromium runs the model in software at about 2 fps, which says nothing about real hardware. Check with the frame-rate label before Task 02. /dev, 2026-11-04.
+- **Known limitation**: which hand the model calls "Right" was checked with MediaPipe's four sample photos (a right hand, palm to the camera), not with a real hand: an unflipped image reads "Right", a flipped copy "Left". The app gives the model the unflipped camera frame, so no conversion is applied. Confirm once with a real right hand: it must light the right-hand label. /dev, 2026-11-04.
