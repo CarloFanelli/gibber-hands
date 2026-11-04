@@ -5,7 +5,7 @@
  * The palm center plays across the playing zone: left–right picks one of 8 note lanes, each playing a note
  * of the current preset, and height sets the brightness. Squeeze to play: thumb and index touching is
  * full volume, fingers apart is silence, so a relaxed hand is quiet. A closed fist and a lost hand fade to
- * silence.
+ * silence. With the octave raised, every note and its brightness double.
  */
 import type { HandState, Point } from '../hands/types';
 
@@ -19,7 +19,7 @@ const LANE_HYSTERESIS = 0.2;
 /** Filter cutoff at the bottom and at the top of the playing zone, Hz. */
 const CUTOFF = { bottom: 200, top: 6400 };
 /** Pinch at or below this is full volume. Tuned by ear. */
-const PINCH_FULL = 0.2;
+export const PINCH_FULL = 0.2;
 /** Pinch at or above this is silence. Tuned by ear. */
 const PINCH_SILENT = 0.5;
 /** How long the volume takes to reach a new target, in ms. Tuned by ear. */
@@ -42,29 +42,36 @@ export interface SynthParams {
   amp: number;
   /** Time for the volume to reach `amp`, ms. */
   ampRampMs: number;
+  /** Octaves above the preset's notes: 1 while the octave is raised, else 0. */
+  octave: number;
 }
 
 /**
  * `previous` is what the last HandState asked for (null at first), which the note lane sticks to. `lanes`
- * are the current preset's notes, one per note lane.
+ * are the current preset's notes, one per note lane; `octave` is 1 while the octave is raised.
  */
-export function mapHandToSynth(s: HandState, previous: SynthParams | null, lanes: readonly Note[]): SynthParams {
+export function mapHandToSynth(s: HandState, previous: SynthParams | null, lanes: readonly Note[], octave = 0): SynthParams {
+  const scale = 2 ** octave;
   if (!s.present) {
-    // The note and the brightness stay while the sound fades. After a preset switch the old note may not
-    // be one of the new preset's: the lane under the palm center gives one. The lane is forgotten: the
-    // next hand plays the lane under its palm center.
-    const here = soundAt(s.palm, null, lanes);
-    const frequency = previous && lanes.some((n) => n.frequency === previous.frequency) ? previous.frequency : here.frequency;
-    return { lane: null, frequency, cutoff: previous?.cutoff ?? here.cutoff, amp: 0, ampRampMs: RAMP_MS.lost };
+    // The note and the brightness stay while the sound fades, in the octave being played. After a preset
+    // switch the old note may not be one of the new preset's: the lane under the palm center gives one.
+    // The lane is forgotten: the next hand plays the lane under its palm center.
+    const here = soundAt(s.palm, null, lanes, scale);
+    const silent = { lane: null, amp: 0, ampRampMs: RAMP_MS.lost, octave };
+    if (!previous) return { ...silent, frequency: here.frequency, cutoff: here.cutoff };
+    const shift = scale / 2 ** previous.octave;
+    const note = previous.frequency / 2 ** previous.octave;
+    const frequency = lanes.some((n) => n.frequency === note) ? previous.frequency * shift : here.frequency;
+    return { ...silent, frequency, cutoff: previous.cutoff * shift };
   }
-  const sound = soundAt(s.palm, previous?.lane ?? null, lanes);
-  if (s.gesture === 'Closed_Fist') return { ...sound, amp: 0, ampRampMs: RAMP_MS.fist };
-  return { ...sound, amp: squeezeVolume(s.pinch), ampRampMs: RAMP_MS.pinch };
+  const sound = soundAt(s.palm, previous?.lane ?? null, lanes, scale);
+  if (s.gesture === 'Closed_Fist') return { ...sound, amp: 0, ampRampMs: RAMP_MS.fist, octave };
+  return { ...sound, amp: squeezeVolume(s.pinch), ampRampMs: RAMP_MS.pinch, octave };
 }
 
-function soundAt(palm: Point, currentLane: number | null, lanes: readonly Note[]) {
+function soundAt(palm: Point, currentLane: number | null, lanes: readonly Note[], scale: number) {
   const lane = noteLane(palm.x, currentLane);
-  return { lane, frequency: lanes[lane]!.frequency, cutoff: brightness(palm.y) };
+  return { lane, frequency: lanes[lane]!.frequency * scale, cutoff: brightness(palm.y) * scale };
 }
 
 /** The note lane under `x`, except that the current lane holds until `x` is LANE_HYSTERESIS past its borders. */

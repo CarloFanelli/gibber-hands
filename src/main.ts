@@ -11,7 +11,8 @@
  *
  * A HandPair holds a HandState per side, right and left, and each hand plays its own note: the engine
  * has a voice per side. mapping/roles says which side is the lead hand, and ui/leadHandSwitch swaps the
- * roles, remembered in browser storage.
+ * roles, remembered in browser storage. mapping/shape follows the second hand: a Victory sign switches it
+ * to shape mode, where it plays no note and its squeeze raises every note an octave.
  *
  * The "no camera" path uses ui/sliders to produce the same HandPair shape, with the sliders as the lead
  * hand, so everything downstream works identically on a phone.
@@ -27,7 +28,9 @@
 import { createStartup, type StartupStatus } from './hands/startup';
 import { SIDES, emptyPair, type HandPair, type Side } from './hands/types';
 import { mapHandToSynth, type SynthParams } from './mapping/handToSynth';
-import { leadSide, roles } from './mapping/roles';
+import { raiseOctave } from './mapping/notes';
+import { leadSide, otherSide, roles } from './mapping/roles';
+import { SECOND_HAND_START, asPlayed, followSecondHand, octaveRaised, secondHandAfterSwap } from './mapping/shape';
 import { createSynth, type EngineStatus, type Sounds } from './synth/engine';
 import { PRESETS, presetIndex } from './synth/presets';
 import { gibberSnippet } from './synth/snippet';
@@ -79,15 +82,31 @@ function boot() {
   // Hand pairs start only once tracking or the sliders run: until then, no hand plays silence.
   let pair: HandPair = emptyPair(0);
   let sounds: Sounds | null = null;
-  /** Maps each hand of the last pair with the current preset's notes, and plays them. */
+  // The second hand's mode lasts the visit, out of view too; the octave follows its squeeze.
+  let second = SECOND_HAND_START;
+  let raised = false;
+  /** The octave the lane names show. */
+  let laneOctave = 0;
+  /** Maps each hand of the last pair with the current preset's notes in the current octave, and plays them. */
   function playHands(): Sounds {
     const lanes = PRESETS[preset]!.lanes;
+    const secondSide = otherSide(lead);
+    second = followSecondHand(second, pair[secondSide].state);
+    raised = octaveRaised(raised, pair[secondSide].state, second);
+    const octave = raised ? 1 : 0;
     const previous = sounds;
-    const map = (side: Side): SynthParams => mapHandToSynth(pair[side].state, previous?.[side] ?? null, lanes);
+    const map = (side: Side): SynthParams => {
+      const state = side === secondSide ? asPlayed(pair[side].state, second) : pair[side].state;
+      return mapHandToSynth(state, previous?.[side] ?? null, lanes, octave);
+    };
     const next: Sounds = { right: map('right'), left: map('left') };
     sounds = next;
+    if (octave !== laneOctave) {
+      laneOctave = octave;
+      showLanes();
+    }
     const leading = next[lead];
-    sliders?.showNote(leading.lane === null ? null : lanes[leading.lane]!.name);
+    sliders?.showNote(leading.lane === null ? null : raiseOctave(lanes[leading.lane]!.name, octave));
     synth.update(next);
     showCode(next);
     guide();
@@ -133,9 +152,12 @@ function boot() {
     writeStored(PRESET_KEY, PRESETS[index]!.id);
     usePreset();
   }
+  function showLanes() {
+    overlay.setLanes(PRESETS[preset]!.lanes.map((n) => raiseOctave(n.name, laneOctave)));
+  }
   function usePreset() {
     presets.show(preset);
-    overlay.setLanes(PRESETS[preset]!.lanes.map((n) => n.name));
+    showLanes();
     synth.setPreset(preset);
     // The sliders send a hand pair only when moved: play the last one again, with this preset's notes.
     playHands();
@@ -145,6 +167,8 @@ function boot() {
   createLeadHandSwitch(ui.instrument, lead, (side) => {
     lead = side;
     writeStored(LEAD_HAND_KEY, side);
+    second = secondHandAfterSwap(pair[otherSide(side)].state);
+    raised = false;
     sliders?.setLeadSide(side);
   });
 
@@ -160,7 +184,8 @@ function boot() {
   startup.onHand((next) => {
     pair = next;
     const played = playHands();
-    overlay.draw(pair, SIDES.flatMap((side) => (played[side].lane === null ? [] : [played[side].lane])));
+    const lanes = SIDES.flatMap((side) => (played[side].lane === null ? [] : [played[side].lane]));
+    overlay.draw(pair, lanes, { side: otherSide(lead), mode: second.mode, octaveUp: raised });
   });
 }
 

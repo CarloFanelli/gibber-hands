@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { noteFrequency } from '../src/mapping/notes';
+import { noteFrequency, raiseOctave } from '../src/mapping/notes';
 
 describe('noteFrequency', () => {
   it('tunes A4 to 440 Hz and the other notes in equal temperament', () => {
@@ -18,5 +18,13 @@ describe('noteFrequency', () => {
 
   it('rejects what is not a note name', () => {
     for (const name of ['H4', 'A', 'Bb3', 'C#4', 'a4', '']) expect(() => noteFrequency(name)).toThrow();
+  });
+});
+
+describe('raiseOctave', () => {
+  it('names the same note octaves up', () => {
+    expect(raiseOctave('B♭3', 1)).toBe('B♭4');
+    expect(raiseOctave('D5', 1)).toBe('D6');
+    expect(raiseOctave('E2', 0)).toBe('E2');
   });
 });

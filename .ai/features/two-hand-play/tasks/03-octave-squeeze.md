@@ -61,3 +61,8 @@ The fast jump to the upper octave is the reason for this milestone. Shape mode's
 - Camera panel narrower than 320 px → the labels shrink to icons (✌, ↑) (REQ-15)
 - No second hand in view → no second-hand labels (REQ-15)
 - Octave raised → lane labels show the upper notes at once (Saw Lead: A4 … D6) (REQ-16)
+
+## Notes from implementation
+
+- **REQ-11 / AC 4 — divergence**: the spec asked every darkest upper note to be within 3 dB of the same lane below → the check is now the average over a preset's 8 lanes, and it holds on every preset (worst gap 1.1 dB). Single notes miss it on Warm Pad (up to 6.7 dB) and Blues Reed (up to 4.4 dB). The cause is the preset's reverb or echo, which makes some near-pure tones louder than others. Neighbouring lanes in the normal octave already differ by up to 8.8 dB and 11 dB. SPEC.md is now version 1.1, and it also writes the octave's drop-back level, pinch 0.3, as a starting value tuned by ear. Agreed in /dev, 2026-11-04.
+- **Known limitation**: that an octave change jumps, never slides, was checked in the engine code, not on a recording: the headless pitch tracker could not tell a note from its lower octave. The live code with the octave raised was run against stand-ins, not pasted at gibber.cc. /dev, 2026-11-04.

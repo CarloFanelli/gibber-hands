@@ -4,7 +4,7 @@ import { PRESETS } from '../src/synth/presets';
 import { gibberSnippet } from '../src/synth/snippet';
 import { highlight } from '../src/ui/highlight';
 
-const playing: SynthParams = { lane: 4, frequency: 392, cutoff: 1131, amp: 0.8, ampRampMs: 15 };
+const playing: SynthParams = { lane: 4, frequency: 392, cutoff: 1131, amp: 0.8, ampRampMs: 15, octave: 0 };
 const silent: SynthParams = { ...playing, amp: 0 };
 const snippets = PRESETS.flatMap((preset) => [gibberSnippet([playing, playing], preset), gibberSnippet([silent], preset)]);
 

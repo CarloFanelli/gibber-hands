@@ -167,3 +167,26 @@ describe('mapHandToSynth brightness', () => {
     expect([lost.frequency, lost.cutoff]).toEqual([before.frequency, before.cutoff]);
   });
 });
+
+describe('mapHandToSynth octave', () => {
+  const up = (s: HandState, previous: SynthParams | null) => mapHandToSynth(s, previous, SAW_LEAD, 1);
+
+  it('plays the same lane one octave up, twice as bright, when the octave is raised', () => {
+    const normal = map(at(0.85, 0.4), null);
+    const raised = up(at(0.85, 0.4), null);
+    expect([raised.lane, raised.octave, normal.octave]).toEqual([normal.lane, 1, 0]);
+    expect(raised.frequency).toBe(normal.frequency * 2);
+    expect(raised.cutoff).toBeCloseTo(normal.cutoff * 2, 9);
+  });
+
+  it('runs the brightness from 400 Hz to 12.8 kHz with the octave raised', () => {
+    expect(up(at(0.5, 0.9), null).cutoff).toBeCloseTo(400, 9);
+    expect(up(at(0.5, 0.1), null).cutoff).toBeCloseTo(12_800, 9);
+  });
+
+  it('keeps the note while a lost hand fades, in the octave being played', () => {
+    const playing = up(at(0.85), null);
+    expect(up(EMPTY_HAND, playing)).toMatchObject({ frequency: playing.frequency, cutoff: playing.cutoff, octave: 1 });
+    expect(map(EMPTY_HAND, playing)).toMatchObject({ frequency: playing.frequency / 2, cutoff: playing.cutoff / 2, octave: 0 });
+  });
+});

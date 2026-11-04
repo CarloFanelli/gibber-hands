@@ -9,6 +9,7 @@
  * chain, as in the app.
  */
 import type { SynthParams } from '../mapping/handToSynth';
+import { raiseOctave } from '../mapping/notes';
 import { reverbMix, type Oscillator, type Preset } from './presets';
 
 /** Gibber's constructor for each oscillator shape; the snippet names its variable after the shape. */
@@ -30,7 +31,8 @@ function voiceCode(p: SynthParams, preset: Preset, index: number): string {
   const frequency = round(p.frequency, 2);
   const cutoff = Math.round(p.cutoff);
   const gain = gainOf(p, preset);
-  const note = preset.lanes.find((n) => n.frequency === p.frequency)?.name ?? `${frequency} Hz`;
+  const lane = preset.lanes.find((n) => n.frequency === p.frequency / 2 ** p.octave);
+  const note = lane ? raiseOctave(lane.name, p.octave) : `${frequency} Hz`;
   const suffix = index === 0 ? '' : String(index + 1);
   const shape = preset.oscillator.shape + suffix;
   const [lpf, verb, echo] = ['lpf', 'verb', 'echo'].map((name) => name + suffix);

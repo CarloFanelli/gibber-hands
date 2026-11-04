@@ -214,7 +214,7 @@ async function bootEngine(ctx: AudioContext, initialPreset: number): Promise<Eng
       const level = Level();
       G.binops.Mul(G.binops.Mul(effect(G, preset, G.binops.Mul(sound, send), rate), level), volume).connect();
       // What was last sent to this voice; NaN until it plays, so its first note and brightness jump.
-      return { preset, sound, send, level, frequency: NaN, cutoff: NaN, rising: false };
+      return { preset, sound, send, level, frequency: NaN, cutoff: NaN, octave: 0, rising: false };
     });
     return { volume, voices, sent: { amp: NaN, rampMs: NaN } };
   };
@@ -231,11 +231,12 @@ async function bootEngine(ctx: AudioContext, initialPreset: number): Promise<Eng
     if (p && p.frequency !== voice.frequency) {
       // Only a note being heard slides to the next one. From silence (fingers apart, Stop, the first
       // start), and on the voice a preset switch brings in, the new note starts at once instead of
-      // gliding in from an old one.
-      const heard = sent.amp > 0 && !Number.isNaN(voice.frequency);
-      voice.sound.frequencySlide = slideSamples(heard ? PITCH_SLIDE_MS : 0, rate);
+      // gliding in from an old one. An octave jump never slides, even with a new lane at the same time.
+      const slides = sent.amp > 0 && !Number.isNaN(voice.frequency) && p.octave === voice.octave;
+      voice.sound.frequencySlide = slideSamples(slides ? PITCH_SLIDE_MS : 0, rate);
       voice.sound.frequency = p.frequency;
       voice.frequency = p.frequency;
+      voice.octave = p.octave;
     }
     if (p && p.cutoff !== voice.cutoff) {
       voice.sound.cutoffSlide = slideSamples(Number.isNaN(voice.cutoff) ? 0 : CUTOFF_RAMP_MS, rate);

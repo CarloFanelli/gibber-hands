@@ -1,6 +1,6 @@
 ---
 feature: two-hand-play
-version: 1.0
+version: 1.1
 status: approved
 base: 552abfe58e22dffc0022d42a48be36e324c09ead
 completed: false
@@ -116,12 +116,12 @@ Two-hand play lets the player use both hands. The right hand, the **lead hand**,
 | Switch back to playing while the octave is raised | The octave returns to normal at once; the effect glides back to the preset's amount | REQ-8, REQ-14 |
 | The second hand leaves in shape mode and returns | Still in shape mode | REQ-9 |
 | Page reloaded | The second hand plays notes again | REQ-9 |
-| Squeeze hovering near the octave level | The octave goes up at the full-volume squeeze level and back only once the squeeze opens clearly past it (tuned by ear): no flicker | REQ-10 |
+| Squeeze hovering near the octave level | The octave goes up at the full-volume squeeze level (pinch 0.2) and back only once the squeeze opens clearly past it, at pinch 0.3 (a starting value tuned by ear): no flicker | REQ-10 |
 | Closed fist with the shaping hand | Not a squeeze: the octave stays normal | REQ-10 |
 | Octave raised while no hand plays | Nothing sounds; the next note starts in the upper octave | REQ-10 |
 | Octave jump and lane change at the same moment | Both land at once; an octave never slides | REQ-10 |
 | Octave raised on the highest note (Warm Pad, E5 to E6) | Plays; the peak limit holds | REQ-10, REQ-11 |
-| Darkest brightness, octave raised | The upper note is within 3 dB of the same lane in the normal octave | REQ-11 |
+| Darkest brightness, octave raised | Averaged over the preset's 8 lanes, the upper octave is within 3 dB of the normal octave. Single notes vary with the preset's reverb or echo, as neighbouring lanes already do in the normal octave | REQ-11 |
 | Brightest, octave raised | Brightness reaches 12,800 Hz; the peak limit holds | REQ-11 |
 | Shaping hand above or below the playing zone | The amount stays at the top or bottom value | REQ-12 |
 | Effect amount changes | It glides, no zipper noise | REQ-12 |

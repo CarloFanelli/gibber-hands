@@ -9,7 +9,7 @@ export function leadSide(stored: string | null): Side {
   return stored === 'left' ? 'left' : 'right';
 }
 
-function otherSide(side: Side): Side {
+export function otherSide(side: Side): Side {
   return side === 'right' ? 'left' : 'right';
 }
 

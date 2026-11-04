@@ -1,12 +1,14 @@
 /**
  * Draws over the video: the note lanes with the played ones highlighted, what the tracker sees of each
  * hand (21 landmarks, their connections and the palm center), each hand's gesture with its confidence on
- * its own side, the "Raise your hand" hint and the frame rate. Landmarks and lanes are in the player's mirrored view already, so
+ * its own side, the second hand's mode and the raised octave beside its gesture, the "Raise your hand"
+ * hint and the frame rate. Landmarks and lanes are in the player's mirrored view already, so
  * nothing here flips them; they are placed inside the letterboxed video's rectangle.
  */
 import { HAND_CONNECTIONS } from '../hands/tracker';
 import { SIDES, type HandPair, type Point, type Side, type TrackedHand } from '../hands/types';
 import { LANE_COUNT, PLAYING_ZONE } from '../mapping/handToSynth';
+import type { SecondHand } from '../mapping/shape';
 import { createFpsMeter } from './fpsMeter';
 import { gestureText } from './gestureLabels';
 
@@ -16,9 +18,19 @@ const NAMES_MIN_WIDTH = 320;
 
 type Rect = { x: number; y: number; w: number; h: number };
 
+/** The second hand's mode as the camera view shows it: an icon, and words a narrow view leaves out. */
+const MODE_WORDS: Record<SecondHand['mode'], [icon: string, words: string]> = { notes: ['♪', 'Notes'], shape: ['✌', 'Shape'] };
+
+/** What the camera view says about the second hand. */
+interface SecondHandView {
+  side: Side;
+  mode: SecondHand['mode'];
+  octaveUp: boolean;
+}
+
 export interface Overlay {
   /** `played` are the note lanes being played, highlighted. */
-  draw(pair: HandPair, played: readonly number[]): void;
+  draw(pair: HandPair, played: readonly number[], second: SecondHandView): void;
   /** Shown only while the tracker runs. */
   setVisible(visible: boolean): void;
   /** Names the note lanes, left to right: the current preset's notes. */
@@ -32,10 +44,7 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
   const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
   const hint = label('overlay-hint', 'Raise your hand');
   const fps = label('overlay-fps', NO_FPS);
-  const gestures: Record<Side, HTMLElement> = {
-    right: label('overlay-gesture overlay-gesture-right', ''),
-    left: label('overlay-gesture overlay-gesture-left', '')
-  };
+  const hands = { right: handLabels('right'), left: handLabels('left') };
   let meter = createFpsMeter();
   let last: { pair: HandPair; played: readonly number[] } | null = null;
   let visible = false;
@@ -56,6 +65,25 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
     el.hidden = true;
     panel.append(el);
     return el;
+  }
+
+  /** A side's labels in its top corner: its gesture, then for the second hand its mode and the octave. */
+  function handLabels(side: Side) {
+    const group = document.createElement('div');
+    group.className = `overlay-hand overlay-hand-${side}`;
+    group.hidden = true;
+    const pill = (name: string) => {
+      const el = document.createElement('p');
+      el.className = `overlay-label ${name}`;
+      return el;
+    };
+    const gesture = pill('overlay-gesture');
+    const mode = pill('overlay-mode');
+    const octave = pill('overlay-octave');
+    showWords(octave, '↑', 'Octave up');
+    group.append(gesture, mode, octave);
+    panel.append(group);
+    return { group, gesture, mode, octave };
   }
 
   function anyHand() {
@@ -165,7 +193,7 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
   }
 
   return {
-    draw(pair, played) {
+    draw(pair, played, second) {
       last = { pair, played };
       const reading = meter.tick(pair.right.state.t);
       const fpsText = reading === null ? NO_FPS : `${reading} fps`;
@@ -173,8 +201,16 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
       hint.hidden = !visible || anyHand() || raiseHandHidden;
       for (const side of SIDES) {
         const { state } = pair[side];
-        gestures[side].hidden = !visible || !state.present;
-        gestures[side].textContent = gestureText(state.gesture, state.gestureScore);
+        const labels = hands[side];
+        const isSecond = side === second.side;
+        labels.group.hidden = !visible || !state.present;
+        labels.gesture.textContent = gestureText(state.gesture, state.gestureScore);
+        labels.mode.hidden = !isSecond;
+        if (isSecond && labels.mode.dataset.mode !== second.mode) {
+          labels.mode.dataset.mode = second.mode;
+          showWords(labels.mode, ...MODE_WORDS[second.mode]);
+        }
+        labels.octave.hidden = !isSecond || !second.octaveUp;
       }
       render();
     },
@@ -187,7 +223,7 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
       fps.textContent = NO_FPS;
       fps.hidden = !visible;
       hint.hidden = !visible || raiseHandHidden;
-      for (const side of SIDES) gestures[side].hidden = true;
+      for (const side of SIDES) hands[side].group.hidden = true;
       render();
     },
     setLanes(names) {
@@ -200,4 +236,16 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
       hint.hidden = !visible || hidden || anyHand();
     }
   };
+}
+
+/** An icon, and words that a narrow camera view hides except from screen readers. */
+function showWords(el: HTMLElement, icon: string, words: string) {
+  const glyph = document.createElement('span');
+  glyph.className = 'label-icon';
+  glyph.setAttribute('aria-hidden', 'true');
+  glyph.textContent = icon;
+  const text = document.createElement('span');
+  text.className = 'label-words';
+  text.textContent = words;
+  el.replaceChildren(glyph, ' ', text);
 }

@@ -81,14 +81,17 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 .code-comment { color: var(--muted); font-style: italic; }
 .overlay-label { position: absolute; margin: 0; padding: 4px 10px; border-radius: 6px; background: rgb(11 15 20 / 0.9); font-size: 14px; pointer-events: none; }
 .overlay-hint { top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 18px; }
-/* Each hand's gesture on its own side: the right hand's under the frame rate. */
+/* Each hand's labels in a row on its own side: the right hand's under the frame rate. */
+.overlay-hand { position: absolute; display: flex; gap: 6px; pointer-events: none; }
+.overlay-hand-left { top: 8px; left: 8px; }
+.overlay-hand-right { top: 40px; right: 8px; flex-direction: row-reverse; }
+.overlay-hand .overlay-label { position: static; white-space: nowrap; }
 .overlay-gesture { font-weight: 600; }
-.overlay-gesture-left { top: 8px; left: 8px; }
-.overlay-gesture-right { top: 40px; right: 8px; }
+.overlay-octave { color: var(--accent); font-weight: 600; }
 .overlay-fps { top: 8px; right: 8px; color: var(--muted); font-variant-numeric: tabular-nums; }
 /* Step hints: under the top labels, never in the way of the sliders below. */
 .step-hint { position: absolute; top: 44px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; max-width: calc(100% - 24px); margin: 0; padding: 8px 14px; border-radius: 10px; background: rgb(11 15 20 / 0.85); font-size: 18px; font-weight: 600; white-space: nowrap; pointer-events: none; }
-.panel-camera:has(.overlay-gesture-right:not([hidden])) .step-hint { top: 76px; }
+.panel-camera:has(.overlay-hand-right:not([hidden])) .step-hint { top: 76px; }
 .step-hint-icon { flex: none; width: 36px; height: 36px; color: var(--accent); }
 .step-hint[data-step="hand"] .step-hint-icon { animation: hint-rise 1.4s ease-in-out infinite; }
 .step-hint[data-step="pinch-slider"] .step-hint-icon { animation: hint-lower 1.4s ease-in-out infinite; }
@@ -99,10 +102,10 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 @keyframes hint-tap { 0%, 100% { transform: scale(1); } 50% { transform: scale(0.82); } }
 @keyframes hint-squeeze { 0%, 100% { transform: scale(1); } 50% { transform: scale(0.78, 0.9); } }
 @media (prefers-reduced-motion: reduce) { .step-hint[data-step] .step-hint-icon { animation: none; } }
-/* A narrow camera view shows the icon only; the words stay for screen readers. */
+/* A narrow camera view shows the icons only; the words stay for screen readers. */
 @container camera (max-width: 319.98px) {
   .step-hint { padding: 8px; }
-  .step-hint-words { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .step-hint-words, .label-words { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 }
 /* The help sheet: a modal dialog over the page, scrolling inside when the window is short. */
 .help-sheet { width: min(560px, 100% - 32px); padding: 20px 24px; border: 1px solid #334155; border-radius: 12px; background: var(--panel); color: var(--fg); }

@@ -8,7 +8,7 @@ const SAW_LEAD = byName('Saw Lead');
 const WARM_PAD = byName('Warm Pad');
 const ORGAN = byName('Organ');
 const BLUES_REED = byName('Blues Reed');
-const params = (over: Partial<SynthParams>): SynthParams => ({ lane: 4, frequency: 392, cutoff: 1131, amp: 1, ampRampMs: 15, ...over });
+const params = (over: Partial<SynthParams>): SynthParams => ({ lane: 4, frequency: 392, cutoff: 1131, amp: 1, ampRampMs: 15, octave: 0, ...over });
 
 interface Made {
   kind: string;
@@ -127,5 +127,12 @@ describe('gibberSnippet', () => {
     const lead = params({ amp: 0, frequency: ORGAN.lanes[2]!.frequency });
     const second = params({ amp: 0, frequency: ORGAN.lanes[5]!.frequency });
     expect(gibberSnippet([lead, second], ORGAN)).toBe(gibberSnippet([lead], ORGAN));
+  });
+
+  it('names the note in the octave being played, and plays it there', () => {
+    const top = SAW_LEAD.lanes[7]!.frequency;
+    const code = gibberSnippet([params({ lane: 7, frequency: top * 2, cutoff: 12_800, octave: 1 })], SAW_LEAD);
+    expect(code.split('\n')[0]).toMatch(/Saw Lead: D6, brightness 12800 Hz/);
+    expect(play(code)[0]!.props.frequency).toBe(Math.round(top * 2 * 100) / 100);
   });
 });
