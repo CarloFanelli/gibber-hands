@@ -1,14 +1,15 @@
 /**
  * Draws over the video: the note lanes with the played ones highlighted, what the tracker sees of each
  * hand (21 landmarks, their connections and the palm center), each hand's gesture with its confidence on
- * its own side, the second hand's mode and the raised octave beside its gesture, the "Raise your hand"
- * hint and the frame rate. Landmarks and lanes are in the player's mirrored view already, so
+ * its own side, the second hand's mode, and while it shapes the effect amount and the raised octave,
+ * beside its gesture, the "Raise your hand" hint and the frame rate. Landmarks and lanes are in the player's mirrored view already, so
  * nothing here flips them; they are placed inside the letterboxed video's rectangle.
  */
 import { HAND_CONNECTIONS } from '../hands/tracker';
 import { SIDES, type HandPair, type Point, type Side, type TrackedHand } from '../hands/types';
 import { LANE_COUNT, PLAYING_ZONE } from '../mapping/handToSynth';
 import type { SecondHand } from '../mapping/shape';
+import { EFFECT_NAME, type Effect } from '../synth/presets';
 import { createFpsMeter } from './fpsMeter';
 import { gestureText } from './gestureLabels';
 
@@ -26,6 +27,8 @@ interface SecondHandView {
   side: Side;
   mode: SecondHand['mode'];
   octaveUp: boolean;
+  /** The current preset's effect and its amount, 0..1. */
+  effect: { kind: Effect['kind']; amount: number };
 }
 
 export interface Overlay {
@@ -67,7 +70,7 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
     return el;
   }
 
-  /** A side's labels in its top corner: its gesture, then for the second hand its mode and the octave. */
+  /** A side's labels in its top corner: its gesture, then for the second hand its mode, the effect amount and the octave. */
   function handLabels(side: Side) {
     const group = document.createElement('div');
     group.className = `overlay-hand overlay-hand-${side}`;
@@ -79,11 +82,17 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
     };
     const gesture = pill('overlay-gesture');
     const mode = pill('overlay-mode');
+    // The effect's name is words a narrow view leaves out; its amount always shows.
+    const effect = pill('overlay-effect');
+    const effectName = document.createElement('span');
+    effectName.className = 'label-words';
+    const effectPercent = document.createElement('span');
+    effect.append(effectName, ' ', effectPercent);
     const octave = pill('overlay-octave');
     showWords(octave, '↑', 'Octave up');
-    group.append(gesture, mode, octave);
+    group.append(gesture, mode, effect, octave);
     panel.append(group);
-    return { group, gesture, mode, octave };
+    return { group, gesture, mode, effect, effectName, effectPercent, octave };
   }
 
   function anyHand() {
@@ -197,7 +206,7 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
       last = { pair, played };
       const reading = meter.tick(pair.right.state.t);
       const fpsText = reading === null ? NO_FPS : `${reading} fps`;
-      if (fps.textContent !== fpsText) fps.textContent = fpsText;
+      setText(fps, fpsText);
       hint.hidden = !visible || anyHand() || raiseHandHidden;
       for (const side of SIDES) {
         const { state } = pair[side];
@@ -209,6 +218,12 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
         if (isSecond && labels.mode.dataset.mode !== second.mode) {
           labels.mode.dataset.mode = second.mode;
           showWords(labels.mode, ...MODE_WORDS[second.mode]);
+        }
+        const shaping = isSecond && second.mode === 'shape';
+        labels.effect.hidden = !shaping;
+        if (shaping) {
+          setText(labels.effectName, EFFECT_NAME[second.effect.kind]);
+          setText(labels.effectPercent, `${Math.round(second.effect.amount * 100)}%`);
         }
         labels.octave.hidden = !isSecond || !second.octaveUp;
       }
@@ -236,6 +251,11 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
       hint.hidden = !visible || hidden || anyHand();
     }
   };
+}
+
+/** Writes `text` only when it changed: draw() runs on every frame. */
+function setText(el: HTMLElement, text: string) {
+  if (el.textContent !== text) el.textContent = text;
 }
 
 /** An icon, and words that a narrow camera view hides except from screen readers. */

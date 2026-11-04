@@ -12,7 +12,8 @@
  * A HandPair holds a HandState per side, right and left, and each hand plays its own note: the engine
  * has a voice per side. mapping/roles says which side is the lead hand, and ui/leadHandSwitch swaps the
  * roles, remembered in browser storage. mapping/shape follows the second hand: a Victory sign switches it
- * to shape mode, where it plays no note and its squeeze raises every note an octave.
+ * to shape mode, where it plays no note, its squeeze raises every note an octave and its height sets the
+ * reverb or echo amount.
  *
  * The "no camera" path uses ui/sliders to produce the same HandPair shape, with the sliders as the lead
  * hand, so everything downstream works identically on a phone.
@@ -30,7 +31,7 @@ import { SIDES, emptyPair, type HandPair, type Side } from './hands/types';
 import { mapHandToSynth, type SynthParams } from './mapping/handToSynth';
 import { raiseOctave } from './mapping/notes';
 import { leadSide, otherSide, roles } from './mapping/roles';
-import { SECOND_HAND_START, asPlayed, followSecondHand, octaveRaised, secondHandAfterSwap } from './mapping/shape';
+import { SECOND_HAND_START, asPlayed, effectAmount, followSecondHand, octaveRaised, secondHandAfterSwap } from './mapping/shape';
 import { createSynth, type EngineStatus, type Sounds } from './synth/engine';
 import { PRESETS, presetIndex } from './synth/presets';
 import { gibberSnippet } from './synth/snippet';
@@ -58,6 +59,12 @@ const HINTS_DONE_KEY = 'gibber-hands-hints-done';
 /** Browser storage key of the lead side, "left" once the roles are swapped. */
 const LEAD_HAND_KEY = 'gibber-hands-lead-hand';
 
+/** What the hands play: each side's sound, and the reverb or echo amount for both. */
+interface Played {
+  sounds: Sounds;
+  effect: number;
+}
+
 function boot() {
   const ui = createLayout(document.getElementById('app')!);
   // Camera and hand model start first, so the prompt and the download begin as the page loads.
@@ -74,9 +81,9 @@ function boot() {
   let preset = presetIndex(readStored(PRESET_KEY));
   const presets = createPresetList(ui.instrument, selectPreset);
   const liveCode = createLiveCode(ui.code);
-  const showCode = throttle((s: Sounds) => {
-    const hands = roles(s, lead);
-    liveCode.show(gibberSnippet([hands.lead, hands.second], PRESETS[preset]!));
+  const showCode = throttle(({ sounds, effect }: Played) => {
+    const hands = roles(sounds, lead);
+    liveCode.show(gibberSnippet([hands.lead, hands.second], PRESETS[preset]!, effect));
   }, LIVE_CODE_PERIOD_MS);
 
   // Hand pairs start only once tracking or the sliders run: until then, no hand plays silence.
@@ -88,8 +95,8 @@ function boot() {
   /** The octave the lane names show. */
   let laneOctave = 0;
   /** Maps each hand of the last pair with the current preset's notes in the current octave, and plays them. */
-  function playHands(): Sounds {
-    const lanes = PRESETS[preset]!.lanes;
+  function playHands(): Played {
+    const { lanes, effect: presetEffect } = PRESETS[preset]!;
     const secondSide = otherSide(lead);
     second = followSecondHand(second, pair[secondSide].state);
     raised = octaveRaised(raised, pair[secondSide].state, second);
@@ -107,10 +114,11 @@ function boot() {
     }
     const leading = next[lead];
     sliders?.showNote(leading.lane === null ? null : raiseOctave(lanes[leading.lane]!.name, octave));
-    synth.update(next);
-    showCode(next);
+    const played = { sounds: next, effect: effectAmount(pair[secondSide].state, second, presetEffect.mix) };
+    synth.update(next, played.effect);
+    showCode(played);
     guide();
-    return next;
+    return played;
   }
 
   // Set at once by startup.onStatus below.
@@ -184,8 +192,9 @@ function boot() {
   startup.onHand((next) => {
     pair = next;
     const played = playHands();
-    const lanes = SIDES.flatMap((side) => (played[side].lane === null ? [] : [played[side].lane]));
-    overlay.draw(pair, lanes, { side: otherSide(lead), mode: second.mode, octaveUp: raised });
+    const lanes = SIDES.flatMap((side) => (played.sounds[side].lane === null ? [] : [played.sounds[side].lane]));
+    const effect = { kind: PRESETS[preset]!.effect.kind, amount: played.effect };
+    overlay.draw(pair, lanes, { side: otherSide(lead), mode: second.mode, octaveUp: raised, effect });
   });
 }
 

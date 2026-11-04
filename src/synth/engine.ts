@@ -2,8 +2,9 @@
  * The audio engine, and the only file that imports Gibber.
  *
  * Each hand, right and left, has one voice per preset, built in Gibber's audio worklet: its oscillator into
- * a resonant low-pass filter, both gliding to new settings, then the preset's reverb or delay, then the
- * preset's level. Only the current preset's level is up; a switch glides one down and the other up, a
+ * a resonant low-pass filter, both gliding to new settings, then the preset's reverb or delay mixed with
+ * the voice itself, then the preset's level. The effect runs fully wet and the mix comes after it, in two
+ * levels both hands share, so the reverb or echo amount can glide: Gibber's own mix setting can't. Only the current preset's level is up; a switch glides one down and the other up, a
  * crossfade that also ends the old preset's echoes. A resting voice still runs, so its way into the effect
  * closes too: otherwise the effect would fill with its old note and replay it when the preset comes back.
  * After all of a hand's voices comes its volume, so its silence silences its tails too, whatever the other
@@ -17,7 +18,7 @@ import workletUrl from 'gibber.audio.lib/dist/gibberish_worklet.js?url';
 import { SIDES, type Side } from '../hands/types';
 import type { SynthParams } from '../mapping/handToSynth';
 import { EngineDownloadError, audioSupported, engineFailure, type EngineFailure } from './engineFailure';
-import { CROSSFADE_MS, CUTOFF_RAMP_MS, PITCH_SLIDE_MS, TOGGLE_RAMP_MS, slideSamples } from './ramp';
+import { CROSSFADE_MS, CUTOFF_RAMP_MS, EFFECT_RAMP_MS, PITCH_SLIDE_MS, TOGGLE_RAMP_MS, slideSamples } from './ramp';
 import { PRESETS, delaySamples, reverbMix, type Oscillator, type Preset } from './presets';
 
 export type EngineStatus = { kind: 'off' | 'starting' | 'on' } | { kind: 'failed'; failure: EngineFailure };
@@ -29,8 +30,8 @@ export interface SynthEngine {
   start(): void;
   /** Fades everything to silence; start() resumes. */
   stop(): void;
-  /** The sound each hand asks for, heard while the engine is on. */
-  update(sounds: Sounds): void;
+  /** The sound each hand asks for, heard while the engine is on, and the reverb or echo amount, 0..1. */
+  update(sounds: Sounds, effect: number): void;
   /** Crossfades to preset `index` (a PRESETS index), or starts on it if the engine isn't running yet. */
   setPreset(index: number): void;
 }
@@ -84,6 +85,8 @@ interface Engine {
    * volume ramping over its own ramp time, or over `rampMs` when given (Start and Stop).
    */
   play(sounds: Sounds | null, rampMs?: number): void;
+  /** Glides the current preset's reverb or echo amount to `amount`, 0..1. */
+  setEffect(amount: number): void;
   setPreset(index: number): void;
 }
 
@@ -95,6 +98,7 @@ export function createSynth(): SynthEngine {
   let listener: ((s: EngineStatus) => void) | null = null;
   let engine: Engine | null = null;
   let wanted: Sounds | null = null;
+  let effect: number | null = null;
   let preset = 0;
 
   function setStatus(s: EngineStatus) {
@@ -130,8 +134,9 @@ export function createSynth(): SynthEngine {
       bootEngine(ctx, preset).then(
         (booted) => {
           engine = booted;
-          // A preset picked while the engine started.
+          // A preset picked, or an effect amount set, while the engine started.
           booted.setPreset(preset);
+          if (effect !== null) booted.setEffect(effect);
           booted.play(wanted, TOGGLE_RAMP_MS);
           setStatus({ kind: 'on' });
         },
@@ -146,8 +151,11 @@ export function createSynth(): SynthEngine {
       engine.play(null, TOGGLE_RAMP_MS);
       setStatus({ kind: 'off' });
     },
-    update(sounds) {
+    update(sounds, amount) {
       wanted = sounds;
+      effect = amount;
+      // Stopped, the volumes are down: the amount can move unheard, ready for Start.
+      engine?.setEffect(amount);
       if (status.kind === 'on') engine?.play(sounds);
     },
     setPreset(index) {
@@ -204,15 +212,24 @@ async function bootEngine(ctx: AudioContext, initialPreset: number): Promise<Eng
     properties: { level: 0, levelSlide: slideSamples(CROSSFADE_MS, rate) },
     constructor: levelGraph
   });
+  // Each preset's share of the voice itself and of its effect, starting at the preset's own amount.
+  const mixes = PRESETS.map(({ effect: { mix } }) => {
+    const levelSlide = slideSamples(EFFECT_RAMP_MS, rate);
+    return { dry: Level({ level: 1 - mix, levelSlide }), wet: Level({ level: mix, levelSlide }), amount: mix };
+  });
 
   // Each side has a voice per preset and its own volume after all of them.
   const buildSide = () => {
     const volume = Level();
-    const voices = PRESETS.map((preset) => {
+    const voices = PRESETS.map((preset, i) => {
       const sound = voiceType(preset.oscillator)({ Q: preset.resonance, ...pulseWidth(preset.oscillator) });
       const send = Level();
       const level = Level();
-      G.binops.Mul(G.binops.Mul(effect(G, preset, G.binops.Mul(sound, send), rate), level), volume).connect();
+      const input = G.binops.Mul(sound, send);
+      const { dry, wet } = mixes[i]!;
+      // The reverb is stereo and the voice mono: Gibberish adds the voice to each side of it.
+      const mixed = G.binops.Add(G.binops.Mul(input, dry), G.binops.Mul(effect(G, preset, input, rate), wet));
+      G.binops.Mul(G.binops.Mul(mixed, level), volume).connect();
       // What was last sent to this voice; NaN until it plays, so its first note and brightness jump.
       return { preset, sound, send, level, frequency: NaN, cutoff: NaN, octave: 0, rising: false };
     });
@@ -265,6 +282,13 @@ async function bootEngine(ctx: AudioContext, initialPreset: number): Promise<Eng
         playSide(side, p, rampMs ?? p?.ampRampMs ?? 0);
       }
     },
+    setEffect(amount) {
+      const mix = mixes[current]!;
+      if (amount === mix.amount) return;
+      mix.dry.level = 1 - amount;
+      mix.wet.level = amount;
+      mix.amount = amount;
+    },
     setPreset(index) {
       if (index === current) return;
       for (const side of SIDES) {
@@ -293,12 +317,12 @@ function pulseWidth(oscillator: Oscillator): Record<string, number> {
   return oscillator.shape === 'pwm' ? { pulsewidth: oscillator.pulsewidth } : {};
 }
 
-/** The preset's reverb or delay, taking `input`. */
+/** The preset's reverb or delay, taking `input`, fully wet: the reverb or the echoes alone. */
 function effect(G: Gibberish, preset: Preset, input: GibberishUgen, sampleRate: number): GibberishUgen {
   const fx = preset.effect;
   return fx.kind === 'reverb'
-    ? G.fx.Freeverb({ input, ...reverbMix(fx.mix) })
-    : G.fx.Delay({ input, time: delaySamples(fx.measures, sampleRate), feedback: fx.feedback, wetdry: fx.mix });
+    ? G.fx.Freeverb({ input, ...reverbMix(1) })
+    : G.fx.Delay({ input, time: delaySamples(fx.measures, sampleRate), feedback: fx.feedback, wetdry: 1 });
 }
 
 /**

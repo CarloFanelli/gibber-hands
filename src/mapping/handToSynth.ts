@@ -87,8 +87,12 @@ function noteLane(x: number, current: number | null): number {
 
 /** Exponential, so equal moves of the palm sound like equal changes of brightness. */
 function brightness(y: number): number {
-  const height = clamp01((PLAYING_ZONE.end - y) / (PLAYING_ZONE.end - PLAYING_ZONE.start));
-  return CUTOFF.bottom * (CUTOFF.top / CUTOFF.bottom) ** height;
+  return CUTOFF.bottom * (CUTOFF.top / CUTOFF.bottom) ** zoneHeight(y);
+}
+
+/** How high `y` is in the playing zone: 0 at its bottom, 1 at its top, and held there outside it. */
+export function zoneHeight(y: number): number {
+  return clamp01((PLAYING_ZONE.end - y) / (PLAYING_ZONE.end - PLAYING_ZONE.start));
 }
 
 /** 0 with the fingers apart, 1 with them touching, growing with the square of how far they have closed. */

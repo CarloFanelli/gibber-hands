@@ -3,6 +3,6 @@
 01-both-hands-tracked: DONE
 02-two-notes-at-once: DONE
 03-octave-squeeze: DONE
-04-effect-by-height: TODO
+04-effect-by-height: DONE
 05-slider-shape-controls: TODO
 06-second-hand-guidance: TODO

@@ -43,3 +43,11 @@ This completes shape mode on top of Task 03's switch and octave: the same hand n
 - Shaping hand leaves while the octave is raised → the effect glides back to the preset's amount (REQ-14)
 - Camera panel narrower than 320 px → the amount shows as a number only (45%) (REQ-15)
 - Snippet copied with the octave raised and the effect at 45% → pasted at gibber.cc, it plays the same notes and amount (REQ-17)
+
+## Notes from implementation
+
+- **REQ-15 / AC 4 — divergence**: the spec shrank the labels to icons only below 320 px. With the effect amount, the second hand's labels in shape mode are 487 px long, so on a phone-sized camera view (390 px) they ran off the panel and over the frame rate. Task 03's labels already did this with the octave up. The spec moved to version 1.2: the hand labels show icons and numbers below 560 px, and a label that still doesn't fit goes on a second line, clear of the frame rate and of the other hand's labels. Checked at 300, 340, 390, 480, 560 and 620 px. The note names and step hints keep 320 px. Agreed in /dev, 2026-11-04.
+- **Known limitation**: the reverb or echo amount glides over 50 ms, a starting value marked "tuned by ear" that no one has tuned by ear yet. Zipper noise was checked by measurement only. Log the value in docs/PROCESS.md with the milestone entry. /dev, 2026-11-04.
+- **Known limitation**: Blues Reed's level at a mixed amount moves by up to 0.13 dB depending on how the note was reached, so it can miss the 0.02 dB match against the live code by that much. A held note is steady to 0.003 dB, and Gibber's own live code moves alike (−17.50 fresh, −17.61 dB after other notes). Dry alone and echo alone match within 0.015 dB, and the other presets match within 0.012 dB at 30%, 45% and 80%. So the split matches Gibber's own mix. /dev, 2026-11-04.
+- **Known limitation**: with the camera view 540 to 600 px wide, labels that wrap to a second line can meet a first-visit step hint. That happens only if the second hand enters shape mode before any first sound, with no right hand in view. /dev, 2026-11-04.
+- **Known limitation**: the live code was run on Gibber's own objects from the app's bundled Gibber, not pasted at gibber.cc. Pasting it there is still to do. /dev, 2026-11-04.

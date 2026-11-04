@@ -16,6 +16,9 @@ export type Oscillator = { shape: 'saw' | 'triangle' | 'square' } | { shape: 'pw
 /** Gibber's stock Reverb or Delay. `mix` is the effect's share of the output; a delay's time is in measures. */
 export type Effect = { kind: 'reverb'; mix: number } | { kind: 'delay'; mix: number; measures: number; feedback: number };
 
+/** What the player sees each effect called. */
+export const EFFECT_NAME: Record<Effect['kind'], string> = { reverb: 'Reverb', delay: 'Echo' };
+
 export interface Preset {
   /** Saved in browser storage to restore the preset on the next visit. */
   id: string;

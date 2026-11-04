@@ -1,6 +1,6 @@
 ---
 feature: two-hand-play
-version: 1.1
+version: 1.2
 status: approved
 base: 552abfe58e22dffc0022d42a48be36e324c09ead
 completed: false
@@ -128,7 +128,7 @@ Two-hand play lets the player use both hands. The right hand, the **lead hand**,
 | Warm Pad (60%) at the top | 80%, not 120% | REQ-13 |
 | Preset switched while shaping | The same height gives the new preset's scaled amount | REQ-13 |
 | Shaping hand leaves while the octave is raised | Notes drop to the normal octave at once; the effect glides back to the preset's amount | REQ-14 |
-| Camera panel narrower than 320 px | Labels shrink to icon and number (✌, ↑, 45%) | REQ-15 |
+| Camera panel narrower than 560 px, a phone's width | The hand labels shrink to icon and number (✌, ↑, 45%); any that still don't fit go on a second line, clear of the frame rate and of the other hand's labels | REQ-15 |
 | No second hand in view | No second-hand labels | REQ-15 |
 | Two hands in different lanes | Both lanes lit | REQ-16 |
 | Octave raised | Lane labels show the upper notes at once (Saw Lead: A4 … D6) | REQ-16 |

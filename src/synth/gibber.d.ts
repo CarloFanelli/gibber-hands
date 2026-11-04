@@ -24,7 +24,7 @@ declare module 'gibber.audio.lib/dist/gibber.audio.js' {
       Delay(props: Record<string, unknown>): GibberishUgen;
     };
     /** Sound objects that combine two others, sample by sample; a stereo one stays stereo. */
-    binops: { Mul(a: GibberishUgen, b: GibberishUgen): GibberishUgen };
+    binops: { Mul(a: GibberishUgen, b: GibberishUgen): GibberishUgen; Add(a: GibberishUgen, b: GibberishUgen): GibberishUgen };
   }
 
   interface Gibber {

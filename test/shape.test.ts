@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { EMPTY_HAND, type GestureName, type HandState } from '../src/hands/types';
-import { SECOND_HAND_START, asPlayed, followSecondHand, octaveRaised, secondHandAfterSwap, type SecondHand } from '../src/mapping/shape';
+import { SECOND_HAND_START, asPlayed, effectAmount, followSecondHand, octaveRaised, secondHandAfterSwap, type SecondHand } from '../src/mapping/shape';
 
 const hand = (over: Partial<HandState>): HandState => ({ ...EMPTY_HAND, present: true, ...over });
 const showing = (gesture: GestureName | null) => hand({ gesture, gestureScore: gesture ? 0.9 : 0 });
@@ -63,6 +63,40 @@ describe('octave', () => {
 
   it('drops at once when the shaping hand leaves', () => {
     expect(octaveRaised(true, EMPTY_HAND, shaping)).toBe(false);
+  });
+});
+
+describe('effect amount', () => {
+  const shaping: SecondHand = { mode: 'shape', lastGesture: null };
+  /** A shaping hand with its palm center at height `y` of the view, 0 at the top. */
+  const at = (y: number, over: Partial<HandState> = {}) => hand({ palm: { x: 0.5, y }, ...over });
+
+  it('rises from none at the bottom of the playing zone, through the preset’s own amount at the middle, to double at the top', () => {
+    expect(effectAmount(at(0.9), shaping, 0.3)).toBe(0);
+    expect(effectAmount(at(0.7), shaping, 0.3)).toBeCloseTo(0.15, 12);
+    expect(effectAmount(at(0.5), shaping, 0.3)).toBeCloseTo(0.3, 12);
+    expect(effectAmount(at(0.3), shaping, 0.3)).toBeCloseTo(0.45, 12);
+    expect(effectAmount(at(0.1), shaping, 0.3)).toBeCloseTo(0.6, 12);
+  });
+
+  it('tops out at 80%, rising to it over the upper half: Warm Pad’s 60% gives 80%, not 120%', () => {
+    expect(effectAmount(at(0.5), shaping, 0.6)).toBeCloseTo(0.6, 12);
+    expect(effectAmount(at(0.3), shaping, 0.6)).toBeCloseTo(0.7, 12);
+    expect(effectAmount(at(0.1), shaping, 0.6)).toBeCloseTo(0.8, 12);
+  });
+
+  it('stays at the top or bottom value above or below the playing zone', () => {
+    expect(effectAmount(at(0.02), shaping, 0.25)).toBeCloseTo(0.5, 12);
+    expect(effectAmount(at(0.98), shaping, 0.25)).toBe(0);
+  });
+
+  it('follows the shaping hand whatever its squeeze or gesture', () => {
+    expect(effectAmount(at(0.1, { pinch: 0, gesture: 'Closed_Fist' }), shaping, 0.3)).toBeCloseTo(0.6, 12);
+  });
+
+  it('is the preset’s own amount while the second hand plays notes or is out of view', () => {
+    expect(effectAmount(at(0.1), SECOND_HAND_START, 0.3)).toBe(0.3);
+    expect(effectAmount(EMPTY_HAND, shaping, 0.3)).toBe(0.3);
   });
 });
 
