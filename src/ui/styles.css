@@ -79,7 +79,6 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 .code-keyword { color: var(--accent); }
 .code-number { color: #fcd34d; }
 .code-comment { color: var(--muted); font-style: italic; }
-.hint { color: var(--muted); padding: 16px; }
 .overlay-label { position: absolute; margin: 0; padding: 4px 10px; border-radius: 6px; background: rgb(11 15 20 / 0.9); font-size: 14px; pointer-events: none; }
 .overlay-hint { top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 18px; }
 .overlay-gesture { top: 8px; left: 8px; font-weight: 600; }
