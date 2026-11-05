@@ -2,22 +2,42 @@
 
 Play a synth with your hands. Webcam → MediaPipe gesture recognition → [Gibber](https://github.com/charlieroberts/gibber.audio.lib) audio, in the browser, with the live-coding snippet that reproduces what you're playing shown next to the video.
 
-<!-- TODO (milestone 4): 5-second GIF here -->
+<!-- TODO (launch REQ-5): the 5-second GIF of a hand playing goes here, recorded by Carlo -->
 
-**Status:** in development, milestone 1 of 4 (hand tracking). The live demo will be at https://carlofanelli.github.io/gibber-hands/ once milestone 4 ships. Without a webcam, sliders take over.
+**Live demo: https://carlofanelli.github.io/gibber-hands/**. You need a desktop browser and a webcam. Without a webcam, sliders take over. The video never leaves your device: no analytics, no cookies.
 
-## How to play (planned)
+**Status:** live. Built so far: hand tracking, sound, the instrument UI, two-hand play, a wider note range and a drum loop. Tested on desktop Chrome. The launch (milestone 4) is in progress: Edge, Firefox and Safari are checked before it ends.
 
-The controls as specified in [`.ai/features/`](.ai/features/). They're not built yet.
+## How to play
 
-| Hand | Sound |
+Open the live demo and allow the camera. Press **Start audio**, raise your hand and squeeze thumb and index together. Press <kbd>?</kbd> in the app for every control and shortcut.
+
+### One hand
+
+| Lead hand (your right, unless you choose Left-handed) | What it does |
 |---|---|
-| Move the hand left/right | note: 8 lanes across the middle of the view, drawn on the video, up to 16 as the camera picture widens |
-| Move it up/down | brightness (filter cutoff) |
-| Squeeze thumb and index | volume: touching is full, apart is silent, so a relaxed hand is quiet |
-| Closed fist | mute |
+| Palm center left or right | picks the note: one note lane each, 8 across the playing zone (the middle of the view), up to 16 as the camera picture widens on screen |
+| Palm center up or down | brighter or darker (filter cutoff) |
+| Thumb and index squeezed | plays the note: touching is full volume, apart is silence, so a relaxed hand is quiet |
+| Closed fist | silence |
 
-Pick one of six presets (click, drag it onto "Now playing", or keys 1–6), press **Start audio**, raise your hand and squeeze.
+### Two hands
+
+The second hand plays notes the same way, so two notes can sound at once. A Victory sign ✌ by the second hand switches it to shape mode and back. In shape mode it plays no note:
+
+| Second hand in shape mode | What it does |
+|---|---|
+| Squeeze held | every note one octave up, until you let go |
+| Thumbs-down held 👎 | every note one octave down, until you let go |
+| Hand up or down | more or less reverb or echo; the middle gives the preset's own amount |
+
+### Around the hands
+
+- **Presets:** six sounds, each with its own scale. Click one, drag it onto "Now playing", or press <kbd>1</kbd>–<kbd>6</kbd>.
+- **Drums:** **Start drums** (or <kbd>D</kbd>) plays a drum loop to play over. ◀ and ▶ step through the drum patterns, Rock, House, Hip-hop and Breakbeat, each at its own tempo. − and + set the drum layers, from the kick alone to the full pattern.
+- **Live code:** the Gibber code for what you're playing, updated as you play. **Copy** it and open the gibber.cc playground to paste and run it.
+- **Panels:** drag the bars between the camera, the instrument and the code to resize them; the sizes are remembered. <kbd>C</kbd> hides the code, and the gesture guide below it stays.
+- **Keys:** <kbd>1</kbd>–<kbd>6</kbd> preset, <kbd>Space</kbd> audio, <kbd>D</kbd> drums, <kbd>C</kbd> code, <kbd>?</kbd> help.
 
 ## How it works
 
@@ -27,7 +47,7 @@ webcam ─► hands/tracker ─► HandPair  ─► mapping/handToSynth ─► S
                                └─► ui (overlay, sliders fallback, panels, live code) ◄─┘
 ```
 
-`HandPair`, a `HandState` for each hand, is the single contract between vision and audio, so the slider fallback and the webcam are interchangeable. The mapping is a pure, unit-tested function.
+`HandPair`, a `HandState` for each hand, is the single contract between vision and audio, so the slider fallback and the webcam are interchangeable. The mapping is a pure, unit-tested function. The sound runs in Gibber's audio worklet: every setting glides there instead of jumping, and the drum clock runs there too.
 
 ## Where it comes from
 
@@ -66,6 +86,36 @@ The techniques I learned building those projects, and where gibber-hands uses th
 - **Sizes saved as percentages.** On release each width is stored in `localStorage` as a percentage of the parent, and restored on load, so the layout survives a reload. See [`saveSize`](https://github.com/CarloFanelli/Resizer/blob/41bb3caeb96e44f805aacd81c5baa9c37921ad70/src/Resize.ts#L152-L174) and [`giveSize`](https://github.com/CarloFanelli/Resizer/blob/41bb3caeb96e44f805aacd81c5baa9c37921ad70/src/Resize.ts#L63-L74).
 - **React to the DOM, not to calls.** A `MutationObserver` watches each panel's `class` attribute. When a panel gets the "hidden" class, the visible panels are resized again from the stored percentages, and the code that hid it doesn't need to know about the layout. See [`observeElementChanges`](https://github.com/CarloFanelli/Resizer/blob/41bb3caeb96e44f805aacd81c5baa9c37921ad70/src/Resize.ts#L37-L51).
 
+## New in gibber-hands
+
+What this project adds to that toolbox. Where a technique was already in it, only the change is new.
+
+### Reading the hand
+
+- **A pinch measured against hand size.** handMouse's pinch was a fixed distance ([above](#hands-as-an-input-device-handmouse)), so it held at only one distance from the camera. Here the thumb-to-index distance is divided by hand size, from wrist to middle knuckle, so a squeeze reads the same near the camera and far from it, whichever way the hand is turned. A hand too small or too edge-on to measure keeps its last squeeze instead of reading a wrong one. See [`src/hands/geometry.ts`](src/hands/geometry.ts).
+- **The mirror in one place.** handMouse flipped x where it read it. Here one function turns landmarks into the player's mirrored view, CSS flips only the video pixels, and the overlay draws the points as they come. See [`src/hands/geometry.ts`](src/hands/geometry.ts).
+- **Smoothing that follows speed.** The palm center goes through a One Euro filter (Casiez et al., 2012): heavy smoothing while the hand is still, almost none when it moves fast, so the note neither jitters nor lags. See [`src/hands/smoothing.ts`](src/hands/smoothing.ts).
+- **Gestures that must hold.** handMouse acted on each frame's gesture. Here a new gesture replaces the current one only after it has been reported with at least 0.6 confidence for 100 ms, so one stray frame doesn't switch a mode. See [`src/hands/gesture.ts`](src/hands/gesture.ts).
+- **Two hands that keep their sides.** A new hand takes the side its left/right reading gives and keeps it until it's gone, followed by where its palm center was last seen. Crossed hands or a flickering reading never swap them, and a hand missing for under 150 ms still counts as there. See [`src/hands/handSlots.ts`](src/hands/handSlots.ts).
+
+### Playing
+
+- **A playing zone that remaps.** handMouse drew its control square but didn't remap it ([above](#hands-as-an-input-device-handmouse)). Here the middle 80% of the view, across and down, covers every note and the whole brightness range; outside it, values stay at its edge. See [`src/mapping/handToSynth.ts`](src/mapping/handToSynth.ts).
+- **Note lanes that hold.** The current note lane holds until the palm center is a fifth of a lane past its border, so a hand resting on a border doesn't flicker between two notes. See [`src/mapping/handToSynth.ts`](src/mapping/handToSynth.ts).
+- **More lanes on a wider picture.** One note lane per 80 px of playing zone on screen, from 8 up to 16. The black bars around a letterboxed picture don't count. See [`src/ui/zoneWidth.ts`](src/ui/zoneWidth.ts).
+
+### Sound
+
+- **Glides, not jumps.** Gibber changes a setting in one jump, which clicks. Here pitch, brightness, volume and the effect amount glide inside the audio worklet, over tens of milliseconds, so moving the hand doesn't click. See [`src/synth/engine.ts`](src/synth/engine.ts) and [`src/synth/ramp.ts`](src/synth/ramp.ts).
+- **A drum clock in the audio thread.** The drum loop's clock is sent to Gibber's audio worklet as source text and runs there, so a slow video frame never moves a hit. A new drum pattern starts on the next bar. See [`src/synth/drumClock.ts`](src/synth/drumClock.ts).
+- **Code that rebuilds the sound.** A pure function writes the Gibber code for what the hands play: the same oscillator, filter and effect, one chain per sounding hand, and the drums. You can paste it into the gibber.cc playground. See [`src/synth/snippet.ts`](src/synth/snippet.ts).
+
+### Interface
+
+- **Resizer, now with a keyboard.** The copied Resizer gets minimal fixes, each listed in its header. With the last one, Tab reaches each bar between panels and the arrow keys move it. See [`src/vendor/resizer/Resize.ts`](src/vendor/resizer/Resize.ts).
+- **Step hints.** A short prompt over the camera view, with an animated hand, shows the first step the visitor hasn't done yet, until a first sound has lasted a second. Then one more teaches the Victory sign. See [`src/ui/stepHints.ts`](src/ui/stepHints.ts).
+- **Storage that may be blocked.** In private mode or with site data turned off, reading gives nothing and writing does nothing, so the page works the same and just doesn't remember. See [`src/ui/storage.ts`](src/ui/storage.ts).
+
 ## Built with an AI agent, on purpose
 
 The three projects above were written by hand. gibber-hands is built with Claude Code, through a spec-first workflow: requirements interview, task breakdown, implementation one task at a time, review.
@@ -85,7 +135,7 @@ npm ci
 npm run dev
 ```
 
-`npm test` runs the mapping tests and `npm run typecheck` runs TypeScript. Every push to `main` runs the deploy workflow. The deploy succeeds once GitHub Pages is enabled with Source set to GitHub Actions (milestone 4).
+`npm test` runs the tests and `npm run typecheck` runs TypeScript. Every push to `main` runs typecheck, tests and build, and deploys to GitHub Pages only if all three pass. A pull request to `main` runs the same checks.
 
 ## Stack
 
