@@ -2,8 +2,9 @@
  * Pure function: HandState → SynthParams, the sound the hand asks for. No DOM, no audio, no MediaPipe.
  * This is the file that gets unit-tested (see test/mapping.test.ts).
  *
- * The palm center plays across the playing zone: left–right picks one of 8 note lanes, each playing a note
- * of the current preset, and height sets the brightness. Squeeze to play: thumb and index touching is
+ * The palm center plays across the playing zone: left–right picks one of the note lanes, each playing a
+ * note of the current preset, and height sets the brightness. There are 8 lanes, or up to 16 as the camera
+ * picture widens on screen. Squeeze to play: thumb and index touching is
  * full volume, fingers apart is silence, so a relaxed hand is quiet. A closed fist and a lost hand fade to
  * silence. With the octave raised, every note and its brightness double.
  */
@@ -11,9 +12,10 @@ import type { HandState, Point } from '../hands/types';
 
 /** The playing zone: the central 80% of the view, across and down. Outside it, values stay at its edge. */
 export const PLAYING_ZONE = { start: 0.1, end: 0.9 };
-/** The playing zone is divided into this many note lanes, from left to right. */
-export const LANE_COUNT = 8;
-const LANE_WIDTH = (PLAYING_ZONE.end - PLAYING_ZONE.start) / LANE_COUNT;
+/** The fewest and the most note lanes the playing zone is divided into, from left to right. */
+export const LANES = { min: 8, max: 16 };
+/** One note lane per this many CSS px of the playing zone's width on screen. Tuned by ear. */
+const LANE_PX = 80;
 /** The note changes only once the palm center is this far past a lane border, in lanes. Tuned by ear. */
 const LANE_HYSTERESIS = 0.2;
 /** Filter cutoff at the bottom and at the top of the playing zone, Hz. */
@@ -32,7 +34,7 @@ export interface Note {
 }
 
 export interface SynthParams {
-  /** The note lane played, 0..7 from the left; null while no hand is in view. */
+  /** The note lane played, 0 for the leftmost; null while no hand is in view. */
   lane: number | null;
   /** Oscillator pitch, Hz. */
   frequency: number;
@@ -46,9 +48,16 @@ export interface SynthParams {
   octave: number;
 }
 
+/** How many note lanes a playing zone this many CSS px wide holds; null without a camera picture. */
+export function laneCount(zoneWidthPx: number | null): number {
+  if (zoneWidthPx === null) return LANES.min;
+  return Math.min(LANES.max, Math.max(LANES.min, Math.floor(zoneWidthPx / LANE_PX)));
+}
+
 /**
  * `previous` is what the last HandState asked for (null at first), which the note lane sticks to. `lanes`
- * are the current preset's notes, one per note lane; `octave` is 1 while the octave is raised.
+ * are the notes of the note lanes in play, one per lane, so their number is the lane count; `octave` is 1
+ * while the octave is raised.
  */
 export function mapHandToSynth(s: HandState, previous: SynthParams | null, lanes: readonly Note[], octave = 0): SynthParams {
   const scale = 2 ** octave;
@@ -70,19 +79,23 @@ export function mapHandToSynth(s: HandState, previous: SynthParams | null, lanes
 }
 
 function soundAt(palm: Point, currentLane: number | null, lanes: readonly Note[], scale: number) {
-  const lane = noteLane(palm.x, currentLane);
+  const lane = noteLane(palm.x, currentLane, lanes.length);
   return { lane, frequency: lanes[lane]!.frequency * scale, cutoff: brightness(palm.y) * scale };
 }
 
-/** The note lane under `x`, except that the current lane holds until `x` is LANE_HYSTERESIS past its borders. */
-function noteLane(x: number, current: number | null): number {
-  const position = (x - PLAYING_ZONE.start) / LANE_WIDTH;
-  if (current !== null && position >= current - LANE_HYSTERESIS && position <= current + 1 + LANE_HYSTERESIS) {
+/**
+ * The note lane under `x`, one of `count`, except that the current lane holds until `x` is LANE_HYSTERESIS
+ * past its borders. A current lane the count no longer has is gone: the lane under `x` plays.
+ */
+function noteLane(x: number, current: number | null, count: number): number {
+  const position = (x - PLAYING_ZONE.start) / ((PLAYING_ZONE.end - PLAYING_ZONE.start) / count);
+  const holds = current !== null && current < count;
+  if (holds && position >= current - LANE_HYSTERESIS && position <= current + 1 + LANE_HYSTERESIS) {
     return current;
   }
   // A palm center exactly on a border plays the lane to its right: the tiny margin absorbs the rounding
   // of the division, which puts 0.3 a hair short of its border.
-  return Math.min(LANE_COUNT - 1, Math.max(0, Math.floor(position + 1e-9)));
+  return Math.min(count - 1, Math.max(0, Math.floor(position + 1e-9)));
 }
 
 /** Exponential, so equal moves of the palm sound like equal changes of brightness. */

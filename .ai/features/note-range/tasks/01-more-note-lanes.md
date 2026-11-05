@@ -53,3 +53,8 @@ None
 - Highest note raised (Warm Pad lane 16, C7 to C8) → plays; the peak limit holds (REQ-4)
 - Note names with 16 lanes → every lane is at least 80 px wide, so every name fits (REQ-5)
 - Camera panel narrower than 320 px → lanes drawn without names, as today (REQ-5)
+
+## Notes from implementation
+
+- **Known limitation**: AC 7 is not checked with a real hand or on the two reference laptops: this machine has no camera and is not one of them. Lane borders still hold for 20% of a lane at any count, as the tests check, and the 16 lanes cost one more line each in the overlay. In headless Chromium with a stand-in camera, the count followed the picture's width at five window sizes, while a bar was dragged, after a reload and with stacked panels. With the hand model blocked and the camera on, the sliders still played 8 lanes. A zoomed-out browser was not tried. /dev, 2026-11-05.
+- **Known limitation**: the "no click" part of AC 3 was checked in the engine code, not on a recording: a count change reaches the engine as an ordinary lane change, which glides as before. Two hands at full squeeze, raised and brightest, on lane 16, and on lanes 16 and 15, peaked at −3.8 dBFS or lower on every preset. /dev, 2026-11-05.

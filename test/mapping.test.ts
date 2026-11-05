@@ -1,11 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import { mapHandToSynth, type SynthParams } from '../src/mapping/handToSynth';
+import { laneCount, mapHandToSynth, type SynthParams } from '../src/mapping/handToSynth';
+import { noteFrequency } from '../src/mapping/notes';
 import { EMPTY_HAND, type HandState } from '../src/hands/types';
 import { PRESETS } from '../src/synth/presets';
 import { INITIAL_SLIDERS, sliderHandState } from '../src/ui/sliders';
 
-const SAW_LEAD = PRESETS[0]!.lanes;
-const ORGAN = PRESETS[2]!.lanes;
+/** The first `count` note lanes of a preset: 8 is what a laptop's default layout plays. */
+const first = (preset: number, count: number) => PRESETS[preset]!.lanes.slice(0, count);
+const SAW_LEAD = first(0, 8);
+const ORGAN = first(2, 8);
 /** Maps with Saw Lead's note lanes unless told otherwise. */
 const map = (s: HandState, previous: SynthParams | null, lanes = SAW_LEAD) => mapHandToSynth(s, previous, lanes);
 
@@ -143,6 +146,46 @@ describe('mapHandToSynth note lanes', () => {
     const lost = map(EMPTY_HAND, before);
     expect(lost.lane).toBeNull();
     expect(map(at(0.51), lost).lane).toBe(4);
+  });
+});
+
+describe('laneCount', () => {
+  it('gives one note lane per 80 px of playing zone, rounded down', () => {
+    expect([719, 720, 799, 800, 1279].map((px) => laneCount(px))).toEqual([8, 9, 9, 10, 15]);
+  });
+
+  it('holds 8 to 16 lanes', () => {
+    expect([0, 500, 639, 1280, 4000].map((px) => laneCount(px))).toEqual([8, 8, 8, 16, 16]);
+  });
+
+  it('holds 8 without a camera picture', () => {
+    expect(laneCount(null)).toBe(8);
+  });
+});
+
+describe('mapHandToSynth with more note lanes', () => {
+  it('divides the playing zone into one lane per note it is given, the extra ones carrying on the scale', () => {
+    const eleven = first(0, 11);
+    const centers = eleven.map((_, i) => 0.1 + ((i + 0.5) * 0.8) / 11);
+    expect(centers.map((x) => map(at(x), null, eleven).lane)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    expect(centers.slice(8).map((x) => map(at(x), null, eleven).frequency)).toEqual(['E5', 'G5', 'A5'].map(noteFrequency));
+  });
+
+  it('plays the top lane at the right edge with 16 lanes', () => {
+    expect(map(at(0.9), null, first(1, 16))).toMatchObject({ lane: 15, frequency: noteFrequency('C7') });
+  });
+
+  it('holds the lane being played after the count changes, until the palm center is 20% of a lane past its border', () => {
+    // With 9 lanes, 0.55 lies 6% of a lane past lane 4's right border, and 0.57 29%.
+    const eight = map(at(0.55), null);
+    expect(map(at(0.55), eight, first(0, 9)).lane).toBe(4);
+    expect(map(at(0.57), eight, first(0, 9)).lane).toBe(5);
+  });
+
+  it('plays the lane under the palm center when the lane being played is gone', () => {
+    const nine = map(at(0.9), null, first(0, 9));
+    expect(nine.lane).toBe(8);
+    expect(map(at(0.9), nine)).toMatchObject({ lane: 7, frequency: SAW_LEAD[7]!.frequency });
   });
 });
 

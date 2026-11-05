@@ -12,7 +12,7 @@ The controls as specified in [`.ai/features/`](.ai/features/). They're not built
 
 | Hand | Sound |
 |---|---|
-| Move the hand left/right | note: 8 lanes across the middle of the view, drawn on the video |
+| Move the hand left/right | note: 8 lanes across the middle of the view, drawn on the video, up to 16 as the camera picture widens |
 | Move it up/down | brightness (filter cutoff) |
 | Squeeze thumb and index | volume: touching is full, apart is silent, so a relaxed hand is quiet |
 | Closed fist | mute |

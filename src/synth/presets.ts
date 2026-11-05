@@ -25,7 +25,7 @@ export interface Preset {
   name: string;
   character: string;
   scale: string;
-  /** The note lanes, left to right. */
+  /** The notes of the note lanes, left to right: one for each of the most lanes; fewer lanes play the first ones. */
   lanes: readonly Note[];
   oscillator: Oscillator;
   /** Resonance of the ladder filter, 0..1: higher rings more at the cutoff. */
@@ -43,7 +43,7 @@ export const PRESETS: readonly Preset[] = [
     name: 'Saw Lead',
     character: 'bright sawtooth lead',
     scale: 'A minor pentatonic',
-    lanes: lanes('A3 C4 D4 E4 G4 A4 C5 D5'),
+    lanes: lanes('A3 C4 D4 E4 G4 A4 C5 D5 E5 G5 A5 C6 D6 E6 G6 A6'),
     oscillator: { shape: 'saw' },
     resonance: 0.5,
     gain: 1.4,
@@ -54,7 +54,7 @@ export const PRESETS: readonly Preset[] = [
     name: 'Warm Pad',
     character: 'soft, slow string pad',
     scale: 'C major pentatonic',
-    lanes: lanes('C4 D4 E4 G4 A4 C5 D5 E5'),
+    lanes: lanes('C4 D4 E4 G4 A4 C5 D5 E5 G5 A5 C6 D6 E6 G6 A6 C7'),
     oscillator: { shape: 'triangle' },
     resonance: 0.2,
     gain: 1.4,
@@ -65,7 +65,7 @@ export const PRESETS: readonly Preset[] = [
     name: 'Organ',
     character: 'hollow square-wave organ',
     scale: 'D dorian',
-    lanes: lanes('D4 E4 F4 G4 A4 B4 C5 D5'),
+    lanes: lanes('D4 E4 F4 G4 A4 B4 C5 D5 E5 F5 G5 A5 B5 C6 D6 E6'),
     oscillator: { shape: 'square' },
     resonance: 0.2,
     gain: 0.45,
@@ -76,7 +76,7 @@ export const PRESETS: readonly Preset[] = [
     name: 'Deep Bass',
     character: 'round low bass',
     scale: 'E minor pentatonic',
-    lanes: lanes('E2 G2 A2 B2 D3 E3 G3 A3'),
+    lanes: lanes('E2 G2 A2 B2 D3 E3 G3 A3 B3 D4 E4 G4 A4 B4 D5 E5'),
     oscillator: { shape: 'saw' },
     resonance: 0.3,
     gain: 0.9,
@@ -87,7 +87,7 @@ export const PRESETS: readonly Preset[] = [
     name: 'Brass',
     character: 'brassy synth horn',
     scale: 'F major',
-    lanes: lanes('F3 G3 A3 B♭3 C4 D4 E4 F4'),
+    lanes: lanes('F3 G3 A3 B♭3 C4 D4 E4 F4 G4 A4 B♭4 C5 D5 E5 F5 G5'),
     oscillator: { shape: 'pwm', pulsewidth: 0.35 },
     resonance: 0.3,
     gain: 0.85,
@@ -98,7 +98,7 @@ export const PRESETS: readonly Preset[] = [
     name: 'Blues Reed',
     character: 'nasal reedy lead',
     scale: 'A blues',
-    lanes: lanes('A3 C4 D4 E♭4 E4 G4 A4 C5'),
+    lanes: lanes('A3 C4 D4 E♭4 E4 G4 A4 C5 D5 E♭5 E5 G5 A5 C6 D6 E♭6'),
     oscillator: { shape: 'pwm', pulsewidth: 0.15 },
     resonance: 0.6,
     gain: 1.2,

@@ -1,6 +1,6 @@
 # Task Progress - note-range
 
-01-more-note-lanes: TODO
+01-more-note-lanes: DONE
 02-octave-down-sign: TODO
 03-slider-octave-choice: TODO
 04-gesture-guide: TODO

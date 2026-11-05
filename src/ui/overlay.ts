@@ -7,17 +7,16 @@
  */
 import { HAND_CONNECTIONS } from '../hands/tracker';
 import { SIDES, type HandPair, type Point, type Side, type TrackedHand } from '../hands/types';
-import { LANE_COUNT, PLAYING_ZONE } from '../mapping/handToSynth';
+import { PLAYING_ZONE } from '../mapping/handToSynth';
 import type { SecondHand } from '../mapping/shape';
 import { EFFECT_NAME, type Effect } from '../synth/presets';
 import { createFpsMeter } from './fpsMeter';
 import { gestureText } from './gestureLabels';
+import { containRect, type Rect } from './zoneWidth';
 
 const NO_FPS = '— fps';
 /** In a camera panel narrower than this, in CSS pixels, the lanes go without their note names. */
 const NAMES_MIN_WIDTH = 320;
-
-type Rect = { x: number; y: number; w: number; h: number };
 
 /** The second hand's mode as the camera view shows it: an icon, and words a narrow view leaves out. */
 const MODE_WORDS: Record<SecondHand['mode'], [icon: string, words: string]> = { notes: ['♪', 'Notes'], shape: ['✌', 'Shape'] };
@@ -36,7 +35,7 @@ export interface Overlay {
   draw(pair: HandPair, played: readonly number[], second: SecondHandView): void;
   /** Shown only while the tracker runs. */
   setVisible(visible: boolean): void;
-  /** Names the note lanes, left to right: the current preset's notes. */
+  /** Names the note lanes, left to right: one name per lane, so as many lanes as names. */
   setLanes(names: readonly string[]): void;
   /** Hides the "Raise your hand" label while a step hint says it. */
   hideRaiseHand(hidden: boolean): void;
@@ -101,12 +100,7 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
 
   /** Where the video frame sits inside the canvas with object-fit: contain, in CSS pixels. */
   function videoRect(): Rect {
-    const cw = canvas.clientWidth;
-    const ch = canvas.clientHeight;
-    const scale = Math.min(cw / video.videoWidth, ch / video.videoHeight);
-    const w = video.videoWidth * scale;
-    const h = video.videoHeight * scale;
-    return { x: (cw - w) / 2, y: (ch - h) / 2, w, h };
+    return containRect(canvas.clientWidth, canvas.clientHeight, video.videoWidth, video.videoHeight);
   }
 
   function render() {
@@ -159,11 +153,12 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
     ctx.restore();
   }
 
-  /** The note lanes across the playing zone, each named at its foot. */
+  /** The note lanes across the playing zone, one per name, each named at its foot. */
   function drawLanes(r: Rect, played: readonly number[]) {
     const size = PLAYING_ZONE.end - PLAYING_ZONE.start;
     const zone = { x: r.x + PLAYING_ZONE.start * r.w, y: r.y + PLAYING_ZONE.start * r.h, w: size * r.w, h: size * r.h };
-    const laneWidth = zone.w / LANE_COUNT;
+    const count = laneNames.length;
+    const laneWidth = zone.w / count;
 
     // Two hands in one lane light it once, no brighter.
     ctx.globalAlpha = 0.25;
@@ -174,7 +169,7 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
     // One path, stroked once, so the borders two lanes share are no brighter than the outer ones.
     ctx.beginPath();
     ctx.rect(zone.x, zone.y, zone.w, zone.h);
-    for (let i = 1; i < LANE_COUNT; i++) {
+    for (let i = 1; i < count; i++) {
       ctx.moveTo(zone.x + i * laneWidth, zone.y);
       ctx.lineTo(zone.x + i * laneWidth, zone.y + zone.h);
     }

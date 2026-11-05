@@ -65,7 +65,7 @@ describe('slider shape controls', () => {
   });
 
   it('play one note, in the upper octave with the switch on: the shaping hand never plays one', () => {
-    const lanes = PRESETS[0]!.lanes;
+    const lanes = PRESETS[0]!.lanes.slice(0, 8);
     const pair = sliderPair({ ...INITIAL_SLIDERS, pinch: 0, octaveUp: true }, 'right', 0);
     const octave = octaveRaised(false, pair.left.state, SLIDERS_SECOND_HAND) ? 1 : 0;
     const lead = mapHandToSynth(pair.right.state, null, lanes, octave);

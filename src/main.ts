@@ -20,7 +20,8 @@
  * identically on a phone.
  *
  * ui/presetList picks the preset: its notes go to the mapping and the overlay, its sound to the engine
- * and the live code. The choice is remembered in browser storage.
+ * and the live code. The choice is remembered in browser storage. ui/zoneWidth measures the camera picture
+ * on screen: the wider it is, the more of the preset's notes the note lanes play (mapping's laneCount).
  *
  * A first visit is guided: ui/statusLine says what is on, and ui/stepHints shows the next step over the
  * camera view until a first sound has lasted a second, then teaches the second hand's Victory switch until
@@ -30,7 +31,7 @@
  */
 import { createStartup, type StartupStatus } from './hands/startup';
 import { SIDES, emptyPair, type HandPair, type Side } from './hands/types';
-import { mapHandToSynth, type SynthParams } from './mapping/handToSynth';
+import { laneCount, mapHandToSynth, type SynthParams } from './mapping/handToSynth';
 import { raiseOctave } from './mapping/notes';
 import { leadSide, otherSide, roles } from './mapping/roles';
 import { SECOND_HAND_START, asPlayed, effectAmount, followSecondHand, octaveRaised, secondHandAfterSwap } from './mapping/shape';
@@ -51,6 +52,7 @@ import { FIRST_SOUND_MS, SHAPE_HINT_MS, createStepHints, holdTimer, stepToShow }
 import { listenForShortcuts } from './ui/shortcuts';
 import { readStored, writeStored } from './ui/storage';
 import { throttle } from './ui/throttle';
+import { watchZoneWidth } from './ui/zoneWidth';
 
 /** The live code panel updates at most this often, in ms. */
 const LIVE_CODE_PERIOD_MS = 100;
@@ -98,18 +100,25 @@ function boot() {
   let raised = false;
   /** The octave the lane names show. */
   let laneOctave = 0;
-  /** Maps each hand of the last pair with the current preset's notes in the current octave, and plays them. */
+  /** How many note lanes the playing zone holds, from its width on screen (null without a camera picture). */
+  let laneTotal = laneCount(null);
+  let zonePx: number | null = null;
+  /** The notes of the note lanes in play: the current preset's first ones. */
+  const lanesInPlay = () => PRESETS[preset]!.lanes.slice(0, laneTotal);
+  /** Whether the sliders send the hands: through a camera or model retry too, while the status no longer says "Sliders". */
+  const slidersPlay = () => !startupStatus.tracking && sliders !== null;
+  /** Maps each hand of the last pair with the notes of the note lanes in play in the current octave, and plays them. */
   function playHands(): Played {
-    const { lanes, effect: presetEffect } = PRESETS[preset]!;
+    const lanes = lanesInPlay();
+    const presetEffect = PRESETS[preset]!.effect;
     const secondSide = otherSide(lead);
     second = followSecondHand(second, pair[secondSide].state);
     if (second.mode === 'shape' && !shapeSwitched) {
       shapeSwitched = true;
       writeStored(SHAPE_HINT_DONE_KEY, '1');
     }
-    // The sliders' second hand only shapes, for as long as the sliders send the hands: through a camera or
-    // model retry too, while the status no longer says "Sliders".
-    const shaping = !startupStatus.tracking && sliders !== null ? SLIDERS_SECOND_HAND : second;
+    // The sliders' second hand only shapes.
+    const shaping = slidersPlay() ? SLIDERS_SECOND_HAND : second;
     raised = octaveRaised(raised, pair[secondSide].state, shaping);
     const octave = raised ? 1 : 0;
     const previous = sounds;
@@ -169,6 +178,7 @@ function boot() {
     startupStatus = status;
     panel.show(status);
     overlay.setVisible(status.tracking);
+    countLanes();
     guide();
   });
   synth.onStatus((status) => {
@@ -184,7 +194,14 @@ function boot() {
     usePreset();
   }
   function showLanes() {
-    overlay.setLanes(PRESETS[preset]!.lanes.map((n) => raiseOctave(n.name, laneOctave)));
+    overlay.setLanes(lanesInPlay().map((n) => raiseOctave(n.name, laneOctave)));
+  }
+  /** The lane count for the playing zone's width; 8 while the sliders play, with no picture to widen. */
+  function countLanes() {
+    const total = laneCount(slidersPlay() ? null : zonePx);
+    if (total === laneTotal) return;
+    laneTotal = total;
+    showLanes();
   }
   function usePreset() {
     presets.show(preset);
@@ -194,6 +211,10 @@ function boot() {
     playHands();
   }
   usePreset();
+  watchZoneWidth(ui.camera.canvas, ui.camera.video, (px) => {
+    zonePx = px;
+    countLanes();
+  });
 
   const help = createHelpSheet(document.body, lead);
   createLeadHandSwitch(ui.instrument, lead, (side) => {
