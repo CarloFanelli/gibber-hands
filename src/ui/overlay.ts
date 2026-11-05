@@ -2,8 +2,9 @@
  * Draws over the video: the note lanes with the played ones highlighted, what the tracker sees of each
  * hand (21 landmarks, their connections and the palm center), each hand's gesture with its confidence on
  * its own side, the second hand's mode, and while it shapes the effect amount and the octave it changed,
- * beside its gesture, the "Raise your hand" hint and the frame rate. Landmarks and lanes are in the player's mirrored view already, so
- * nothing here flips them; they are placed inside the letterboxed video's rectangle.
+ * beside its gesture, the "Raise your hand" hint and the frame rate. Landmarks and lanes are in the
+ * player's mirrored view already, so nothing here flips them; they are placed inside the letterboxed
+ * video's rectangle.
  */
 import { HAND_CONNECTIONS } from '../hands/tracker';
 import { SIDES, type HandPair, type Point, type Side, type TrackedHand } from '../hands/types';
@@ -19,7 +20,10 @@ const NO_FPS = '— fps';
 const NAMES_MIN_WIDTH = 320;
 
 /** The second hand's mode as the camera view shows it: an icon, and words a narrow view leaves out. */
-const MODE_WORDS: Record<SecondHand['mode'], [icon: string, words: string]> = { notes: ['♪', 'Notes'], shape: ['✌', 'Shape'] };
+const MODE_WORDS: Record<SecondHand['mode'], [icon: string, words: string]> = {
+  notes: ['♪', 'Notes'],
+  shape: ['✌', 'Shape']
+};
 /** The octave the second hand raised or lowered, as the camera view shows it. */
 const OCTAVE_WORDS: Record<'up' | 'down', [icon: string, words: string]> = { up: ['↑', 'Octave up'], down: ['↓', 'Octave down'] };
 
@@ -71,7 +75,10 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
     return el;
   }
 
-  /** A side's labels in its top corner: its gesture, then for the second hand its mode, the effect amount and the octave. */
+  /**
+   * A side's labels in its top corner: its gesture, then for the second hand its mode, the effect amount and
+   * the octave.
+   */
   function handLabels(side: Side) {
     const group = document.createElement('div');
     group.className = `overlay-hand overlay-hand-${side}`;

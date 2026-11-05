@@ -16,7 +16,7 @@ export const PLAYING_ZONE = { start: 0.1, end: 0.9 };
 export const LANES = { min: 8, max: 16 };
 /** One note lane per this many CSS px of the playing zone's width on screen. Tuned by ear. */
 const LANE_PX = 80;
-/** The note changes only once the palm center is this far past a lane border, in lanes. Tuned by ear. */
+/** A note lane changes only once the palm center is this far past its border, in lanes. Tuned by ear. */
 const LANE_HYSTERESIS = 0.2;
 /** Filter cutoff at the bottom and at the top of the playing zone, Hz. */
 const CUTOFF = { bottom: 200, top: 6400 };
@@ -84,8 +84,9 @@ function soundAt(palm: Point, currentLane: number | null, lanes: readonly Note[]
 }
 
 /**
- * The note lane under `x`, one of `count`, except that the current lane holds until `x` is LANE_HYSTERESIS
- * past its borders. A current lane the count no longer has is gone: the lane under `x` plays.
+ * The note lane under `x`, one of `count` side by side across the playing zone, except that the current lane
+ * holds until the palm center is LANE_HYSTERESIS past its borders. A current lane the count no longer has
+ * is gone: the lane under `x` counts.
  */
 function noteLane(x: number, current: number | null, count: number): number {
   const position = (x - PLAYING_ZONE.start) / ((PLAYING_ZONE.end - PLAYING_ZONE.start) / count);
@@ -93,8 +94,8 @@ function noteLane(x: number, current: number | null, count: number): number {
   if (holds && position >= current - LANE_HYSTERESIS && position <= current + 1 + LANE_HYSTERESIS) {
     return current;
   }
-  // A palm center exactly on a border plays the lane to its right: the tiny margin absorbs the rounding
-  // of the division, which puts 0.3 a hair short of its border.
+  // A palm center exactly on a border counts in the band past it: the tiny margin absorbs the rounding of
+  // the division, which puts 0.3 a hair short of its border.
   return Math.min(count - 1, Math.max(0, Math.floor(position + 1e-9)));
 }
 

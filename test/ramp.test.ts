@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CUTOFF_RAMP_MS, EFFECT_RAMP_MS, PITCH_SLIDE_MS, TOGGLE_RAMP_MS, slideSamples } from '../src/synth/ramp';
+import { CUTOFF_RAMP_MS, ECHO_TIME_RAMP_MS, EFFECT_RAMP_MS, PITCH_SLIDE_MS, TOGGLE_RAMP_MS, slideSamples } from '../src/synth/ramp';
 
 describe('slideSamples', () => {
   /** Share of the step a one-pole slide of `n` samples still has left after `samples` samples. */
@@ -7,6 +7,10 @@ describe('slideSamples', () => {
 
   it('slides a note over 40 ms, ramps the cutoff over 15 ms and the effect amount over 50 ms', () => {
     expect([PITCH_SLIDE_MS, CUTOFF_RAMP_MS, EFFECT_RAMP_MS]).toEqual([40, 15, 50]);
+  });
+
+  it('glides the echo time to a new tempo over 250 ms', () => {
+    expect(ECHO_TIME_RAMP_MS).toBe(250);
   });
 
   it('comes within 1% of the target in the given time, not before', () => {

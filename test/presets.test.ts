@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { noteFrequency } from '../src/mapping/notes';
 import { LANES } from '../src/mapping/handToSynth';
-import { PRESETS, delaySamples, presetIndex, reverbMix } from '../src/synth/presets';
+import { GIBBER_BPM, PRESETS, delaySamples, presetIndex, reverbMix } from '../src/synth/presets';
 
 describe('PRESETS', () => {
   it('lists the six presets in number-key order, each with its character and scale', () => {
@@ -74,7 +74,13 @@ describe('reverbMix', () => {
 describe('delaySamples', () => {
   it('converts a delay time in measures as Gibber does, at its 140 BPM in 4/4', () => {
     // An eighth of a measure is half a beat: 30/140 s.
-    expect(delaySamples(1 / 8, 48_000)).toBeCloseTo((30 / 140) * 48_000, 6);
-    expect(delaySamples(1, 44_100)).toBeCloseTo((240 / 140) * 44_100, 6);
+    expect(GIBBER_BPM).toBe(140);
+    expect(delaySamples(1 / 8, GIBBER_BPM, 48_000)).toBeCloseTo((30 / 140) * 48_000, 6);
+    expect(delaySamples(1, GIBBER_BPM, 44_100)).toBeCloseTo((240 / 140) * 44_100, 6);
+  });
+
+  it('keeps the delay time in beats at another tempo', () => {
+    expect(delaySamples(1 / 8, 110, 48_000)).toBeCloseTo((30 / 110) * 48_000, 6);
+    expect(delaySamples(3 / 16, 110, 48_000)).toBeCloseTo((45 / 110) * 48_000, 6);
   });
 });

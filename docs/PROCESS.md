@@ -217,6 +217,13 @@ All four were written in one session, through one interview per milestone.
 
 - **Decided by me during the work:** in the octave-down task, the darkest-brightness check missed its 3 dB target on two presets. With the octave lowered, Blues Reed played 4.5 dB louder on average over its eight lanes, and Brass 3.2 dB. I kept the sound as built, each lower note half as bright, and relaxed the check to 5 dB (spec version 1.1). Neighbouring lanes in the normal octave already differ by up to 11 dB.
 
+### Drum loop (in progress)
+
+- **Proposed by the agent, rejected after I played it:** spec 1.x let the second hand steer the drums. A rock sign 🤟 switched it to drum mode, where its palm center picked one of four drum patterns, its height set 1 to 4 drum layers, and a closed fist muted the drums. It was built and tested through task 05. When I played it, changing the beat by hand didn't work.
+- **Decided by me:** buttons beside "Start drums" replace it (spec 2.0). ◀ and ▶ step through the patterns and − and + set the layers. I dropped the mute, since "Stop drums" ends the beat, and kept the D key for start and stop only.
+- **What went with it:** drum mode and the mute; the camera view's drum label; the band rule the note lanes had shared with the hand's pattern and height bands; and the planned slider drum controls. The buttons work without a camera, so the no-camera path needs nothing of its own. The help-sheet task stays, without drum gestures.
+- The agent checked the buttons in headless Chromium without a camera: wrap-around, the layer bounds, choices made while stopped, and the live code changing a bar after the panel.
+
 ### M4 — Ship
 - …
 

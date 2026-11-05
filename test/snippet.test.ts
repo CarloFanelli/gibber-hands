@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { SynthParams } from '../src/mapping/handToSynth';
+import { DRUM_PATTERNS, KIT, drumSteps, type Drum, type DrumLayers, type Drums } from '../src/synth/drumPatterns';
 import { PRESETS, reverbMix, type Preset } from '../src/synth/presets';
 import { gibberSnippet } from '../src/synth/snippet';
 
@@ -10,8 +11,9 @@ const ORGAN = byName('Organ');
 const DEEP_BASS = byName('Deep Bass');
 const BLUES_REED = byName('Blues Reed');
 const params = (over: Partial<SynthParams>): SynthParams => ({ lane: 4, frequency: 392, cutoff: 1131, amp: 1, ampRampMs: 15, octave: 0, ...over });
-/** The snippet at the preset's own effect amount, unless another is given. */
-const snippet = (sounds: SynthParams[], preset: Preset, effect = preset.effect.mix) => gibberSnippet(sounds, preset, effect);
+/** The snippet at the preset's own effect amount, unless another is given, without drums unless given. */
+const snippet = (sounds: SynthParams[], preset: Preset, effect = preset.effect.mix, drums: Drums | null = null) =>
+  gibberSnippet(sounds, preset, effect, drums);
 
 interface Made {
   kind: string;
@@ -19,21 +21,65 @@ interface Made {
   connected: boolean;
 }
 
-const STOCK = ['Saw', 'Triangle', 'Square', 'PWM', 'Filter24Moog', 'Reverb', 'Delay'];
-const SINGLE = ['saw', 'triangle', 'square', 'pwm', 'lpf', 'verb', 'echo'];
-const VARIABLES = [...SINGLE, ...SINGLE.map((name) => name + '2')];
+/** A stock drum: what `trigger.seq` was given, the loudness values and the Hex string of the steps it hits. */
+interface Drummed extends Made {
+  seq?: { values: number | number[]; hits: string };
+}
 
-/** Runs a snippet against stand-ins for Gibber's stock objects and returns what it built, in order. */
-function play(code: string, sampleRate = 48_000): Made[] {
-  const made: Made[] = [];
+const STOCK = ['Saw', 'Triangle', 'Square', 'PWM', 'Filter24Moog', 'Reverb', 'Delay', 'Kick', 'Snare', 'Hat'];
+const SINGLE = ['saw', 'triangle', 'square', 'pwm', 'lpf', 'verb', 'echo'];
+const DRUMS = ['kick', 'snare', 'hat', 'openHat'];
+const VARIABLES = [...SINGLE, ...SINGLE.map((name) => name + '2'), ...DRUMS];
+
+/**
+ * Runs a snippet against stand-ins for Gibber's stock objects. Returns what it built, in order, setting
+ * the clock's tempo included, and its drums by variable name.
+ */
+function run(code: string, sampleRate = 48_000): { made: Drummed[]; drums: Record<string, Drummed | undefined> } {
+  const made: Drummed[] = [];
   const stock = (kind: string) => (props: Record<string, unknown>) => {
-    const ugen = { kind, props, connected: false, connect: () => ((ugen.connected = true), ugen) };
+    const ugen: Drummed & { connect(): Drummed; trigger: { seq(values: number | number[], hits: { hex: string }): void } } = {
+      kind,
+      props,
+      connected: false,
+      connect: () => ((ugen.connected = true), ugen),
+      trigger: { seq: (values, hits) => (ugen.seq = { values, hits: hits.hex }) }
+    };
     made.push(ugen);
     return ugen;
   };
+  const Clock = { set bpm(bpm: number) { made.push({ kind: 'Clock.bpm', props: { bpm }, connected: false }); } };
+  const Hex = (hex: string) => ({ hex });
   // The snippet's own variables are parameters here, so running it leaves no globals behind.
-  new Function(...STOCK, 'Gibberish', ...VARIABLES, code)(...STOCK.map(stock), { ctx: { sampleRate } });
-  return made;
+  const drums = new Function(...STOCK, 'Clock', 'Hex', 'Gibberish', ...VARIABLES, `${code}\nreturn { ${DRUMS.join(', ')} }`)(
+    ...STOCK.map(stock),
+    Clock,
+    Hex,
+    { ctx: { sampleRate } }
+  ) as Record<string, Drummed | undefined>;
+  return { made, drums };
+}
+
+/** Runs a snippet as run() does and returns what it built, in order. */
+function play(code: string, sampleRate = 48_000): Made[] {
+  return run(code, sampleRate).made;
+}
+
+/** Each of the 16 steps' loudness a stock drum's sequence plays, 0 where it rests: Gibber reads the next value as the drum hits. */
+function stepsOf(drum: Drummed): number[] {
+  const { values, hits } = drum.seq!;
+  const bits = [...hits].flatMap((digit) => [...parseInt(digit, 16).toString(2).padStart(4, '0')]);
+  let hit = 0;
+  return bits.map((bit) => (bit === '1' ? (Array.isArray(values) ? values[hit++ % values.length]! : values) : 0));
+}
+
+/** Each drum's loudness on each of the 16 steps, 0 where it rests, as the app plays the drum pattern at `layers`. */
+function appSteps(pattern: number, layers: DrumLayers): Partial<Record<Drum, number[]>> {
+  const steps: Partial<Record<Drum, number[]>> = {};
+  drumSteps(DRUM_PATTERNS[pattern]!, layers).forEach((hits, step) => {
+    for (const { drum, loudness } of hits) (steps[drum] ??= Array<number>(16).fill(0))[step] = loudness;
+  });
+  return steps;
 }
 
 describe('gibberSnippet', () => {
@@ -158,5 +204,61 @@ describe('gibberSnippet', () => {
     const code = snippet([params({ lane: 7, frequency: top * 2, cutoff: 12_800, octave: 1 })], SAW_LEAD);
     expect(code.split('\n')[0]).toMatch(/Saw Lead: D6, brightness 12800 Hz/);
     expect(play(code)[0]!.props.frequency).toBe(Math.round(top * 2 * 100) / 100);
+  });
+});
+
+describe('gibberSnippet drums', () => {
+  const note = params({});
+  const loop = (pattern: number, layers: DrumLayers): Drums => ({ pattern, layers });
+  const playedDrums = (drums: Record<string, Drummed | undefined>) => Object.keys(drums).filter((name) => drums[name]);
+
+  it('plays Hip-hop at 2 drum layers as kick and snare at 90 BPM, then the notes over it', () => {
+    const code = snippet([note], SAW_LEAD, 0.3, loop(2, 2));
+    const { made, drums } = run(code);
+    expect(made[0]).toMatchObject({ kind: 'Clock.bpm', props: { bpm: 90 } });
+    expect(playedDrums(drums)).toEqual(['kick', 'snare']);
+    expect(stepsOf(drums.kick!)).toEqual([1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0]);
+    expect(stepsOf(drums.snare!)).toEqual([0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0]);
+    expect(made.slice(-3).map((m) => m.kind)).toEqual(['Saw', 'Filter24Moog', 'Reverb']);
+    expect(code.split('\n')[0]).toBe('// Drums: Hip-hop, 90 BPM, 2 of 4 drum layers');
+  });
+
+  it('plays every drum pattern at every count of drum layers hit for hit, loudness included, as the app', () => {
+    for (const pattern of [0, 1, 2, 3]) {
+      for (const layers of [1, 2, 3, 4] as const) {
+        const { made, drums } = run(snippet([note], SAW_LEAD, 0.3, loop(pattern, layers)));
+        expect(made[0]!.props.bpm).toBe(DRUM_PATTERNS[pattern]!.bpm);
+        const app = appSteps(pattern, layers);
+        expect(playedDrums(drums)).toEqual(Object.keys(KIT).filter((drum) => app[drum as Drum]));
+        for (const drum of playedDrums(drums)) expect(stepsOf(drums[drum]!)).toEqual(app[drum as Drum]);
+      }
+    }
+  });
+
+  it('builds each drum from its stock instrument with every setting of the app’s kit, to the speakers', () => {
+    const { drums } = run(snippet([note], SAW_LEAD, 0.3, loop(1, 4)));
+    for (const drum of ['kick', 'snare', 'hat', 'openHat'] as const) {
+      expect(drums[drum]).toMatchObject({ kind: KIT[drum].instrument, connected: true });
+      expect(drums[drum]!.props).toEqual(KIT[drum].settings);
+    }
+  });
+
+  it('builds every drum before it starts any, so building one never delays another’s start', () => {
+    const lines = snippet([note], SAW_LEAD, 0.3, loop(1, 4)).split('\n');
+    const built = lines.flatMap((line, i) => (/^\w+ = (Kick|Snare|Hat)\(/.test(line) ? [i] : []));
+    const started = lines.flatMap((line, i) => (line.includes('.trigger.seq(') ? [i] : []));
+    expect([built.length, started.length]).toEqual([4, 4]);
+    expect(Math.max(...built)).toBeLessThan(Math.min(...started));
+  });
+
+  it('sets the tempo before the echo is built, so the pasted echo keeps the app’s timing', () => {
+    const kinds = play(snippet([note], ORGAN, 0.45, loop(0, 4))).map((m) => m.kind);
+    expect(kinds.slice(0, kinds.indexOf('Delay'))).toContain('Clock.bpm');
+  });
+
+  it('leaves the drums and the tempo out while no drum loop plays', () => {
+    const code = snippet([note], ORGAN, 0.45, null);
+    expect(code).not.toMatch(/Clock|Kick|Snare|Hat/);
+    expect(play(code).map((m) => m.kind)).toEqual(['Square', 'Filter24Moog', 'Delay']);
   });
 });

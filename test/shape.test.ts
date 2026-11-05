@@ -23,8 +23,9 @@ describe('second hand mode', () => {
     expect(modes(['Victory', 'Victory', 'Victory'])).toEqual(['shape', 'shape', 'shape']);
   });
 
-  it('switches on no other gesture', () => {
-    expect(modes(['Open_Palm', 'Pointing_Up', 'Thumb_Up', 'Thumb_Down', 'ILoveYou', 'Closed_Fist', null])).toEqual(Array(7).fill('notes'));
+  it('switches on no other gesture than Victory, the rock sign included', () => {
+    expect(modes(['Open_Palm', 'Pointing_Up', 'Thumb_Up', 'Thumb_Down', 'Closed_Fist', 'ILoveYou', null])).toEqual(Array(7).fill('notes'));
+    expect(modes(['Victory', null, 'ILoveYou', null])).toEqual(Array(4).fill('shape'));
   });
 
   it('keeps its mode while the hand is out of view', () => {

@@ -3,6 +3,8 @@ declare module 'gibber.audio.lib/dist/gibber.audio.js' {
   /** A sound object living in the audio worklet: property writes and method calls are forwarded there. */
   export interface GibberishUgen {
     [property: string]: unknown;
+    /** Names its copy in the worklet. */
+    id: number;
     connect(target?: GibberishUgen): GibberishUgen;
   }
 
@@ -17,12 +19,16 @@ declare module 'gibber.audio.lib/dist/gibber.audio.js' {
         properties: Record<string, number>;
         constructor: () => unknown;
       }): (props?: Record<string, number>) => GibberishUgen;
+      /** Handles the worklet's messages to the page, by their `address`. */
+      workletHandlers: Record<string, (event: MessageEvent) => void>;
     };
     fx: {
       Freeverb(props: Record<string, unknown>): GibberishUgen;
-      /** `time` in samples. */
+      /** `time` in samples, or a sound object giving it. */
       Delay(props: Record<string, unknown>): GibberishUgen;
     };
+    /** Synthesized drums, each sounding on its trigger. */
+    instruments: Record<'Kick' | 'Snare' | 'Hat', (props: Record<string, number>) => GibberishUgen>;
     /** Sound objects that combine two others, sample by sample; a stereo one stays stereo. */
     binops: { Mul(a: GibberishUgen, b: GibberishUgen): GibberishUgen; Add(a: GibberishUgen, b: GibberishUgen): GibberishUgen };
   }

@@ -29,18 +29,33 @@
  *
  * ui/gestureGuide lists every gesture below the live code, naming the hands by their roles.
  *
- * ui/shortcuts maps keys to the same actions as the controls: presets, audio, the live code and ui/helpSheet.
+ * ui/drumPanel starts and stops the drum loop and steps its drum pattern and drum layers, whose state for the
+ * visit mapping/drumLoop keeps; the engine plays it once audio is on. No gesture changes the drums.
+ *
+ * ui/shortcuts maps keys to the same actions as the controls: presets, audio, the drums, the live code and
+ * ui/helpSheet.
  */
 import { createStartup, type StartupStatus } from './hands/startup';
 import { SIDES, emptyPair, type HandPair, type Side } from './hands/types';
+import { DRUMS_START, drumsWithEngine, stepLayers, stepPattern, toggleDrums, type DrumLoop } from './mapping/drumLoop';
 import { laneCount, mapHandToSynth, type SynthParams } from './mapping/handToSynth';
 import { raiseOctave } from './mapping/notes';
 import { leadSide, otherSide, roles } from './mapping/roles';
-import { SECOND_HAND_START, asPlayed, effectAmount, followSecondHand, octaveShift, secondHandAfterSwap, type Octave } from './mapping/shape';
+import {
+  SECOND_HAND_START,
+  asPlayed,
+  effectAmount,
+  followSecondHand,
+  octaveShift,
+  secondHandAfterSwap,
+  type Octave
+} from './mapping/shape';
+import type { Drums } from './synth/drumPatterns';
 import { createSynth, type EngineStatus, type Sounds } from './synth/engine';
 import { PRESETS, presetIndex } from './synth/presets';
 import { gibberSnippet } from './synth/snippet';
 import { createAudioPanel } from './ui/audioPanel';
+import { createDrumPanel } from './ui/drumPanel';
 import { createLayout } from './ui/layout';
 import { createCameraPanel } from './ui/cameraPanel';
 import { createGestureGuide } from './ui/gestureGuide';
@@ -87,14 +102,27 @@ function boot() {
   const statusLine = createStatusLine(ui.instrument);
   const synth = createSynth();
   const audio = createAudioPanel(ui.instrument, synth);
+  let drums = DRUMS_START;
+  /** The drum pattern and drum layers the engine last reported playing; null while it plays none. */
+  let heard: Drums | null = null;
+  const drumPanel = createDrumPanel(ui.instrument, {
+    toggle: () => useDrums(toggleDrums(drums)),
+    pattern: (step) => useDrums(stepPattern(drums, step)),
+    layers: (step) => useDrums(stepLayers(drums, step))
+  });
   let preset = presetIndex(readStored(PRESET_KEY));
   const presets = createPresetList(ui.instrument, selectPreset);
   const liveCode = createLiveCode(ui.code);
   const gestures = createGestureGuide(ui.guide, lead);
   const showCode = throttle(({ sounds, effect }: Played) => {
     const hands = roles(sounds, lead);
-    liveCode.show(gibberSnippet([hands.lead, hands.second], PRESETS[preset]!, effect));
+    liveCode.show(gibberSnippet([hands.lead, hands.second], PRESETS[preset]!, effect, drums.playing ? heard : null));
   }, LIVE_CODE_PERIOD_MS);
+  let lastPlayed: Played | null = null;
+  /** Shows the live code again for a drum loop change, which comes with no hand pair. */
+  const showDrumsCode = () => {
+    if (lastPlayed) showCode(lastPlayed);
+  };
 
   // Hand pairs start only once tracking or the sliders run: until then, no hand plays silence.
   let pair: HandPair = emptyPair(0);
@@ -139,6 +167,7 @@ function boot() {
     sliders?.showNote(leading.lane === null ? null : raiseOctave(lanes[leading.lane]!.name, octave));
     const played = { sounds: next, effect: effectAmount(pair[secondSide].state, shaping, presetEffect.mix) };
     synth.update(next, played.effect);
+    lastPlayed = played;
     showCode(played);
     guide();
     return played;
@@ -188,8 +217,24 @@ function boot() {
   synth.onStatus((status) => {
     engineStatus = status;
     audio.show(status);
+    if (status.kind !== 'on') heard = null;
+    useDrums(drums);
     guide();
   });
+  synth.onDrums((next) => {
+    // A report still on its way as audio or the loop stops is no longer heard.
+    if (engineStatus.kind !== 'on' || !drums.playing) return;
+    heard = next;
+    showDrumsCode();
+  });
+  /** Plays `next`, unless the audio engine has failed, and shows it. */
+  function useDrums(next: DrumLoop) {
+    drums = drumsWithEngine(next, engineStatus);
+    if (!drums.playing) heard = null;
+    drumPanel.show(drums, engineStatus);
+    synth.setDrums(drums.playing ? drums : null);
+    showDrumsCode();
+  }
 
   function selectPreset(index: number) {
     if (index === preset) return;
@@ -236,6 +281,7 @@ function boot() {
   listenForShortcuts((action) => {
     if (action.kind === 'preset') selectPreset(action.index);
     else if (action.kind === 'audio') audio.startOrStop();
+    else if (action.kind === 'drums') drumPanel.startOrStop();
     else if (action.kind === 'code') ui.toggleCode();
     else help.toggle();
   });
