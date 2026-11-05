@@ -1,15 +1,11 @@
 # Glossary
 
 ### Drum layers
-How many parts of the drum pattern play, from 1 (kick only) to 4 (the full pattern), set by the **Second hand**'s height in **Drum mode**.
+How many parts of the drum pattern play, from 1 (kick only) to 4 (the full pattern), set with the − and + buttons in the instrument panel.
 _Avoid_: level, volume, intensity (volume is the squeeze's job)
 
-### Drum mode
-The **Second hand**'s mode, switched with the rock sign 🤟, in which it plays no note and runs the drum loop: left–right picks the **Drum pattern**, height sets the **Drum layers**, a closed fist mutes.
-_Avoid_: beat mode, rhythm mode
-
 ### Drum pattern
-One of the four fixed drum loops (Rock, House, Hip-hop, Breakbeat), each with its own tempo.
+One of the four fixed drum loops (Rock, House, Hip-hop, Breakbeat), each with its own tempo, stepped through with the ◀ and ▶ buttons beside "Start drums".
 _Avoid_: preset (the synth sound), beat (one count of the bar), groove
 
 ### Gesture guide
@@ -41,7 +37,7 @@ The central 80% of the camera view, horizontally and vertically, where hand move
 _Avoid_: control square (handMouse's name for the same idea), active area
 
 ### Second hand
-The player's other hand. It plays notes like the **Lead hand** until the Victory sign switches it to **Shape mode** or the rock sign 🤟 to **Drum mode**, and back on the same sign again.
+The player's other hand. It plays notes like the **Lead hand** until the Victory sign switches it to **Shape mode**, and back on the next Victory sign.
 _Avoid_: left hand (wrong after a swap), control hand, free hand
 
 ### Shape mode
