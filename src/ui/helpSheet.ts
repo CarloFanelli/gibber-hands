@@ -39,6 +39,7 @@ const CONTENT = `
   <dl>
     <dt><kbd>1</kbd>–<kbd>6</kbd></dt><dd>Pick a preset</dd>
     <dt><kbd>Space</kbd></dt><dd>Start or stop audio</dd>
+    <dt><kbd>D</kbd></dt><dd>Start or stop the drums</dd>
     <dt><kbd>C</kbd></dt><dd>Hide or show the code; the gesture guide stays</dd>
     <dt><kbd>?</kbd></dt><dd>Open or close this help</dd>
     <dt><kbd>Esc</kbd></dt><dd>Close this help</dd>
@@ -49,6 +50,9 @@ const CONTENT = `
   <h3>Mouse and touch</h3>
   <dl>
     <dt>Start audio / Stop audio</dt><dd>Starts the sound, or silences it</dd>
+    <dt>Start drums / Stop drums</dt><dd>Starts or stops a drum loop to play over; you hear it once audio is on</dd>
+    <dt>◀ ▶ beside the drums</dt><dd>The previous or next drum pattern: Rock, House, Hip-hop, Breakbeat, each at its own tempo; a new one comes in on the next bar</dd>
+    <dt>− + beside the drums</dt><dd>Fewer or more drum layers, from the kick alone to the full pattern; the arrows and − + work with the drums stopped too, and the next start plays your choice</dd>
     <dt>A preset card</dt><dd>Click or tap to pick it, or drag it onto “Now playing”</dd>
     <dt>Hide code / Show code</dt><dd>Hides or shows the code; the gesture guide below it stays</dd>
     <dt>Copy</dt><dd>Copies the code; if the browser blocks it, selects the code to copy by hand</dd>

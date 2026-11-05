@@ -4,4 +4,4 @@
 03-pattern-and-layers: DONE
 05-drum-live-code: DONE
 06-drum-buttons: DONE
-07-drum-guidance: TODO
+07-drum-guidance: DONE
