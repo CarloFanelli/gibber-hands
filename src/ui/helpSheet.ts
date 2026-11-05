@@ -54,7 +54,7 @@ const CONTENT = `
     <dt>Open gibber.cc</dt><dd>Opens the Gibber playground in a new tab, to paste the code and run it</dd>
     <dt>Selecting the code</dt><dd>Keeps it still until you click elsewhere</dd>
     <dt>The bars between panels</dt><dd>Drag to resize the panels; the sizes are remembered</dd>
-    <dt>Sliders, without a camera</dt><dd>Stand in for your hand: palm center, pinches and gesture; Octave up and the reverb or echo amount stand in for the second hand in shape mode</dd>
+    <dt>Sliders, without a camera</dt><dd>Stand in for your hand: palm center, pinches and gesture; the Octave choice (Down, Normal, Up) and the reverb or echo amount stand in for the second hand in shape mode</dd>
   </dl>
 `;
 

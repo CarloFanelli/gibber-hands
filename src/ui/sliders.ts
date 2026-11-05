@@ -1,14 +1,14 @@
 /**
  * Fallback without a camera or a hand model: four 0..1 sliders and a gesture menu that emit the same
- * HandState the tracker would, as the lead hand. An "Octave up" switch and an effect slider stand in for the
- * second hand in shape mode: the switch is its squeeze, held or open, and the slider its height. Native
+ * HandState the tracker would, as the lead hand. An Octave choice and an effect slider stand in for the
+ * second hand in shape mode: Up is its squeeze held, Down its thumbs-down, and the slider its height. Native
  * controls, so keyboard and touch work without extra code.
  */
 import { gestureName } from '../hands/gesture';
 import type { HandSource } from '../hands/tracker';
 import { GESTURE_NAMES, type GestureName, type HandPair, type HandState, type Side } from '../hands/types';
 import { PLAYING_ZONE } from '../mapping/handToSynth';
-import type { SecondHand } from '../mapping/shape';
+import type { Octave, SecondHand } from '../mapping/shape';
 import { GESTURE_LABELS } from './gestureLabels';
 
 export interface SliderFallback extends HandSource {
@@ -27,13 +27,14 @@ interface SliderValues {
   pinch: number;
   pinchMiddle: number;
   gesture: GestureName | null;
-  octaveUp: boolean;
+  /** The Octave choice: Down, Normal or Up. */
+  octave: Octave;
   /** The effect slider, 0..1: the shaping hand's height in the playing zone. */
   effect: number;
 }
 
-/** Palm center in the middle, fingers open, no gesture; the octave down and the preset's own effect amount. */
-export const INITIAL_SLIDERS: SliderValues = { x: 0.5, y: 0.5, pinch: 1, pinchMiddle: 1, gesture: null, octaveUp: false, effect: 0.5 };
+/** Palm center in the middle, fingers open, no gesture; the normal octave and the preset's own effect amount. */
+export const INITIAL_SLIDERS: SliderValues = { x: 0.5, y: 0.5, pinch: 1, pinchMiddle: 1, gesture: null, octave: 0, effect: 0.5 };
 
 /** The sliders' second hand only shapes the sound, so the sliders play one note, as one hand does. */
 export const SLIDERS_SECOND_HAND: SecondHand = { mode: 'shape', lastGesture: null };
@@ -50,10 +51,11 @@ export function sliderHandState(v: SliderValues, t: number): HandState {
   };
 }
 
-/** The second hand the shape controls stand in for: squeezed while "Octave up" is on, as high as the effect slider. */
+/** The second hand the shape controls stand in for: squeezed on Up, a thumbs-down on Down, as high as the effect slider. */
 function shapingHandState(v: SliderValues, t: number): HandState {
   const y = PLAYING_ZONE.end - v.effect * (PLAYING_ZONE.end - PLAYING_ZONE.start);
-  return { present: true, palm: { x: 0.5, y }, pinch: v.octaveUp ? 0 : 1, pinchMiddle: 1, gesture: null, gestureScore: 0, t };
+  const down = v.octave === -1;
+  return { present: true, palm: { x: 0.5, y }, pinch: v.octave === 1 ? 0 : 1, pinchMiddle: 1, gesture: down ? 'Thumb_Down' : null, gestureScore: down ? 1 : 0, t };
 }
 
 /** The sliders' hand on the lead side, the shaping hand on the other: the sliders always play as the lead hand. */
@@ -64,13 +66,19 @@ export function sliderPair(v: SliderValues, lead: Side, t: number): HandPair {
 }
 
 /** The settings a 0..1 slider sets. */
-type SliderKey = Exclude<keyof SliderValues, 'gesture' | 'octaveUp'>;
+type SliderKey = Exclude<keyof SliderValues, 'gesture' | 'octave'>;
 
 const SLIDERS: { key: SliderKey; label: string }[] = [
   { key: 'x', label: 'Palm center left–right' },
   { key: 'y', label: 'Palm center up–down' },
   { key: 'pinch', label: 'Pinch (thumb–index)' },
   { key: 'pinchMiddle', label: 'Middle pinch (thumb–middle)' }
+];
+
+const OCTAVES: { value: Octave; label: string }[] = [
+  { value: -1, label: 'Down' },
+  { value: 0, label: 'Normal' },
+  { value: 1, label: 'Up' }
 ];
 
 /** Mounts the controls in their own container inside `root`; stop() removes them. */
@@ -102,17 +110,25 @@ export function createSliderFallback(root: HTMLElement, leadSide: Side): SliderF
   });
   container.append(field('Gesture', select));
 
-  const octave = document.createElement('input');
-  octave.type = 'checkbox';
-  octave.addEventListener('input', () => {
-    values.octaveUp = octave.checked;
-    emit();
-  });
-  const octaveLabel = document.createElement('label');
-  octaveLabel.className = 'slider-switch';
-  octaveLabel.append(octave, 'Octave up');
+  // Radio buttons in a fieldset: Tab reaches the group, the arrow keys pick within it.
+  const octave = document.createElement('fieldset');
+  octave.className = 'slider-octave';
+  const legend = document.createElement('legend');
+  legend.textContent = 'Octave';
+  octave.append(legend);
+  for (const { value, label } of OCTAVES) {
+    const input = document.createElement('input');
+    Object.assign(input, { type: 'radio', name: 'slider-octave', checked: value === values.octave });
+    input.addEventListener('input', () => {
+      values.octave = value;
+      emit();
+    });
+    const choice = document.createElement('label');
+    choice.append(input, label);
+    octave.append(choice);
+  }
 
-  container.append(octaveLabel, field('Reverb or echo amount', slider('effect')));
+  container.append(octave, field('Reverb or echo amount', slider('effect')));
   root.append(container);
 
   function emit() {

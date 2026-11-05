@@ -46,15 +46,26 @@ describe('slider pair', () => {
 describe('slider shape controls', () => {
   const second = (over: Partial<typeof INITIAL_SLIDERS>) => sliderPair({ ...INITIAL_SLIDERS, ...over }, 'right', 0).left.state;
 
-  it('start with the octave switch off and the effect slider in the middle: the preset’s own amount', () => {
+  it('start on the normal octave and with the effect slider in the middle: the preset’s own amount', () => {
+    expect(INITIAL_SLIDERS.octave).toBe(0);
     expect(octaveShift(0, second({}), SLIDERS_SECOND_HAND)).toBe(0);
     expect(effectAmount(second({}), SLIDERS_SECOND_HAND, 0.3)).toBeCloseTo(0.3, 12);
   });
 
-  it('raise the octave while the switch is on, and drop it once it is off', () => {
-    expect(octaveShift(0, second({ octaveUp: true }), SLIDERS_SECOND_HAND)).toBe(1);
-    expect(octaveShift(1, second({ octaveUp: true }), SLIDERS_SECOND_HAND)).toBe(1);
-    expect(octaveShift(1, second({ octaveUp: false }), SLIDERS_SECOND_HAND)).toBe(0);
+  it('raise the octave on Up, and bring it back on Normal', () => {
+    expect(octaveShift(0, second({ octave: 1 }), SLIDERS_SECOND_HAND)).toBe(1);
+    expect(octaveShift(1, second({ octave: 1 }), SLIDERS_SECOND_HAND)).toBe(1);
+    expect(octaveShift(1, second({ octave: 0 }), SLIDERS_SECOND_HAND)).toBe(0);
+  });
+
+  it('lower the octave on Down, and bring it back on Normal', () => {
+    expect(octaveShift(0, second({ octave: -1 }), SLIDERS_SECOND_HAND)).toBe(-1);
+    expect(octaveShift(-1, second({ octave: -1 }), SLIDERS_SECOND_HAND)).toBe(-1);
+    expect(octaveShift(-1, second({ octave: 0 }), SLIDERS_SECOND_HAND)).toBe(0);
+  });
+
+  it('go from Up straight to Down', () => {
+    expect(octaveShift(1, second({ octave: -1 }), SLIDERS_SECOND_HAND)).toBe(-1);
   });
 
   it('set the effect amount like a shaping hand’s height: none at one end, double at the other, at most 80%', () => {
@@ -64,13 +75,15 @@ describe('slider shape controls', () => {
     expect(effectAmount(second({ effect: 1 }), SLIDERS_SECOND_HAND, 0.6)).toBeCloseTo(0.8, 12);
   });
 
-  it('play one note, in the upper octave with the switch on: the shaping hand never plays one', () => {
+  it('play one note in the octave picked, at full pinch: the shaping hand never plays one', () => {
     const lanes = PRESETS[0]!.lanes.slice(0, 8);
-    const pair = sliderPair({ ...INITIAL_SLIDERS, pinch: 0, octaveUp: true }, 'right', 0);
-    const octave = octaveShift(0, pair.left.state, SLIDERS_SECOND_HAND);
-    const lead = mapHandToSynth(pair.right.state, null, lanes, octave);
-    expect(lead).toMatchObject({ amp: 1, frequency: lanes[lead.lane!]!.frequency * 2 });
-    expect(mapHandToSynth(asPlayed(pair.left.state, SLIDERS_SECOND_HAND), null, lanes, octave).amp).toBe(0);
+    for (const picked of [-1, 0, 1] as const) {
+      const pair = sliderPair({ ...INITIAL_SLIDERS, pinch: 0, octave: picked }, 'right', 0);
+      const octave = octaveShift(0, pair.left.state, SLIDERS_SECOND_HAND);
+      const lead = mapHandToSynth(pair.right.state, null, lanes, octave);
+      expect(lead).toMatchObject({ amp: 1, octave: picked, frequency: lanes[lead.lane!]!.frequency * 2 ** picked });
+      expect(mapHandToSynth(asPlayed(pair.left.state, SLIDERS_SECOND_HAND), null, lanes, octave).amp).toBe(0);
+    }
     expect(asPlayed(EMPTY_HAND, SLIDERS_SECOND_HAND).present).toBe(false);
   });
 });

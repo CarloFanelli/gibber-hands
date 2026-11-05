@@ -2,6 +2,6 @@
 
 01-more-note-lanes: DONE
 02-octave-down-sign: DONE
-03-slider-octave-choice: TODO
-04-gesture-guide: TODO
+03-slider-octave-choice: DONE
+04-gesture-guide: IN_PROGRESS
 05-code-guide-divider: TODO
