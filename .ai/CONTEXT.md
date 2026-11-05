@@ -1,5 +1,9 @@
 # Glossary
 
+### Gesture guide
+The list of every gesture and what it does, always in view below the live code, in the same panel. The help sheet opened with "?" stays the full reference, keys included.
+_Avoid_: cheat sheet, legend, help (the help sheet)
+
 ### Hand size
 The distance from the wrist to the middle-finger knuckle. Pinch values are divided by it, so they don't depend on how far the hand is from the camera.
 _Avoid_: hand scale, palm length
@@ -9,7 +13,7 @@ The hand that always plays notes: the player's right hand, or the left one after
 _Avoid_: main hand, melody hand, playing hand (the **Second hand** plays notes too)
 
 ### Note lane
-One of the 8 vertical strips that divide the **Playing zone** from left to right. The lane under the **Palm center** picks the note.
+One of the vertical strips that divide the **Playing zone** from left to right: 8, or up to 16 as the camera picture widens. The lane under the **Palm center** picks the note.
 _Avoid_: zone (reserved for the playing zone), key, column
 
 ### Palm center
@@ -29,7 +33,7 @@ The player's other hand. It plays notes like the **Lead hand** until the Victory
 _Avoid_: left hand (wrong after a swap), control hand, free hand
 
 ### Shape mode
-The **Second hand**'s mode in which it plays no note: holding its squeeze raises every note one octave, and its height sets the reverb or echo amount.
+The **Second hand**'s mode in which it plays no note: holding its squeeze raises every note one octave, holding a thumbs-down lowers them one, and its height sets the reverb or echo amount.
 _Avoid_: effects mode, control mode
 
 ### Step hint
