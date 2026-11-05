@@ -1,19 +1,18 @@
 /**
- * Three resizable panels side by side: camera | instrument (audio controls) | live code. Resizer adds the
- * drag handles and remembers the sizes; a button in the instrument panel, or the C key, hides or shows the
- * code panel, for this visit only. Narrow windows stack the panels (styles.css).
+ * Three resizable panels side by side: camera | instrument (audio controls) | live code above the gesture
+ * guide. Resizer adds the drag handles and remembers the sizes; a button in the instrument panel, or the
+ * C key, hides or shows the live code, for this visit only, while the guide stays and its panel keeps its
+ * width. Narrow windows stack the panels (styles.css).
  */
 import Resize from '../vendor/resizer/Resize';
-
-/** Panels with this class leave the row, and Resizer resizes the others without them. */
-const HIDDEN_PANEL = 'panel-hidden';
 
 export interface Layout {
   camera: { root: HTMLElement; video: HTMLVideoElement; canvas: HTMLCanvasElement; status: HTMLElement };
   instrument: HTMLElement;
   code: HTMLElement;
-  /** Hides the code panel, or shows it, as its button does. */
-  toggleCodePanel(): void;
+  guide: HTMLElement;
+  /** Hides the live code, or shows it, as its button does. */
+  toggleCode(): void;
 }
 
 export function createLayout(root: HTMLElement): Layout {
@@ -26,33 +25,41 @@ export function createLayout(root: HTMLElement): Layout {
     </section>
     <section class="panel panel-instrument" id="panel-instrument">
       <div class="instrument-controls"></div>
-      <button type="button" class="code-toggle" aria-controls="panel-code"></button>
+      <button type="button" class="code-toggle" aria-controls="code-part"></button>
     </section>
-    <section class="panel panel-code" id="panel-code"></section>
+    <section class="panel panel-code" id="panel-code">
+      <div class="code-part" id="code-part"></div>
+      <div class="guide-part"></div>
+    </section>
   `;
   const panels = [...root.querySelectorAll<HTMLElement>('.panel')];
   const codePanel = root.querySelector<HTMLElement>('#panel-code')!;
+  const codePart = root.querySelector<HTMLElement>('#code-part')!;
   const codeToggle = root.querySelector<HTMLButtonElement>('.code-toggle')!;
   const video = root.querySelector<HTMLVideoElement>('#cam')!;
   const canvas = root.querySelector<HTMLCanvasElement>('#overlay')!;
 
-  new Resize({ resizableElements: panels, resizerClassList: 'resize-handle', saveName: 'gibber-hands', classToCheck: HIDDEN_PANEL });
+  // Resizer leaves panels with the class it checks out of the row; no panel takes it, so all three stay.
+  new Resize({ resizableElements: panels, resizerClassList: 'resize-handle', saveName: 'gibber-hands', classToCheck: 'panel-hidden' });
 
-  function showCodePanel(shown: boolean) {
-    // The C key can hide the panel under a focused Copy button: focus would fall back to the page.
+  let codeShown = true;
+  function showCode(shown: boolean) {
+    // The C key can hide the code under a focused Copy button: focus would fall back to the page.
     if (!shown && codePanel.contains(document.activeElement)) codeToggle.focus();
-    codePanel.classList.toggle(HIDDEN_PANEL, !shown);
+    codeShown = shown;
+    codePart.hidden = !shown;
     codeToggle.textContent = shown ? 'Hide code' : 'Show code';
     codeToggle.setAttribute('aria-expanded', String(shown));
   }
-  const toggleCodePanel = () => showCodePanel(codePanel.classList.contains(HIDDEN_PANEL));
-  showCodePanel(true);
-  codeToggle.addEventListener('click', toggleCodePanel);
+  const toggleCode = () => showCode(!codeShown);
+  showCode(true);
+  codeToggle.addEventListener('click', toggleCode);
 
   return {
     camera: { root: root.querySelector('#panel-camera')!, video, canvas, status: root.querySelector('#camera-status')! },
     instrument: root.querySelector('.instrument-controls')!,
-    code: codePanel,
-    toggleCodePanel
+    code: codePart,
+    guide: root.querySelector('.guide-part')!,
+    toggleCode
   };
 }

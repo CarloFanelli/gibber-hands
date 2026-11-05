@@ -29,12 +29,12 @@ describe('shortcut', () => {
     expect(shortcut(press('c'), 'control')).toEqual({ kind: 'code' });
   });
 
-  it('hides or shows the code panel with C, in either case', () => {
+  it('hides or shows the live code with C, in either case', () => {
     expect(shortcut(press('c'), 'other')).toEqual({ kind: 'code' });
     expect(shortcut(press('C', { shiftKey: true }), 'other')).toEqual({ kind: 'code' });
   });
 
-  it('leaves the code panel shown when C is typed in the gesture menu or a slider', () => {
+  it('leaves the live code shown when C is typed in the gesture menu or a slider', () => {
     expect(shortcut(press('c'), 'field')).toBeNull();
     expect(shortcut(press('1'), 'field')).toBeNull();
     expect(shortcut(press(' '), 'field')).toBeNull();

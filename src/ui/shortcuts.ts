@@ -1,5 +1,5 @@
 /**
- * Keyboard shortcuts: 1–6 pick a preset, Space starts or stops audio, C hides or shows the code panel and
+ * Keyboard shortcuts: 1–6 pick a preset, Space starts or stops audio, C hides or shows the live code and
  * "?" opens or closes help. Escape is left to the help sheet, which closes on it by itself.
  */
 import { PRESETS } from '../synth/presets';

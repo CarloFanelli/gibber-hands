@@ -27,7 +27,9 @@
  * camera view until a first sound has lasted a second, then teaches the second hand's Victory switch until
  * it first switches. Browser storage remembers both.
  *
- * ui/shortcuts maps keys to the same actions as the controls: presets, audio, the code panel and ui/helpSheet.
+ * ui/gestureGuide lists every gesture below the live code, naming the hands by their roles.
+ *
+ * ui/shortcuts maps keys to the same actions as the controls: presets, audio, the live code and ui/helpSheet.
  */
 import { createStartup, type StartupStatus } from './hands/startup';
 import { SIDES, emptyPair, type HandPair, type Side } from './hands/types';
@@ -41,6 +43,7 @@ import { gibberSnippet } from './synth/snippet';
 import { createAudioPanel } from './ui/audioPanel';
 import { createLayout } from './ui/layout';
 import { createCameraPanel } from './ui/cameraPanel';
+import { createGestureGuide } from './ui/gestureGuide';
 import { createHelpSheet } from './ui/helpSheet';
 import { createLeadHandSwitch } from './ui/leadHandSwitch';
 import { createLiveCode } from './ui/liveCode';
@@ -87,6 +90,7 @@ function boot() {
   let preset = presetIndex(readStored(PRESET_KEY));
   const presets = createPresetList(ui.instrument, selectPreset);
   const liveCode = createLiveCode(ui.code);
+  const gestures = createGestureGuide(ui.guide, lead);
   const showCode = throttle(({ sounds, effect }: Played) => {
     const hands = roles(sounds, lead);
     liveCode.show(gibberSnippet([hands.lead, hands.second], PRESETS[preset]!, effect));
@@ -157,11 +161,12 @@ function boot() {
     guide();
   });
   /**
-   * The status line, and the step hint for the first step not done until a first sound has lasted a second,
-   * then for the second hand's switch.
+   * The status line, the gesture guide's line about the sliders, and the step hint for the first step not
+   * done until a first sound has lasted a second, then for the second hand's switch.
    */
   function guide() {
     statusLine.show(startupStatus, engineStatus);
+    gestures.showSliders(slidersPlay());
     const audioOn = engineStatus.kind === 'on';
     firstSound.update(audioOn && SIDES.some((side) => (sounds?.[side].amp ?? 0) > 0));
     const hand = SIDES.some((side) => pair[side].state.present);
@@ -223,6 +228,7 @@ function boot() {
     octave = 0;
     sliders?.setLeadSide(side);
     help.setLeadSide(side);
+    gestures.setLeadSide(side);
     // The shape step's hint names the second hand.
     guide();
   });
@@ -230,7 +236,7 @@ function boot() {
   listenForShortcuts((action) => {
     if (action.kind === 'preset') selectPreset(action.index);
     else if (action.kind === 'audio') audio.startOrStop();
-    else if (action.kind === 'code') ui.toggleCodePanel();
+    else if (action.kind === 'code') ui.toggleCode();
     else help.toggle();
   });
 
