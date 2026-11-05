@@ -6,8 +6,8 @@
  * Names, tempos and the order of the drum layers are fixed by the spec; the hits are tuned by ear.
  */
 
-/** The kit's drums. */
-export type Drum = 'kick' | 'snare' | 'hat';
+/** The kit's drums; "hat" is the closed hi-hat. */
+export type Drum = 'kick' | 'snare' | 'hat' | 'openHat';
 
 /** How many parts of a drum pattern play: 1 the kick, 2 adds the snare, 3 the closed hi-hat, 4 the extra hits. */
 export type DrumLayers = 1 | 2 | 3 | 4;
@@ -25,7 +25,8 @@ export type Instrument = 'Kick' | 'Snare' | 'Hat';
 export const KIT: Record<Drum, { instrument: Instrument; settings: Record<string, number> }> = {
   kick: { instrument: 'Kick', settings: { gain: 0.3 } },
   snare: { instrument: 'Snare', settings: { gain: 0.18 } },
-  hat: { instrument: 'Hat', settings: { gain: 0.1 } }
+  hat: { instrument: 'Hat', settings: { gain: 0.1 } },
+  openHat: { instrument: 'Hat', settings: { gain: 0.08, decay: 0.35 } }
 };
 
 /** A loud ("x") or soft ("o") hit of one drum, at a step of the bar. */
@@ -65,6 +66,38 @@ export const DRUM_PATTERNS: readonly DrumPattern[] = [
       { drum: 'hat', layer: 3, steps: 'x.o.x.o.x.o.x.o.' },
       { drum: 'kick', layer: 4, steps: '..........x.....' },
       { drum: 'snare', layer: 4, steps: '...............o' }
+    ]
+  },
+  {
+    name: 'House',
+    bpm: 124,
+    parts: [
+      { drum: 'kick', layer: 1, steps: 'x...x...x...x...' },
+      { drum: 'snare', layer: 2, steps: '....x.......x...' },
+      { drum: 'hat', layer: 3, steps: 'o.x.o.x.o.x.o.x.' },
+      { drum: 'openHat', layer: 4, steps: '..x...x...x...x.' }
+    ]
+  },
+  {
+    name: 'Hip-hop',
+    bpm: 90,
+    parts: [
+      { drum: 'kick', layer: 1, steps: 'x......x..x.....' },
+      { drum: 'snare', layer: 2, steps: '....x.......x...' },
+      { drum: 'hat', layer: 3, steps: 'x.o.x.o.x.o.x.o.' },
+      { drum: 'hat', layer: 4, steps: '.o.o.o.o.o.o.o.o' },
+      { drum: 'kick', layer: 4, steps: '...............o' }
+    ]
+  },
+  {
+    name: 'Breakbeat',
+    bpm: 130,
+    parts: [
+      { drum: 'kick', layer: 1, steps: 'x.x.......x.....' },
+      { drum: 'snare', layer: 2, steps: '....x....x..x...' },
+      { drum: 'hat', layer: 3, steps: 'x.o.x.o.x.o.x.o.' },
+      { drum: 'snare', layer: 4, steps: '.......o.......o' },
+      { drum: 'kick', layer: 4, steps: '...........x....' }
     ]
   }
 ];

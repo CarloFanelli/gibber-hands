@@ -1,56 +1,81 @@
 import { describe, expect, it } from 'vitest';
-import { DRUM_PATTERNS, STEPS, drumSteps, stepSamples, type Drum } from '../src/synth/drumPatterns';
+import { DRUM_PATTERNS, STEPS, drumSteps, stepSamples, type Drum, type DrumLayers, type DrumPattern } from '../src/synth/drumPatterns';
 
-const ROCK = DRUM_PATTERNS[0]!;
+const [ROCK, HOUSE, HIP_HOP, BREAKBEAT] = DRUM_PATTERNS as [DrumPattern, DrumPattern, DrumPattern, DrumPattern];
+const LAYERS = [1, 2, 3, 4] as const;
+/** The beats of a bar, as steps. */
+const BEATS = [0, 4, 8, 12];
 
-/** The steps where `drum` plays, with `layers` drum layers playing. */
-function stepsOf(drum: Drum, layers: 1 | 2 | 3 | 4): number[] {
-  return drumSteps(ROCK, layers).flatMap((hits, step) => (hits.some((h) => h.drum === drum) ? [step] : []));
+/** The steps where `drum` plays in `pattern`, with `layers` drum layers playing. */
+function stepsOf(pattern: DrumPattern, drum: Drum, layers: DrumLayers): number[] {
+  return drumSteps(pattern, layers).flatMap((hits, step) => (hits.some((h) => h.drum === drum) ? [step] : []));
 }
+/** The drums heard in `pattern` with `layers` drum layers playing. */
+const drumsOf = (pattern: DrumPattern, layers: DrumLayers) => new Set(drumSteps(pattern, layers).flat().map((h) => h.drum));
 
 describe('DRUM_PATTERNS', () => {
-  it('starts with Rock at 110 BPM', () => {
-    expect([ROCK.name, ROCK.bpm]).toEqual(['Rock', 110]);
+  it('lists Rock, House, Hip-hop and Breakbeat, left to right, each at its own tempo', () => {
+    expect(DRUM_PATTERNS.map((p) => [p.name, p.bpm])).toEqual([
+      ['Rock', 110],
+      ['House', 124],
+      ['Hip-hop', 90],
+      ['Breakbeat', 130]
+    ]);
   });
 
   it('writes each part with one mark per step of the bar', () => {
     for (const { parts } of DRUM_PATTERNS) for (const { steps } of parts) expect(steps).toMatch(new RegExp(`^[xo.]{${STEPS}}$`));
+  });
+
+  it('plays Rock with the snare on 2 and 4 and eighth-note hi-hats', () => {
+    expect(stepsOf(ROCK, 'snare', 2)).toEqual([4, 12]);
+    expect(stepsOf(ROCK, 'hat', 3)).toEqual([0, 2, 4, 6, 8, 10, 12, 14]);
+  });
+
+  it('plays House with the kick on every beat and an off-beat open hi-hat', () => {
+    expect(stepsOf(HOUSE, 'kick', 1)).toEqual(BEATS);
+    expect(stepsOf(HOUSE, 'openHat', 4)).toEqual([2, 6, 10, 14]);
+  });
+
+  it('plays Hip-hop with busier hi-hats than Rock', () => {
+    expect(stepsOf(HIP_HOP, 'hat', 4).length).toBeGreaterThan(stepsOf(ROCK, 'hat', 4).length);
+  });
+
+  it('plays Breakbeat with the kick and the snare off the beat too', () => {
+    expect(stepsOf(BREAKBEAT, 'kick', 1).some((step) => !BEATS.includes(step))).toBe(true);
+    expect(stepsOf(BREAKBEAT, 'snare', 2).some((step) => !BEATS.includes(step))).toBe(true);
   });
 });
 
 describe('drumSteps', () => {
   it('splits a 4/4 bar into sixteenths', () => {
     expect(STEPS).toBe(16);
-    for (const layers of [1, 2, 3, 4] as const) expect(drumSteps(ROCK, layers)).toHaveLength(STEPS);
+    for (const pattern of DRUM_PATTERNS) for (const layers of LAYERS) expect(drumSteps(pattern, layers)).toHaveLength(STEPS);
   });
 
-  it('plays only the kick with 1 drum layer', () => {
-    expect(stepsOf('kick', 1)).toEqual([0, 8]);
-    expect(drumSteps(ROCK, 1).flat().every((h) => h.drum === 'kick')).toBe(true);
-  });
-
-  it('adds the snare on 2 and 4 with 2 drum layers', () => {
-    expect(stepsOf('kick', 2)).toEqual([0, 8]);
-    expect(stepsOf('snare', 2)).toEqual([4, 12]);
-    expect(stepsOf('hat', 2)).toEqual([]);
-  });
-
-  it('adds eighth-note closed hi-hats with 3 drum layers', () => {
-    expect(stepsOf('hat', 3)).toEqual([0, 2, 4, 6, 8, 10, 12, 14]);
-    expect(stepsOf('snare', 3)).toEqual([4, 12]);
+  it('adds the drums in order, layer by layer: kick, snare, closed hi-hat', () => {
+    for (const pattern of DRUM_PATTERNS) {
+      expect(drumsOf(pattern, 1)).toEqual(new Set(['kick']));
+      expect(drumsOf(pattern, 2)).toEqual(new Set(['kick', 'snare']));
+      expect(drumsOf(pattern, 3)).toEqual(new Set(['kick', 'snare', 'hat']));
+    }
   });
 
   it('plays the full pattern with 4 drum layers: everything of 3 layers, and its extra hits', () => {
-    const three = drumSteps(ROCK, 3);
-    const four = drumSteps(ROCK, 4);
-    three.forEach((hits, step) => expect(four[step]).toEqual(expect.arrayContaining(hits)));
-    expect(four.flat().length).toBeGreaterThan(three.flat().length);
+    for (const pattern of DRUM_PATTERNS) {
+      const three = drumSteps(pattern, 3);
+      const four = drumSteps(pattern, 4);
+      three.forEach((hits, step) => expect(four[step]).toEqual(expect.arrayContaining(hits)));
+      expect(four.flat().length).toBeGreaterThan(three.flat().length);
+    }
   });
 
   it('gives every hit a loudness between 0 and 1', () => {
-    for (const h of drumSteps(ROCK, 4).flat()) {
-      expect(h.loudness).toBeGreaterThan(0);
-      expect(h.loudness).toBeLessThanOrEqual(1);
+    for (const pattern of DRUM_PATTERNS) {
+      for (const h of drumSteps(pattern, 4).flat()) {
+        expect(h.loudness).toBeGreaterThan(0);
+        expect(h.loudness).toBeLessThanOrEqual(1);
+      }
     }
   });
 });

@@ -2,7 +2,7 @@
  * Draws over the video: the note lanes with the played ones highlighted, what the tracker sees of each
  * hand (21 landmarks, their connections and the palm center), each hand's gesture with its confidence on
  * its own side, the second hand's mode, and while it shapes the effect amount and the octave it changed,
- * beside its gesture, the "Raise your hand" hint and the frame rate. Landmarks and lanes are in the player's mirrored view already, so
+ * or in drum mode the drum pattern under it and its drum layers, beside its gesture, the "Raise your hand" hint and the frame rate. Landmarks and lanes are in the player's mirrored view already, so
  * nothing here flips them; they are placed inside the letterboxed video's rectangle.
  */
 import { HAND_CONNECTIONS } from '../hands/tracker';
@@ -34,6 +34,8 @@ interface SecondHandView {
   octave: Octave;
   /** The current preset's effect and its amount, 0..1. */
   effect: { kind: Effect['kind']; amount: number };
+  /** In drum mode, the drum pattern under the hand and its drum layers. */
+  drums: { name: string; layers: number };
 }
 
 export interface Overlay {
@@ -75,7 +77,10 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
     return el;
   }
 
-  /** A side's labels in its top corner: its gesture, then for the second hand its mode, the effect amount and the octave. */
+  /**
+   * A side's labels in its top corner: its gesture, then for the second hand its mode, the effect amount, the
+   * octave, and the drum pattern with its drum layers.
+   */
   function handLabels(side: Side) {
     const group = document.createElement('div');
     group.className = `overlay-hand overlay-hand-${side}`;
@@ -94,9 +99,15 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
     const effectPercent = document.createElement('span');
     effect.append(effectName, ' ', effectPercent);
     const octave = pill('overlay-octave');
-    group.append(gesture, mode, effect, octave);
+    // Likewise the drum pattern's name; its drum layers, out of 4, always show.
+    const drums = pill('overlay-drums');
+    const drumsName = document.createElement('span');
+    drumsName.className = 'label-words';
+    const drumsLayers = document.createElement('span');
+    drums.append(drumsName, ' ', drumsLayers);
+    group.append(gesture, mode, effect, octave, drums);
     panel.append(group);
-    return { group, gesture, mode, effect, effectName, effectPercent, octave };
+    return { group, gesture, mode, effect, effectName, effectPercent, octave, drums, drumsName, drumsLayers };
   }
 
   function anyHand() {
@@ -224,6 +235,12 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
         if (shaping) {
           setText(labels.effectName, EFFECT_NAME[second.effect.kind]);
           setText(labels.effectPercent, `${Math.round(second.effect.amount * 100)}%`);
+        }
+        const drumming = isSecond && second.mode === 'drums';
+        labels.drums.hidden = !drumming;
+        if (drumming) {
+          setText(labels.drumsName, second.drums.name);
+          setText(labels.drumsLayers, `${second.drums.layers}/4`);
         }
         labels.octave.hidden = !isSecond || second.octave === 0;
         const shift = second.octave > 0 ? 'up' : 'down';

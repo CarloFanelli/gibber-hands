@@ -46,3 +46,7 @@ This gives drum mode its purpose: the hand steers the loop Task 01 plays. Change
 - Hand sweeps from bottom to top within one beat → the next beat plays 4 drum layers (REQ-8)
 - Loop started from the button → Rock with 4 drum layers, or the last drum pattern and drum layers of this visit (REQ-11, REQ-12)
 - Camera panel narrower than 560 px → the drum labels shrink to their icons, as the other hand labels do (REQ-16)
+
+## Notes from implementation
+
+- **Known limitation**: the House, Hip-hop and Breakbeat hits and the open hi-hat's sound were written from the feel the spec tables, not heard; like the drum mix in Task 01, they need a listen before the review. /dev, 2026-11-05.

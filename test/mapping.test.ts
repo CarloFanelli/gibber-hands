@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { laneCount, mapHandToSynth, type SynthParams } from '../src/mapping/handToSynth';
+import { laneCount, mapHandToSynth, zoneColumn, zoneRow, type SynthParams } from '../src/mapping/handToSynth';
 import { noteFrequency } from '../src/mapping/notes';
 import { EMPTY_HAND, type HandState } from '../src/hands/types';
 import { PRESETS } from '../src/synth/presets';
@@ -146,6 +146,44 @@ describe('mapHandToSynth note lanes', () => {
     const lost = map(EMPTY_HAND, before);
     expect(lost.lane).toBeNull();
     expect(map(at(0.51), lost).lane).toBe(4);
+  });
+});
+
+describe('zoneColumn', () => {
+  // Four columns across the playing zone (x 0.1 to 0.9) are 0.2 wide each.
+  it('splits the playing zone into columns, left to right', () => {
+    expect([0.15, 0.35, 0.55, 0.85].map((x) => zoneColumn(x, null, 4))).toEqual([0, 1, 2, 3]);
+  });
+
+  it('gives the first or last column left or right of the playing zone', () => {
+    expect(zoneColumn(0.02, null, 4)).toBe(0);
+    expect(zoneColumn(0.98, null, 4)).toBe(3);
+  });
+
+  it('holds the current column until 20% of a column past its border', () => {
+    expect(zoneColumn(0.33, 0, 4)).toBe(0);
+    expect(zoneColumn(0.345, 0, 4)).toBe(1);
+    expect(zoneColumn(0.27, 1, 4)).toBe(1);
+    expect(zoneColumn(0.255, 1, 4)).toBe(0);
+  });
+});
+
+describe('zoneRow', () => {
+  // Four rows up the playing zone (y 0.9 at the bottom to 0.1 at the top) are 0.2 tall each.
+  it('splits the playing zone into rows, bottom to top', () => {
+    expect([0.85, 0.65, 0.45, 0.15].map((y) => zoneRow(y, null, 4))).toEqual([0, 1, 2, 3]);
+  });
+
+  it('gives the bottom or top row below or above the playing zone', () => {
+    expect(zoneRow(0.98, null, 4)).toBe(0);
+    expect(zoneRow(0.02, null, 4)).toBe(3);
+  });
+
+  it('holds the current row until 20% of a row past its border', () => {
+    expect(zoneRow(0.67, 0, 4)).toBe(0);
+    expect(zoneRow(0.655, 0, 4)).toBe(1);
+    expect(zoneRow(0.73, 1, 4)).toBe(1);
+    expect(zoneRow(0.745, 1, 4)).toBe(0);
   });
 });
 

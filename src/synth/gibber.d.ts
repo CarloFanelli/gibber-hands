@@ -19,6 +19,8 @@ declare module 'gibber.audio.lib/dist/gibber.audio.js' {
         properties: Record<string, number>;
         constructor: () => unknown;
       }): (props?: Record<string, number>) => GibberishUgen;
+      /** Handles the worklet's messages to the page, by their `address`. */
+      workletHandlers: Record<string, (event: MessageEvent) => void>;
     };
     fx: {
       Freeverb(props: Record<string, unknown>): GibberishUgen;

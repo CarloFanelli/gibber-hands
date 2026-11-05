@@ -14,7 +14,8 @@
  * roles, remembered in browser storage. mapping/shape follows the second hand: a Victory sign switches it
  * to shape mode, where it plays no note, its squeeze raises every note an octave, its thumbs-down lowers
  * them one and its height sets the reverb or echo amount. A rock sign switches it to drum mode, where it
- * plays no note either and the drum loop starts.
+ * plays no note either: the drum loop starts, and mapping/drumLoop lets its palm center pick the drum
+ * pattern and its height the drum layers.
  *
  * The "no camera" path uses ui/sliders to produce the same HandPair shape, with the sliders as the lead
  * hand and their shape controls as the second hand, always in shape mode, so everything downstream works
@@ -38,7 +39,7 @@
  */
 import { createStartup, type StartupStatus } from './hands/startup';
 import { SIDES, emptyPair, type HandPair, type Side } from './hands/types';
-import { DRUMS_START, drumsWithEngine, startDrums, toggleDrums, type DrumLoop } from './mapping/drumLoop';
+import { DRUMS_START, drumsWithEngine, startDrums, steerDrums, toggleDrums, type DrumLoop } from './mapping/drumLoop';
 import { laneCount, mapHandToSynth, type SynthParams } from './mapping/handToSynth';
 import { raiseOctave } from './mapping/notes';
 import { leadSide, otherSide, roles } from './mapping/roles';
@@ -52,6 +53,7 @@ import {
   secondHandWithoutDrums,
   type Octave
 } from './mapping/shape';
+import { DRUM_PATTERNS, type Drums } from './synth/drumPatterns';
 import { createSynth, type EngineStatus, type Sounds } from './synth/engine';
 import { PRESETS, presetIndex } from './synth/presets';
 import { gibberSnippet } from './synth/snippet';
@@ -104,6 +106,8 @@ function boot() {
   const synth = createSynth();
   const audio = createAudioPanel(ui.instrument, synth);
   let drums = DRUMS_START;
+  /** The drum pattern and drum layers the engine last reported playing; null while it plays none. */
+  let heard: Drums | null = null;
   const drumPanel = createDrumPanel(ui.instrument, () => useDrums(toggleDrums(drums)));
   let preset = presetIndex(readStored(PRESET_KEY));
   const presets = createPresetList(ui.instrument, selectPreset);
@@ -136,7 +140,11 @@ function boot() {
     const secondSide = otherSide(lead);
     const before = second.mode;
     second = followSecondHand(second, pair[secondSide].state);
-    if (second.mode === 'drums' && before !== 'drums') useDrums(startDrums(drums));
+    // Drum mode starts the loop, then the hand steers it.
+    if (second.mode === 'drums') {
+      const steered = steerDrums(before === 'drums' ? drums : startDrums(drums), pair[secondSide].state);
+      if (steered !== drums) useDrums(steered);
+    }
     if (second.mode === 'shape' && !shapeSwitched) {
       shapeSwitched = true;
       writeStored(SHAPE_HINT_DONE_KEY, '1');
@@ -208,14 +216,22 @@ function boot() {
   synth.onStatus((status) => {
     engineStatus = status;
     audio.show(status);
+    if (status.kind !== 'on') heard = null;
     useDrums(drums);
     guide();
+  });
+  synth.onDrums((next) => {
+    heard = next;
+    drumPanel.show(drums, heard, engineStatus);
   });
   /** Plays `next`, unless the audio engine has failed, and shows it. */
   function useDrums(next: DrumLoop) {
     drums = drumsWithEngine(next, engineStatus);
-    if (!drums.playing) second = secondHandWithoutDrums(second);
-    drumPanel.show(drums, engineStatus);
+    if (!drums.playing) {
+      heard = null;
+      second = secondHandWithoutDrums(second);
+    }
+    drumPanel.show(drums, heard, engineStatus);
     synth.setDrums(drums.playing ? drums : null);
   }
 
@@ -275,7 +291,8 @@ function boot() {
     const played = playHands();
     const lanes = SIDES.flatMap((side) => (played.sounds[side].lane === null ? [] : [played.sounds[side].lane]));
     const effect = { kind: PRESETS[preset]!.effect.kind, amount: played.effect };
-    overlay.draw(pair, lanes, { side: otherSide(lead), mode: second.mode, octave, effect });
+    const drumLabel = { name: DRUM_PATTERNS[drums.pattern]!.name, layers: drums.layers };
+    overlay.draw(pair, lanes, { side: otherSide(lead), mode: second.mode, octave, effect, drums: drumLabel });
   });
 }
 
