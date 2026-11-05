@@ -20,10 +20,7 @@ const NO_FPS = '— fps';
 const NAMES_MIN_WIDTH = 320;
 
 /** The second hand's mode as the camera view shows it: an icon, and words a narrow view leaves out. */
-const MODE_WORDS: Record<SecondHand['mode'], [icon: string, words: string]> = {
-  notes: ['♪', 'Notes'],
-  shape: ['✌', 'Shape']
-};
+const MODE_WORDS: Record<SecondHand['mode'], [icon: string, words: string]> = { notes: ['♪', 'Notes'], shape: ['✌', 'Shape'] };
 /** The octave the second hand raised or lowered, as the camera view shows it. */
 const OCTAVE_WORDS: Record<'up' | 'down', [icon: string, words: string]> = { up: ['↑', 'Octave up'], down: ['↓', 'Octave down'] };
 
@@ -75,10 +72,7 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
     return el;
   }
 
-  /**
-   * A side's labels in its top corner: its gesture, then for the second hand its mode, the effect amount and
-   * the octave.
-   */
+  /** A side's labels in its top corner: its gesture, then for the second hand its mode, the effect amount and the octave. */
   function handLabels(side: Side) {
     const group = document.createElement('div');
     group.className = `overlay-hand overlay-hand-${side}`;
