@@ -243,6 +243,8 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
       render();
     },
     setLanes(names) {
+      // Lanes lit for another count would light the wrong strip, or one past the zone: none until the next draw().
+      if (last && names.length !== laneNames.length) last = { ...last, played: [] };
       laneNames = names;
       render();
     },

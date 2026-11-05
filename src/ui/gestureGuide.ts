@@ -15,7 +15,7 @@ export interface GestureGuide {
 
 const CONTENT = `
   <h2 class="guide-title">Gestures</h2>
-  <p class="guide-sliders" hidden>No camera: the sliders stand in for your hand.</p>
+  <p class="guide-sliders" hidden>Sliders: they stand in for your hand while the camera can’t track it.</p>
   <p><span data-hand="lead"></span> hand: the lead hand. <span data-hand="second"></span> hand: the second hand.</p>
   <dl>
     <dt>Palm center left or right</dt><dd>Picks the note, one note lane each; a wider camera picture gives more lanes</dd>
