@@ -117,9 +117,9 @@ export function reverbMix(mix: number) {
 }
 
 /** Gibber's default tempo, at which it reads a Delay's time in measures of 4 beats. */
-const GIBBER_BPM = 140;
+export const GIBBER_BPM = 140;
 
-/** A delay time in measures, as Gibber reads it, in samples, as Gibberish's Delay takes it. */
-export function delaySamples(measures: number, sampleRate: number): number {
-  return ((measures * 4 * 60) / GIBBER_BPM) * sampleRate;
+/** A delay time in measures, as Gibber reads it at `bpm`, in samples, as Gibberish's Delay takes it. */
+export function delaySamples(measures: number, bpm: number, sampleRate: number): number {
+  return ((measures * 4 * 60) / bpm) * sampleRate;
 }

@@ -40,6 +40,17 @@ describe('shortcut', () => {
     expect(shortcut(press(' '), 'field')).toBeNull();
   });
 
+  it('starts or stops the drums with D, in either case, also while a button has focus', () => {
+    expect(shortcut(press('d'), 'other')).toEqual({ kind: 'drums' });
+    expect(shortcut(press('D', { shiftKey: true }), 'other')).toEqual({ kind: 'drums' });
+    expect(shortcut(press('d'), 'control')).toEqual({ kind: 'drums' });
+  });
+
+  it('leaves the drums alone when D is typed in the gesture menu or a slider, or held down', () => {
+    expect(shortcut(press('d'), 'field')).toBeNull();
+    expect(shortcut(press('d', { repeat: true }), 'other')).toBeNull();
+  });
+
   it('opens or closes help with "?", also when the layout needs Shift for it', () => {
     expect(shortcut(press('?'), 'other')).toEqual({ kind: 'help' });
     expect(shortcut(press('?', { shiftKey: true }), 'other')).toEqual({ kind: 'help' });

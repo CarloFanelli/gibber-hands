@@ -46,3 +46,9 @@ None
 - Loop stopped → the echo returns to today's timing at once, without a click (REQ-14)
 - Loop stopped → the panel reads "Drums off" (REQ-15)
 - N/A — network: drums are synthesized on the device; no sample downloads (REQ-4, REQ-11)
+
+## Notes from implementation
+
+- **REQ-11 — divergence**: the spec said the D key is ignored while the help sheet is open, "as the other shortcuts are"; they aren't: 1–6 and C act while it is open. D acts too, and the spec row now says so (version 1.1). Agreed at /prep Gate 2, 2026-11-05.
+- **REQ-14 — divergence**: a tempo change can't move the echo's time in one jump without a click, so the time glides over 250 ms (a new tuned-by-ear constant). Echoes ringing during the glide bend in pitch, about like a tape echo; no click. /dev, 2026-11-05.
+- **Known limitation**: the drum mix (each drum's gain) and the echo glide were set by measurement only, not by ear: the kit's gains keep 4 drum layers at −6.9 dBFS alone and under −3 dBFS with two loud hands. Carlo should listen before the review. /dev, 2026-11-05.

@@ -15,6 +15,11 @@ export const CUTOFF_RAMP_MS = 15;
 export const CROSSFADE_MS = 60;
 /** The reverb or echo amount glides to a new value over this long, in ms. Tuned by ear. */
 export const EFFECT_RAMP_MS = 50;
+/**
+ * The echo's time glides to a new tempo over this long, in ms: a jump would click. Echoes ringing meanwhile
+ * bend in pitch; a shorter glide bends them further. Tuned by ear.
+ */
+export const ECHO_TIME_RAMP_MS = 250;
 
 /**
  * Length, in samples, of a Gibberish slide that comes within 1% of its target in `ms`. The slide moves

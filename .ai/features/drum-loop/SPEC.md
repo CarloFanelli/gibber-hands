@@ -1,6 +1,6 @@
 ---
 feature: drum-loop
-version: 1.0
+version: 1.1
 status: approved
 base: 552abfe58e22dffc0022d42a48be36e324c09ead
 completed: false
@@ -127,7 +127,7 @@ Drum loop adds a beat to play over. The rock sign 🤟 with the **second hand** 
 | Fist held across a bar start | Muted bars stay silent; the pattern under the hand is the one that comes back | REQ-6, REQ-9 |
 | No hand in view, loop playing | The loop goes on unchanged | REQ-10 |
 | Two hands play notes over the loop | The loop goes on; both notes sound over it | REQ-10 |
-| D key while the help sheet is open | Ignored, as the other shortcuts are | REQ-11 |
+| D key while the help sheet is open | Starts or stops the drums, as 1–6 and C act while it is open | REQ-11 |
 | D key while typing in a field | Ignored | REQ-11 |
 | "Stop drums" while the second hand is in drum mode | The loop stops, and the second hand goes back to playing notes | REQ-1, REQ-11 |
 | Keyboard only | The button is reachable with Tab, with a focus outline | REQ-11 |

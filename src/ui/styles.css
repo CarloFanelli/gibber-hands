@@ -64,13 +64,16 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 .preset-character, .preset-scale { grid-column: 2; font-size: 13px; color: var(--muted); }
 /* A narrow instrument panel keeps each preset's name and scale; names wrap. */
 @container (max-width: 219px) { .preset-character { display: none; } }
-.code-toggle, .help-close, .code-copy, .code-open, .lead-hand { align-self: flex-start; min-height: 44px; padding: 10px 14px; border-radius: 8px; border: 1px solid #334155; background: transparent; color: var(--fg); font: inherit; cursor: pointer; }
+.code-toggle, .help-close, .code-copy, .code-open, .lead-hand, .drum-toggle { align-self: flex-start; min-height: 44px; padding: 10px 14px; border-radius: 8px; border: 1px solid #334155; background: transparent; color: var(--fg); font: inherit; cursor: pointer; }
 .audio-toggle, .retry { min-height: 44px; padding: 10px 14px; border-radius: 8px; border: 0; background: var(--accent); color: #0b0f14; font-weight: 600; cursor: pointer; }
 .audio-toggle:disabled, .retry:disabled { opacity: 0.5; cursor: default; }
 /* Until audio first starts, the button that starts it is the largest control in the panel, preset cards included. */
 .audio-toggle.prominent, .retry.prominent { min-height: 88px; font-size: 20px; box-shadow: 0 0 0 3px rgb(125 211 252 / 0.35); }
 .retry.prominent { align-self: stretch; }
 .status-line { margin: 0; font-size: 13px; color: var(--muted); }
+.drum-panel { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.drum-toggle:disabled { opacity: 0.5; cursor: default; }
+.drum-line { margin: 0; font-size: 13px; color: var(--muted); }
 /* The code panel: the live code above the gesture guide, each scrolling on its own, split by the code's share
    of the height (codeGuideSplit.ts); the guide fills the panel while the code is hidden. The code's tools
    sit on top, the snippet scrolls under them, wrapped so it never scrolls sideways. */

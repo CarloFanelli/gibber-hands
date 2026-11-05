@@ -9,7 +9,9 @@
  * closes too: otherwise the effect would fill with its old note and replay it when the preset comes back.
  * After all of a hand's voices comes its volume, so its silence silences its tails too, whatever the other
  * hand plays. Every setting glides in the worklet: Gibber itself changes a setting in one jump, which clicks.
- * Two loud hands can add up past full scale: a limiter after the worklet keeps their peaks down.
+ * The drum loop plays Gibberish's synthesized kick, snare and hi-hat through a level of their own. A clock in
+ * the worklet triggers them, so tracking never moves a hit; while it plays, each echo's time follows its tempo.
+ * Two loud hands and the drums can add up past full scale: a limiter after the worklet keeps their peaks down.
  *
  * Browsers allow audio only from a user gesture: start() must be called from the click handler.
  */
@@ -18,8 +20,9 @@ import workletUrl from 'gibber.audio.lib/dist/gibberish_worklet.js?url';
 import { SIDES, type Side } from '../hands/types';
 import type { SynthParams } from '../mapping/handToSynth';
 import { EngineDownloadError, audioSupported, engineFailure, type EngineFailure } from './engineFailure';
-import { CROSSFADE_MS, CUTOFF_RAMP_MS, EFFECT_RAMP_MS, PITCH_SLIDE_MS, TOGGLE_RAMP_MS, slideSamples } from './ramp';
-import { PRESETS, delaySamples, reverbMix, type Oscillator, type Preset } from './presets';
+import { DRUM_PATTERNS, KIT, drumSteps, stepSamples, type Drum, type Drums } from './drumPatterns';
+import { CROSSFADE_MS, CUTOFF_RAMP_MS, ECHO_TIME_RAMP_MS, EFFECT_RAMP_MS, PITCH_SLIDE_MS, TOGGLE_RAMP_MS, slideSamples } from './ramp';
+import { GIBBER_BPM, PRESETS, delaySamples, reverbMix, type Oscillator, type Preset } from './presets';
 
 export type EngineStatus = { kind: 'off' | 'starting' | 'on' } | { kind: 'failed'; failure: EngineFailure };
 
@@ -34,6 +37,8 @@ export interface SynthEngine {
   update(sounds: Sounds, effect: number): void;
   /** Crossfades to preset `index` (a PRESETS index), or starts on it if the engine isn't running yet. */
   setPreset(index: number): void;
+  /** The drum loop to play while the engine is on, or null for none. */
+  setDrums(drums: Drums | null): void;
 }
 
 /** A stalled download of the sound worklet counts as failed after this long. */
@@ -44,12 +49,23 @@ const INIT_TIMEOUT_MS = 10_000;
 const LIMIT_DB = -4.5;
 const LIMIT_RATIO = 20;
 
-/** The worklet's global Gibberish, as the graphs below see it. */
+/** The worklet's global Gibberish, as the graphs and the drum clock below see it. */
 declare const Gibberish: {
   genish: { in(name: string): unknown; slide(input: unknown, up: unknown, down: unknown): unknown };
   oscillators: { factory(shape: Oscillator['shape'], frequency: unknown, antialias: boolean): unknown };
   filters: { factory(input: unknown, cutoff: unknown, saturation: number, props: { filterModel: number }): unknown };
+  /** Runs each function once its time comes, checked every sample; `phase` counts the samples rendered. */
+  scheduler: { phase: number; add(samples: number, func: () => void): void };
+  /** The worklet's sound objects, by the id their page-side copies carry. */
+  processor: { ugens: Map<number, { trigger(loudness: number): void }> };
+  drumClock: DrumClock;
 };
+
+interface DrumClock {
+  /** Plays `steps` over and over from `lead` samples on, each `samples` long: a step lists its hits, [drum, loudness]. */
+  play(steps: [number, number][][], samples: number, lead: number): void;
+  stop(): void;
+}
 
 /**
  * A voice's graph. Its source text is sent to the audio worklet and run there, so it can use only the
@@ -71,12 +87,41 @@ function voiceGraph(shape: Oscillator['shape']) {
 
 /**
  * A level that glides to each new value like the voice's settings: a voice's way into its effect, a
- * preset's output, or a hand's volume. Runs in the worklet too.
+ * preset's output, a hand's volume, the drums' level or an echo's time. Runs in the worklet too.
  */
 function levelGraph() {
   const g = Gibberish.genish;
   const samples = g.in('levelSlide');
   return g.slide(g.in('level'), samples, samples);
+}
+
+/**
+ * Installs the drum clock in the worklet, which triggers the kit's drums (`kit`, their ids) on its sample-counting
+ * scheduler. Its source text is run there, like the graphs above. Each step's time is reckoned from the loop's
+ * start, so rounding to whole samples never adds up.
+ */
+function drumClock(kit: number[]) {
+  const drums = kit.map((id) => Gibberish.processor.ugens.get(id)!);
+  const scheduler = Gibberish.scheduler;
+  // Each play() is a run; a step of an earlier run, still waiting in the scheduler, does nothing.
+  let run = 0;
+  Gibberish.drumClock = {
+    play(steps, samples, lead) {
+      const current = ++run;
+      const start = scheduler.phase + lead;
+      let n = 0;
+      const step = () => {
+        if (current !== run) return;
+        for (const [drum, loudness] of steps[n % steps.length]!) drums[drum]!.trigger(loudness);
+        n++;
+        scheduler.add(Math.round(start + n * samples) - scheduler.phase, step);
+      };
+      scheduler.add(lead, step);
+    },
+    stop() {
+      run++;
+    }
+  };
 }
 
 interface Engine {
@@ -88,6 +133,8 @@ interface Engine {
   /** Glides the current preset's reverb or echo amount to `amount`, 0..1. */
   setEffect(amount: number): void;
   setPreset(index: number): void;
+  /** Starts or stops the drum loop, each echo's time following its tempo. */
+  playDrums(drums: Drums | null): void;
 }
 
 /** What each hand asks for, by side. */
@@ -100,6 +147,7 @@ export function createSynth(): SynthEngine {
   let wanted: Sounds | null = null;
   let effect: number | null = null;
   let preset = 0;
+  let drums: Drums | null = null;
 
   function setStatus(s: EngineStatus) {
     status = s;
@@ -115,6 +163,7 @@ export function createSynth(): SynthEngine {
       if (status.kind === 'starting' || status.kind === 'on') return;
       if (engine) {
         engine.play(wanted, TOGGLE_RAMP_MS);
+        engine.playDrums(drums);
         setStatus({ kind: 'on' });
         return;
       }
@@ -134,10 +183,11 @@ export function createSynth(): SynthEngine {
       bootEngine(ctx, preset).then(
         (booted) => {
           engine = booted;
-          // A preset picked, or an effect amount set, while the engine started.
+          // A preset picked, an effect amount set or the drums started while the engine started.
           booted.setPreset(preset);
           if (effect !== null) booted.setEffect(effect);
           booted.play(wanted, TOGGLE_RAMP_MS);
+          booted.playDrums(drums);
           setStatus({ kind: 'on' });
         },
         (error: unknown) => {
@@ -149,6 +199,7 @@ export function createSynth(): SynthEngine {
     stop() {
       if (status.kind !== 'on' || !engine) return;
       engine.play(null, TOGGLE_RAMP_MS);
+      engine.playDrums(null);
       setStatus({ kind: 'off' });
     },
     update(sounds, amount) {
@@ -161,6 +212,10 @@ export function createSynth(): SynthEngine {
     setPreset(index) {
       preset = index;
       engine?.setPreset(index);
+    },
+    setDrums(next) {
+      drums = next;
+      if (status.kind === 'on') engine?.playDrums(next);
     }
   };
 }
@@ -218,6 +273,13 @@ async function bootEngine(ctx: AudioContext, initialPreset: number): Promise<Eng
     return { dry: Level({ level: 1 - mix, levelSlide }), wet: Level({ level: mix, levelSlide }), amount: mix };
   });
 
+  // Each delay preset's echo time, shared by both sides, gliding to a new tempo: Gibberish's Delay jumps to a new time.
+  const echoes = PRESETS.map(({ effect: fx }) => {
+    if (fx.kind !== 'delay') return null;
+    const time = Level({ level: delaySamples(fx.measures, GIBBER_BPM, rate), levelSlide: slideSamples(ECHO_TIME_RAMP_MS, rate) });
+    return { measures: fx.measures, time };
+  });
+
   // Each side has a voice per preset and its own volume after all of them.
   const buildSide = () => {
     const volume = Level();
@@ -228,7 +290,7 @@ async function bootEngine(ctx: AudioContext, initialPreset: number): Promise<Eng
       const input = G.binops.Mul(sound, send);
       const { dry, wet } = mixes[i]!;
       // The reverb is stereo and the voice mono: Gibberish adds the voice to each side of it.
-      const mixed = G.binops.Add(G.binops.Mul(input, dry), G.binops.Mul(effect(G, preset, input, rate), wet));
+      const mixed = G.binops.Add(G.binops.Mul(input, dry), G.binops.Mul(effect(G, preset, input, echoes[i]?.time ?? null), wet));
       G.binops.Mul(G.binops.Mul(mixed, level), volume).connect();
       // What was last sent to this voice; NaN until it plays, so its first note and brightness jump.
       return { preset, sound, send, level, frequency: NaN, cutoff: NaN, octave: 0, rising: false };
@@ -236,6 +298,17 @@ async function bootEngine(ctx: AudioContext, initialPreset: number): Promise<Eng
     return { volume, voices, sent: { amp: NaN, rampMs: NaN } };
   };
   const sides: Record<Side, ReturnType<typeof buildSide>> = { right: buildSide(), left: buildSide() };
+
+  // The drums, through a level that glides them in and out: cut off, a ringing drum would click.
+  const drumNames = Object.keys(KIT) as Drum[];
+  const kit = drumNames.map((drum) => G.instruments[KIT[drum].instrument](KIT[drum].settings));
+  const drumLevel = Level({ level: 0, levelSlide: slideSamples(TOGGLE_RAMP_MS, rate) });
+  G.binops.Mul(kit.reduce((sum, drum) => G.binops.Add(sum, drum)), drumLevel).connect();
+  const post = (code: string) => G.worklet.port.postMessage({ address: 'eval', code });
+  post(`(${drumClock})(${JSON.stringify(kit.map((drum) => drum.id))})`);
+  // The first hit waits for the level to be up.
+  const drumLead = Math.round((TOGGLE_RAMP_MS / 1000) * rate);
+  let drumsOn = false;
 
   const nyquist = rate / 2;
   let current = initialPreset;
@@ -300,6 +373,18 @@ async function bootEngine(ctx: AudioContext, initialPreset: number): Promise<Eng
         next.rising = true;
       }
       current = index;
+    },
+    playDrums(drums) {
+      if ((drums !== null) === drumsOn) return;
+      drumsOn = drums !== null;
+      const bpm = drums ? DRUM_PATTERNS[drums.pattern]!.bpm : GIBBER_BPM;
+      for (const echo of echoes) if (echo) echo.time.level = delaySamples(echo.measures, bpm, rate);
+      drumLevel.level = drumsOn ? 1 : 0;
+      if (!drums) return post('Gibberish.drumClock.stop()');
+      const steps = drumSteps(DRUM_PATTERNS[drums.pattern]!, drums.layers).map((hits) =>
+        hits.map(({ drum, loudness }) => [drumNames.indexOf(drum), loudness])
+      );
+      post(`Gibberish.drumClock.play(${JSON.stringify(steps)}, ${stepSamples(bpm, rate)}, ${drumLead})`);
     }
   };
 }
@@ -317,12 +402,12 @@ function pulseWidth(oscillator: Oscillator): Record<string, number> {
   return oscillator.shape === 'pwm' ? { pulsewidth: oscillator.pulsewidth } : {};
 }
 
-/** The preset's reverb or delay, taking `input`, fully wet: the reverb or the echoes alone. */
-function effect(G: Gibberish, preset: Preset, input: GibberishUgen, sampleRate: number): GibberishUgen {
+/** The preset's reverb or delay, taking `input`, fully wet: the reverb or the echoes alone, `echoTime` apart. */
+function effect(G: Gibberish, preset: Preset, input: GibberishUgen, echoTime: GibberishUgen | null): GibberishUgen {
   const fx = preset.effect;
   return fx.kind === 'reverb'
     ? G.fx.Freeverb({ input, ...reverbMix(1) })
-    : G.fx.Delay({ input, time: delaySamples(fx.measures, sampleRate), feedback: fx.feedback, wetdry: 1 });
+    : G.fx.Delay({ input, time: echoTime, feedback: fx.feedback, wetdry: 1 });
 }
 
 /**

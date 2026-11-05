@@ -29,10 +29,15 @@
  *
  * ui/gestureGuide lists every gesture below the live code, naming the hands by their roles.
  *
- * ui/shortcuts maps keys to the same actions as the controls: presets, audio, the live code and ui/helpSheet.
+ * ui/drumPanel starts and stops the drum loop, whose state for the visit mapping/drumLoop keeps; the engine
+ * plays it once audio is on.
+ *
+ * ui/shortcuts maps keys to the same actions as the controls: presets, audio, the drums, the live code and
+ * ui/helpSheet.
  */
 import { createStartup, type StartupStatus } from './hands/startup';
 import { SIDES, emptyPair, type HandPair, type Side } from './hands/types';
+import { DRUMS_START, drumsWithEngine, toggleDrums, type DrumLoop } from './mapping/drumLoop';
 import { laneCount, mapHandToSynth, type SynthParams } from './mapping/handToSynth';
 import { raiseOctave } from './mapping/notes';
 import { leadSide, otherSide, roles } from './mapping/roles';
@@ -41,6 +46,7 @@ import { createSynth, type EngineStatus, type Sounds } from './synth/engine';
 import { PRESETS, presetIndex } from './synth/presets';
 import { gibberSnippet } from './synth/snippet';
 import { createAudioPanel } from './ui/audioPanel';
+import { createDrumPanel } from './ui/drumPanel';
 import { createLayout } from './ui/layout';
 import { createCameraPanel } from './ui/cameraPanel';
 import { createGestureGuide } from './ui/gestureGuide';
@@ -87,6 +93,8 @@ function boot() {
   const statusLine = createStatusLine(ui.instrument);
   const synth = createSynth();
   const audio = createAudioPanel(ui.instrument, synth);
+  let drums = DRUMS_START;
+  const drumPanel = createDrumPanel(ui.instrument, () => useDrums(toggleDrums(drums)));
   let preset = presetIndex(readStored(PRESET_KEY));
   const presets = createPresetList(ui.instrument, selectPreset);
   const liveCode = createLiveCode(ui.code);
@@ -188,8 +196,14 @@ function boot() {
   synth.onStatus((status) => {
     engineStatus = status;
     audio.show(status);
+    useDrums(drumsWithEngine(drums, status));
     guide();
   });
+  function useDrums(next: DrumLoop) {
+    drums = next;
+    drumPanel.show(drums, engineStatus);
+    synth.setDrums(drums.playing ? drums : null);
+  }
 
   function selectPreset(index: number) {
     if (index === preset) return;
@@ -236,6 +250,7 @@ function boot() {
   listenForShortcuts((action) => {
     if (action.kind === 'preset') selectPreset(action.index);
     else if (action.kind === 'audio') audio.startOrStop();
+    else if (action.kind === 'drums') drumPanel.startOrStop();
     else if (action.kind === 'code') ui.toggleCode();
     else help.toggle();
   });
