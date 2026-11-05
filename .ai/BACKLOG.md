@@ -59,6 +59,7 @@
 - **What**: Let each hand play its own preset, e.g. Deep Bass on the left and Saw Lead on the right.
 - **From**: two-hand-play (interview, 2026-11-04)
 
-### B-15 · open
+### B-15 · picked-up
 - **What**: A rhythm milestone: a drum loop at a set tempo that you start, change and shape with your hands.
 - **From**: two-hand-play (interview, 2026-11-04)
+- **Picked up by**: drum-loop (2026-11-05)
