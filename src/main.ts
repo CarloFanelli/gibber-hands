@@ -23,7 +23,8 @@
  * and the live code. The choice is remembered in browser storage.
  *
  * A first visit is guided: ui/statusLine says what is on, and ui/stepHints shows the next step over the
- * camera view until a first sound has lasted a second, which browser storage remembers.
+ * camera view until a first sound has lasted a second, then teaches the second hand's Victory switch until
+ * it first switches. Browser storage remembers both.
  *
  * ui/shortcuts maps keys to the same actions as the controls: presets, audio, the code panel and ui/helpSheet.
  */
@@ -46,7 +47,7 @@ import { createOverlay } from './ui/overlay';
 import { createPresetList } from './ui/presetList';
 import { SLIDERS_SECOND_HAND, createSliderFallback, type SliderFallback } from './ui/sliders';
 import { cameraMode, createStatusLine } from './ui/statusLine';
-import { createStepHints, firstSoundTimer, nextStep } from './ui/stepHints';
+import { FIRST_SOUND_MS, SHAPE_HINT_MS, createStepHints, holdTimer, stepToShow } from './ui/stepHints';
 import { listenForShortcuts } from './ui/shortcuts';
 import { readStored, writeStored } from './ui/storage';
 import { throttle } from './ui/throttle';
@@ -55,8 +56,10 @@ import { throttle } from './ui/throttle';
 const LIVE_CODE_PERIOD_MS = 100;
 /** Browser storage key of the last preset picked. */
 const PRESET_KEY = 'gibber-hands-preset';
-/** Browser storage key set once step hints are done for good. */
+/** Browser storage key set once the first steps' hints are done for good. */
 const HINTS_DONE_KEY = 'gibber-hands-hints-done';
+/** Browser storage key set once the second hand has first switched to shape mode. */
+const SHAPE_HINT_DONE_KEY = 'gibber-hands-shape-hint-done';
 /** Browser storage key of the lead side, "left" once the roles are swapped. */
 const LEAD_HAND_KEY = 'gibber-hands-lead-hand';
 
@@ -100,6 +103,10 @@ function boot() {
     const { lanes, effect: presetEffect } = PRESETS[preset]!;
     const secondSide = otherSide(lead);
     second = followSecondHand(second, pair[secondSide].state);
+    if (second.mode === 'shape' && !shapeSwitched) {
+      shapeSwitched = true;
+      writeStored(SHAPE_HINT_DONE_KEY, '1');
+    }
     const shaping = cameraMode(startupStatus) === 'sliders' ? SLIDERS_SECOND_HAND : second;
     raised = octaveRaised(raised, pair[secondSide].state, shaping);
     const octave = raised ? 1 : 0;
@@ -127,19 +134,31 @@ function boot() {
   let startupStatus!: StartupStatus;
   let engineStatus: EngineStatus = { kind: 'off' };
   let hintsDone = readStored(HINTS_DONE_KEY) !== null;
-  const firstSound = firstSoundTimer(() => {
+  const firstSound = holdTimer(FIRST_SOUND_MS, () => {
     hintsDone = true;
     writeStored(HINTS_DONE_KEY, '1');
     guide();
   });
-  /** The status line, and the step hint for the first step not done until a first sound has lasted a second. */
+  let shapeSwitched = readStored(SHAPE_HINT_DONE_KEY) !== null;
+  // The shape step's hint, ignored, hides for this visit only.
+  let shapeHintOver = false;
+  const shapeHint = holdTimer(SHAPE_HINT_MS, () => {
+    shapeHintOver = true;
+    guide();
+  });
+  /**
+   * The status line, and the step hint for the first step not done until a first sound has lasted a second,
+   * then for the second hand's switch.
+   */
   function guide() {
     statusLine.show(startupStatus, engineStatus);
     const audioOn = engineStatus.kind === 'on';
     firstSound.update(audioOn && SIDES.some((side) => (sounds?.[side].amp ?? 0) > 0));
     const hand = SIDES.some((side) => pair[side].state.present);
-    const step = hintsDone ? null : nextStep({ camera: cameraMode(startupStatus), hand, audio: audioOn });
-    hints.show(step);
+    const progress = { camera: cameraMode(startupStatus), hand, audio: audioOn };
+    const step = stepToShow(progress, { firstSound: hintsDone, shape: shapeSwitched || shapeHintOver });
+    hints.show(step, otherSide(lead));
+    shapeHint.update(step === 'shape');
     // The camera view's own prompts for these steps give way while a step hint says them.
     overlay.hideRaiseHand(step === 'hand');
     panel.hidePrompt(step === 'camera');
@@ -174,15 +193,18 @@ function boot() {
   }
   usePreset();
 
+  const help = createHelpSheet(document.body, lead);
   createLeadHandSwitch(ui.instrument, lead, (side) => {
     lead = side;
     writeStored(LEAD_HAND_KEY, side);
     second = secondHandAfterSwap(pair[otherSide(side)].state);
     raised = false;
     sliders?.setLeadSide(side);
+    help.setLeadSide(side);
+    // The shape step's hint names the second hand.
+    guide();
   });
 
-  const help = createHelpSheet(document.body);
   listenForShortcuts((action) => {
     if (action.kind === 'preset') selectPreset(action.index);
     else if (action.kind === 'audio') audio.startOrStop();

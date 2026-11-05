@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { STEP_WORDS, firstSoundTimer, nextStep, type Step } from '../src/ui/stepHints';
+import { FIRST_SOUND_MS, SHAPE_HINT_MS, STEP_WORDS, holdTimer, nextStep, stepToShow, stepWords, type Progress, type Step } from '../src/ui/stepHints';
 
 describe('nextStep', () => {
   it('asks for the camera first', () => {
@@ -23,11 +23,49 @@ describe('nextStep', () => {
   });
 
   it('says each step in four words or fewer', () => {
-    for (const step of Object.keys(STEP_WORDS) as Step[]) expect(STEP_WORDS[step].split(' ').length).toBeLessThanOrEqual(4);
+    const steps = [...Object.keys(STEP_WORDS), 'shape'] as Step[];
+    for (const step of steps) for (const side of ['left', 'right'] as const) expect(stepWords(step, side).split(' ').length).toBeLessThanOrEqual(4);
   });
 });
 
-describe('firstSoundTimer', () => {
+describe('stepToShow', () => {
+  const live: Progress = { camera: 'live', hand: true, audio: true };
+
+  it('shows the first step not done until a first sound has lasted a second', () => {
+    expect(stepToShow(live, { firstSound: false, shape: false })).toBe('squeeze');
+    expect(stepToShow({ ...live, hand: false }, { firstSound: false, shape: false })).toBe('hand');
+  });
+
+  it('then teaches the second hand’s switch while a hand is in view, not while the hand model loads', () => {
+    expect(stepToShow(live, { firstSound: true, shape: false })).toBe('shape');
+    expect(stepToShow({ ...live, hand: false }, { firstSound: true, shape: false })).toBeNull();
+  });
+
+  it('shows nothing more once the second hand has switched, or the shape hint has had its time', () => {
+    expect(stepToShow(live, { firstSound: true, shape: true })).toBeNull();
+  });
+
+  it('never teaches the switch on the sliders, or without the camera running', () => {
+    expect(stepToShow({ ...live, camera: 'sliders' }, { firstSound: true, shape: false })).toBeNull();
+    expect(stepToShow({ ...live, camera: 'waiting' }, { firstSound: true, shape: false })).toBeNull();
+  });
+});
+
+describe('stepWords', () => {
+  it('names the second hand by its side', () => {
+    expect(stepWords('shape', 'left')).toBe('Left hand: shape sound');
+    expect(stepWords('shape', 'right')).toBe('Right hand: shape sound');
+  });
+
+  it('says the other steps whichever hand leads', () => {
+    expect(stepWords('squeeze', 'left')).toBe('Squeeze to play');
+    expect(stepWords('squeeze', 'right')).toBe('Squeeze to play');
+  });
+});
+
+describe('holdTimer', () => {
+  const firstSoundTimer = (done: () => void) => holdTimer(FIRST_SOUND_MS, done);
+
   beforeEach(() => vi.useFakeTimers());
   afterEach(() => vi.useRealTimers());
 
@@ -62,6 +100,10 @@ describe('firstSoundTimer', () => {
     timer.update(true);
     vi.advanceTimersByTime(400);
     expect(done).toHaveBeenCalledOnce();
+  });
+
+  it('hides the shape hint after 10 s', () => {
+    expect(SHAPE_HINT_MS).toBe(10_000);
   });
 
   it('ends only once', () => {

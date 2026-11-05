@@ -100,10 +100,14 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 .step-hint[data-step="pinch-slider"] .step-hint-icon { animation: hint-lower 1.4s ease-in-out infinite; }
 .step-hint[data-step="camera"] .step-hint-icon, .step-hint[data-step="audio"] .step-hint-icon { animation: hint-tap 1.2s ease-in-out infinite; }
 .step-hint[data-step="squeeze"] .step-hint-icon { animation: hint-squeeze 1s ease-in-out infinite; }
+/* The shape step shows the Victory sign, rocking; every other step the open hand. */
+.step-hint[data-step="shape"] .step-hint-hand, .step-hint:not([data-step="shape"]) .step-hint-victory { display: none; }
+.step-hint[data-step="shape"] .step-hint-icon { animation: hint-sign 1.4s ease-in-out infinite; }
 @keyframes hint-rise { 0%, 100% { transform: translateY(4px); } 50% { transform: translateY(-4px); } }
 @keyframes hint-lower { 0%, 100% { transform: translateY(-4px); } 50% { transform: translateY(4px); } }
 @keyframes hint-tap { 0%, 100% { transform: scale(1); } 50% { transform: scale(0.82); } }
 @keyframes hint-squeeze { 0%, 100% { transform: scale(1); } 50% { transform: scale(0.78, 0.9); } }
+@keyframes hint-sign { 0%, 100% { transform: rotate(-8deg); } 50% { transform: rotate(8deg); } }
 @media (prefers-reduced-motion: reduce) { .step-hint[data-step] .step-hint-icon { animation: none; } }
 /* A narrow camera view shows the icons only; the words stay for screen readers. The second hand's labels
    in shape mode are about 490 px long with their words: a camera view of a phone's width shows their icons. */

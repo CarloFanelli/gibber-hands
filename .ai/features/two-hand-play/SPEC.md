@@ -1,6 +1,6 @@
 ---
 feature: two-hand-play
-version: 1.2
+version: 1.3
 status: approved
 base: 552abfe58e22dffc0022d42a48be36e324c09ead
 completed: false
@@ -59,7 +59,7 @@ Two-hand play lets the player use both hands. The right hand, the **lead hand**,
 
 ### Guidance
 
-- REQ-18: After the first sound has lasted a second, one more step hint shows a Victory-sign icon and "Left hand: shape sound".
+- REQ-18: After the first sound has lasted a second, one more step hint shows a Victory-sign icon and "Left hand: shape sound" while a hand is in view.
 - REQ-19: That step hint goes once the second hand first switches to shape mode, and never returns in that browser.
 - REQ-20: The help sheet describes both hands' roles, the Victory switch, and shape mode's squeeze and height.
 
@@ -137,7 +137,8 @@ Two-hand play lets the player use both hands. The right hand, the **lead hand**,
 | No note sounding | The snippet is as today: silent, with the line that makes it sound | REQ-17 |
 | Roles swapped | The hint reads "Right hand: shape sound" | REQ-18 |
 | No camera (sliders) | The second-hand hint never shows | REQ-18 |
-| Hint ignored | It hides after 10 s and returns on the next visit, until the second hand first switches | REQ-19 |
+| Hint ignored | It hides after 10 s in view, and returns on the next visit, until the second hand first switches | REQ-19 |
+| Hands leave before the 10 s | The hint goes with them, and returns with them for a fresh 10 s | REQ-18, REQ-19 |
 | Browser storage blocked | The hint returns every visit until the second hand switches in that visit | REQ-19 |
 | Roles swapped | The help sheet names the left hand as the lead hand | REQ-20 |
 | N/A — empty and concurrent: the help sheet is fixed text | — | REQ-20 |

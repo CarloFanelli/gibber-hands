@@ -37,3 +37,8 @@ Last, because it teaches what Tasks 03 and 04 built, and names the hands by the 
 - Browser storage blocked → the step hint returns every visit until the second hand switches in that visit (REQ-19)
 - Roles swapped → the help sheet names the left hand as the lead hand (REQ-20)
 - Empty and concurrent states → N/A: the help sheet is fixed text (REQ-20)
+
+## Notes from implementation
+
+- **REQ-18 / AC 1 — divergence**: the spec showed the hint as soon as the first sound had lasted a second. On a later visit the camera comes on before the hand model has loaded (over 10 s in headless Chromium), so the hint's 10 seconds ran out before any hand could be tracked. The hint now shows only while a hand is in view, and its 10 seconds count only then. Hands that leave take it with them, and when they return it gets a fresh 10 seconds. SPEC.md is now version 1.3, with this rule and a new edge-case row. Agreed in /dev, 2026-11-05.
+- **Known limitation**: with browser storage blocked, the first-step hints already start over each visit. The shape hint's own rule there (it comes back until a switch in that visit) was checked in code and tests, not in the browser: producing a first sound needs a squeezing hand, and the test photos have none. /dev, 2026-11-05.

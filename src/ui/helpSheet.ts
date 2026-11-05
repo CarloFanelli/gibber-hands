@@ -1,12 +1,17 @@
 /**
  * The help sheet: a modal dialog listing every control and shortcut. "?" opens and closes it (ui/shortcuts);
  * Escape and its Close button close it too, and focus goes back where it was. The Close button comes first,
- * so the sheet opens on its top even when it has to scroll.
+ * so the sheet opens on its top even when it has to scroll. It names the hands by their current roles.
  */
+import type { Side } from '../hands/types';
+import { otherSide } from '../mapping/roles';
+import { SIDE_NAME } from './handWords';
 
 export interface HelpSheet {
   /** Opens the sheet, or closes it if it is open. */
   toggle(): void;
+  /** Names the hands after the roles are swapped. */
+  setLeadSide(side: Side): void;
 }
 
 const CONTENT = `
@@ -20,6 +25,15 @@ const CONTENT = `
     <dt>Palm center up or down</dt><dd>Brighter or darker</dd>
     <dt>Thumb and index squeezed</dt><dd>Plays the note: the closer, the louder</dd>
     <dt>Closed fist</dt><dd>Silence</dd>
+  </dl>
+  <h3>With two hands</h3>
+  <dl>
+    <dt><span data-hand="lead"></span> hand, the lead hand</dt><dd>Always plays notes</dd>
+    <dt><span data-hand="second"></span> hand, the second hand</dt><dd>Plays notes too, so two can sound at once</dd>
+    <dt><span data-hand="second"></span> hand: Victory sign ✌</dt><dd>Switches it between playing notes and shape mode, where it plays no note</dd>
+    <dt>Shape mode: squeeze held</dt><dd>Every note one octave up, until you let go</dd>
+    <dt>Shape mode: hand up or down</dt><dd>More or less reverb or echo; the middle gives the preset’s own amount</dd>
+    <dt>Left-handed</dt><dd>Swaps the roles: the left hand leads; remembered for your next visit</dd>
   </dl>
   <h3>Keys</h3>
   <dl>
@@ -40,20 +54,27 @@ const CONTENT = `
     <dt>Open gibber.cc</dt><dd>Opens the Gibber playground in a new tab, to paste the code and run it</dd>
     <dt>Selecting the code</dt><dd>Keeps it still until you click elsewhere</dd>
     <dt>The bars between panels</dt><dd>Drag to resize the panels; the sizes are remembered</dd>
-    <dt>Sliders, without a camera</dt><dd>Stand in for your hand: palm center, pinches and gesture</dd>
+    <dt>Sliders, without a camera</dt><dd>Stand in for your hand: palm center, pinches and gesture; Octave up and the reverb or echo amount stand in for the second hand in shape mode</dd>
   </dl>
 `;
 
-export function createHelpSheet(root: HTMLElement): HelpSheet {
+export function createHelpSheet(root: HTMLElement, leadSide: Side): HelpSheet {
   const dialog = document.createElement('dialog');
   dialog.className = 'help-sheet';
   dialog.setAttribute('aria-labelledby', 'help-title');
   dialog.innerHTML = CONTENT;
   root.append(dialog);
+  const names = (lead: Side) => {
+    for (const el of dialog.querySelectorAll<HTMLElement>('[data-hand]')) {
+      el.textContent = SIDE_NAME[el.dataset.hand === 'lead' ? lead : otherSide(lead)];
+    }
+  };
+  names(leadSide);
   return {
     toggle() {
       if (dialog.open) dialog.close();
       else dialog.showModal();
-    }
+    },
+    setLeadSide: names
   };
 }

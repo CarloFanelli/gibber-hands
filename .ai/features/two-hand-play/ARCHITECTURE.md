@@ -1,6 +1,6 @@
 ---
 feature: two-hand-play
-spec-version: 1.2
+spec-version: 1.3
 status: approved
 ---
 
