@@ -14,7 +14,7 @@ function stepsOf(pattern: DrumPattern, drum: Drum, layers: DrumLayers): number[]
 const drumsOf = (pattern: DrumPattern, layers: DrumLayers) => new Set(drumSteps(pattern, layers).flat().map((h) => h.drum));
 
 describe('DRUM_PATTERNS', () => {
-  it('lists Rock, House, Hip-hop and Breakbeat, left to right, each at its own tempo', () => {
+  it('lists Rock, House, Hip-hop and Breakbeat, in the order the arrows step through them, each at its own tempo', () => {
     expect(DRUM_PATTERNS.map((p) => [p.name, p.bpm])).toEqual([
       ['Rock', 110],
       ['House', 124],

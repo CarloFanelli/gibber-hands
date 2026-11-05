@@ -41,15 +41,7 @@ import { DRUMS_START, drumsWithEngine, stepLayers, stepPattern, toggleDrums, typ
 import { laneCount, mapHandToSynth, type SynthParams } from './mapping/handToSynth';
 import { raiseOctave } from './mapping/notes';
 import { leadSide, otherSide, roles } from './mapping/roles';
-import {
-  SECOND_HAND_START,
-  asPlayed,
-  effectAmount,
-  followSecondHand,
-  octaveShift,
-  secondHandAfterSwap,
-  type Octave
-} from './mapping/shape';
+import { SECOND_HAND_START, asPlayed, effectAmount, followSecondHand, octaveShift, secondHandAfterSwap, type Octave } from './mapping/shape';
 import type { Drums } from './synth/drumPatterns';
 import { createSynth, type EngineStatus, type Sounds } from './synth/engine';
 import { PRESETS, presetIndex } from './synth/presets';
