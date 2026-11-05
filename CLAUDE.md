@@ -11,11 +11,11 @@ Portfolio piece for creative-tooling / frontend-leaning roles. Two things matter
 
 ## Architecture (keep it)
 ```
-webcam ─► src/hands/tracker.ts ─► HandState ─► src/mapping/handToSynth.ts ─► SynthParams ─► src/synth/engine.ts
+webcam ─► src/hands/tracker.ts ─► HandPair  ─► src/mapping/handToSynth.ts ─► SynthParams ─► src/synth/engine.ts
                                      │                                                             │
                                      └─► src/ui/* (overlay, sliders fallback, layout, live code) ◄─┘
 ```
-- `HandState` (src/hands/types.ts) is the only contract between vision and audio. MediaPipe types never leave `hands/`.
+- `HandPair` (src/hands/types.ts), a `HandState` per side (right and left), is the only contract between vision and audio. MediaPipe types never leave `hands/`.
 - `mapping/handToSynth.ts` is pure and unit-tested. Change behaviour there first, then wire.
 - `synth/engine.ts` is the only file that imports Gibber.
 - Reuse the author's own libraries: Resizer (panels) and drag-kit (presets). Their 2024 files are copied into the repo. Each copied file starts with a header that links its original commit and lists every fix. Change them only with minimal fixes, each added to that list. Don't rewrite them.

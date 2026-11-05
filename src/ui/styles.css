@@ -34,7 +34,9 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 .sliders label { display: grid; font-size: 14px; color: var(--muted); }
 .sliders label > span { display: flex; justify-content: space-between; }
 .slider-note { color: var(--fg); font-weight: 600; }
-.sliders input { width: 100%; height: 44px; margin: 0; accent-color: var(--accent); }
+.sliders input[type="range"] { width: 100%; height: 44px; margin: 0; accent-color: var(--accent); }
+.sliders .slider-switch { display: flex; align-items: center; gap: 10px; min-height: 44px; color: var(--fg); }
+.slider-switch input { width: 22px; height: 22px; margin: 0; accent-color: var(--accent); }
 .sliders select { min-height: 44px; padding: 0 10px; border: 1px solid #334155; border-radius: 8px; background: var(--panel); color: var(--fg); font: inherit; }
 .status-card { display: flex; flex-direction: column; align-items: center; gap: 10px; max-width: 36ch; padding: 14px 18px; border-radius: 8px; background: rgb(11 15 20 / 0.9); text-align: center; pointer-events: auto; }
 .status-card p { margin: 0; }
@@ -53,7 +55,7 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 .preset-cell + .preset-cell { padding-top: 6px; }
 .preset { display: grid; grid-template-columns: auto 1fr; column-gap: 10px; align-items: baseline; width: 100%; padding: 6px 10px; border: 1px solid #334155; border-radius: 8px; background: transparent; color: var(--fg); font: inherit; text-align: left; cursor: pointer; user-select: none; }
 .preset:hover { border-color: #64748b; }
-.preset[aria-pressed="true"] { border-color: var(--accent); background: rgb(125 211 252 / 0.12); }
+.preset[aria-pressed="true"], .lead-hand[aria-pressed="true"] { border-color: var(--accent); background: rgb(125 211 252 / 0.12); }
 .preset.preset-dragging { z-index: 1; background: var(--panel); box-shadow: 0 6px 20px rgb(0 0 0 / 0.5); }
 /* The faded copy drag-kit leaves after a pressed card sits on top of it: a release there must still click the card. */
 .preset + .preset { pointer-events: none; }
@@ -63,7 +65,7 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 .preset-character, .preset-scale { grid-column: 2; font-size: 13px; color: var(--muted); }
 /* A narrow instrument panel keeps each preset's name and scale; names wrap. */
 @container (max-width: 219px) { .preset-character { display: none; } }
-.code-toggle, .help-close, .code-copy, .code-open { align-self: flex-start; min-height: 44px; padding: 10px 14px; border-radius: 8px; border: 1px solid #334155; background: transparent; color: var(--fg); font: inherit; cursor: pointer; }
+.code-toggle, .help-close, .code-copy, .code-open, .lead-hand { align-self: flex-start; min-height: 44px; padding: 10px 14px; border-radius: 8px; border: 1px solid #334155; background: transparent; color: var(--fg); font: inherit; cursor: pointer; }
 .audio-toggle, .retry { min-height: 44px; padding: 10px 14px; border-radius: 8px; border: 0; background: var(--accent); color: #0b0f14; font-weight: 600; cursor: pointer; }
 .audio-toggle:disabled, .retry:disabled { opacity: 0.5; cursor: default; }
 /* Until audio first starts, the button that starts it is the largest control in the panel, preset cards included. */
@@ -81,21 +83,37 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 .code-comment { color: var(--muted); font-style: italic; }
 .overlay-label { position: absolute; margin: 0; padding: 4px 10px; border-radius: 6px; background: rgb(11 15 20 / 0.9); font-size: 14px; pointer-events: none; }
 .overlay-hint { top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 18px; }
-.overlay-gesture { top: 8px; left: 8px; font-weight: 600; }
+/* Each hand's labels in a row on its own side: the right hand's under the frame rate. A label that doesn't
+   fit goes to a next line: the left hand's stop short of the frame rate. */
+.overlay-hand { position: absolute; display: flex; flex-wrap: wrap; gap: 6px; pointer-events: none; }
+.overlay-hand-left { top: 8px; left: 8px; max-width: calc(100% - 96px); }
+.overlay-hand-right { top: 40px; right: 8px; max-width: calc(100% - 16px); flex-direction: row-reverse; }
+.overlay-hand .overlay-label { position: static; white-space: nowrap; }
+.overlay-gesture { font-weight: 600; }
+.overlay-octave { color: var(--accent); font-weight: 600; }
 .overlay-fps { top: 8px; right: 8px; color: var(--muted); font-variant-numeric: tabular-nums; }
 /* Step hints: under the top labels, never in the way of the sliders below. */
 .step-hint { position: absolute; top: 44px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; max-width: calc(100% - 24px); margin: 0; padding: 8px 14px; border-radius: 10px; background: rgb(11 15 20 / 0.85); font-size: 18px; font-weight: 600; white-space: nowrap; pointer-events: none; }
+.panel-camera:has(.overlay-hand-right:not([hidden])) .step-hint { top: 76px; }
 .step-hint-icon { flex: none; width: 36px; height: 36px; color: var(--accent); }
 .step-hint[data-step="hand"] .step-hint-icon { animation: hint-rise 1.4s ease-in-out infinite; }
 .step-hint[data-step="pinch-slider"] .step-hint-icon { animation: hint-lower 1.4s ease-in-out infinite; }
 .step-hint[data-step="camera"] .step-hint-icon, .step-hint[data-step="audio"] .step-hint-icon { animation: hint-tap 1.2s ease-in-out infinite; }
 .step-hint[data-step="squeeze"] .step-hint-icon { animation: hint-squeeze 1s ease-in-out infinite; }
+/* The shape step shows the Victory sign, rocking; every other step the open hand. */
+.step-hint[data-step="shape"] .step-hint-hand, .step-hint:not([data-step="shape"]) .step-hint-victory { display: none; }
+.step-hint[data-step="shape"] .step-hint-icon { animation: hint-sign 1.4s ease-in-out infinite; }
 @keyframes hint-rise { 0%, 100% { transform: translateY(4px); } 50% { transform: translateY(-4px); } }
 @keyframes hint-lower { 0%, 100% { transform: translateY(-4px); } 50% { transform: translateY(4px); } }
 @keyframes hint-tap { 0%, 100% { transform: scale(1); } 50% { transform: scale(0.82); } }
 @keyframes hint-squeeze { 0%, 100% { transform: scale(1); } 50% { transform: scale(0.78, 0.9); } }
+@keyframes hint-sign { 0%, 100% { transform: rotate(-8deg); } 50% { transform: rotate(8deg); } }
 @media (prefers-reduced-motion: reduce) { .step-hint[data-step] .step-hint-icon { animation: none; } }
-/* A narrow camera view shows the icon only; the words stay for screen readers. */
+/* A narrow camera view shows the icons only; the words stay for screen readers. The second hand's labels
+   in shape mode are about 490 px long with their words: a camera view of a phone's width shows their icons. */
+@container camera (max-width: 559.98px) {
+  .label-words { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+}
 @container camera (max-width: 319.98px) {
   .step-hint { padding: 8px; }
   .step-hint-words { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }

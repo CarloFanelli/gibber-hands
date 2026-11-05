@@ -8,7 +8,7 @@ export interface Point {
 export const GESTURE_NAMES = ['Closed_Fist', 'Open_Palm', 'Pointing_Up', 'Thumb_Down', 'Thumb_Up', 'Victory', 'ILoveYou'] as const;
 export type GestureName = (typeof GESTURE_NAMES)[number];
 
-/** Normalized hand state. Everything downstream depends only on this shape. */
+/** Normalized state of one hand. Everything downstream depends only on this shape, one per side (HandPair). */
 export interface HandState {
   /** True while a hand is tracked, and for up to 150 ms after it is lost (or while the sliders are shown). */
   present: boolean;
@@ -35,3 +35,21 @@ export const EMPTY_HAND: HandState = {
   pinchMiddle: 1,
   t: 0
 };
+
+/** The player's side a hand is on: the player's own right or left hand. */
+export type Side = 'right' | 'left';
+export const SIDES: readonly Side[] = ['right', 'left'];
+
+/** One hand as tracked: its state, and its 21 landmarks in the player's view (null without a tracked hand, always null from the sliders). */
+export interface TrackedHand {
+  state: HandState;
+  landmarks: Point[] | null;
+}
+
+/** Both hands, by the player's side. Both states carry the same timestamp. */
+export type HandPair = Record<Side, TrackedHand>;
+
+/** No hand on either side, at time `t`. */
+export function emptyPair(t: number): HandPair {
+  return { right: { state: { ...EMPTY_HAND, t }, landmarks: null }, left: { state: { ...EMPTY_HAND, t }, landmarks: null } };
+}

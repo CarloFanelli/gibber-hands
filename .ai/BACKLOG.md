@@ -1,16 +1,18 @@
 # Backlog
 
-### B-1 · open
+### B-1 · picked-up
 - **What**: Play with two hands, e.g. one picks the notes and the other shapes the sound.
 - **From**: hand-tracking (interview, 2026-11-02)
+- **Picked up by**: two-hand-play (2026-11-04)
 
 ### B-2 · open
 - **What**: A gesture that freezes the current note so the player can sweep the brightness over it.
 - **From**: hand-to-sound (interview, 2026-11-02)
 
-### B-3 · open
+### B-3 · picked-up
 - **What**: Control the reverb or echo amount with the hand, after play-testing.
 - **From**: hand-to-sound (interview, 2026-11-02)
+- **Picked up by**: two-hand-play (2026-11-04)
 
 ### B-4 · open
 - **What**: Edit the Gibber snippet in the page and hear the change.
@@ -47,3 +49,15 @@
 ### B-12 · open
 - **What**: At phone width the camera panel is short, so the step hint at its top (for example "Start audio") sits over the camera's status card, such as "No camera found", and hides its Try again button. The button still works under it, but it can't be seen.
 - **From**: instrument-ui (dev task 06, 2026-11-03)
+
+### B-13 · open
+- **What**: A way to play every note an octave lower, e.g. a second gesture of the shaping hand.
+- **From**: two-hand-play (interview, 2026-11-04)
+
+### B-14 · open
+- **What**: Let each hand play its own preset, e.g. Deep Bass on the left and Saw Lead on the right.
+- **From**: two-hand-play (interview, 2026-11-04)
+
+### B-15 · open
+- **What**: A rhythm milestone: a drum loop at a set tempo that you start, change and shape with your hands.
+- **From**: two-hand-play (interview, 2026-11-04)

@@ -1,6 +1,6 @@
 /**
  * Starts the camera and the hand model together on page load, reports their status, and keeps one
- * HandState source active: the tracker once both are ready (whichever comes last), or the fallback
+ * hand source active: the tracker once both are ready (whichever comes last), or the fallback
  * from the first failure until tracking starts. Each request has at most one in flight; Try again is
  * ignored while one runs.
  */
@@ -9,7 +9,7 @@ import { createCamera, type CameraFailure } from './camera';
 import { loadHandModel } from './model';
 import type { ModelFailure } from './modelSource';
 import { createTracker, type HandSource } from './tracker';
-import { EMPTY_HAND, type HandState, type Point } from './types';
+import { emptyPair, type HandPair } from './types';
 
 type CameraStatus =
   | { kind: 'pending' }
@@ -31,8 +31,8 @@ export interface StartupStatus {
 export interface Startup {
   /** Calls `cb` with the current status at once, then on every change. */
   onStatus(cb: (s: StartupStatus) => void): void;
-  /** Receives every HandState of the active source, and an empty one when tracking stops. */
-  onHand(cb: (s: HandState, landmarks: Point[] | null) => void): void;
+  /** Receives every HandPair of the active source, and an empty one when tracking stops. */
+  onHand(cb: (pair: HandPair) => void): void;
   /** Asks for the camera again after a failure; ignored otherwise. */
   retryCamera(): void;
   /** Loads the hand model again after a failure the browser can recover from; ignored otherwise. */
@@ -47,11 +47,11 @@ export function createStartup(video: HTMLVideoElement, createFallback: () => Han
   let tracker: HandSource | null = null;
   let fallback: HandSource | null = null;
   let statusListener: ((s: StartupStatus) => void) | null = null;
-  let handListener: ((s: HandState, landmarks: Point[] | null) => void) | null = null;
+  let handListener: ((pair: HandPair) => void) | null = null;
 
   const emit = () => statusListener?.({ camera, model, tracking: tracker !== null });
 
-  const relay = (s: HandState, landmarks: Point[] | null) => handListener?.(s, landmarks);
+  const relay = (pair: HandPair) => handListener?.(pair);
 
   /** Switches the active source to match the camera and model, then reports the status. */
   function update() {
@@ -59,7 +59,7 @@ export function createStartup(video: HTMLVideoElement, createFallback: () => Han
     if (tracker && !trackable) {
       tracker.stop();
       tracker = null;
-      handListener?.({ ...EMPTY_HAND, t: performance.now() }, null);
+      handListener?.(emptyPair(performance.now()));
     }
     // Stopped before the tracker starts, so the two never emit together.
     if (fallback && trackable) {
