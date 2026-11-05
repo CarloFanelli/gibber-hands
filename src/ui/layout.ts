@@ -1,10 +1,11 @@
 /**
  * Three resizable panels side by side: camera | instrument (audio controls) | live code above the gesture
- * guide. Resizer adds the drag handles and remembers the sizes; a button in the instrument panel, or the
- * C key, hides or shows the live code, for this visit only, while the guide stays and its panel keeps its
- * width. Narrow windows stack the panels (styles.css).
+ * guide, with a divider between them (codeGuideSplit). Resizer adds the drag handles and remembers the sizes;
+ * a button in the instrument panel, or the C key, hides or shows the live code and its divider, for this
+ * visit only, while the guide stays and its panel keeps its width. Narrow windows stack the panels (styles.css).
  */
 import Resize from '../vendor/resizer/Resize';
+import { mountCodeGuideSplit } from './codeGuideSplit';
 
 export interface Layout {
   camera: { root: HTMLElement; video: HTMLVideoElement; canvas: HTMLCanvasElement; status: HTMLElement };
@@ -29,12 +30,14 @@ export function createLayout(root: HTMLElement): Layout {
     </section>
     <section class="panel panel-code" id="panel-code">
       <div class="code-part" id="code-part"></div>
+      <div class="code-split"></div>
       <div class="guide-part"></div>
     </section>
   `;
   const panels = [...root.querySelectorAll<HTMLElement>('.panel')];
   const codePanel = root.querySelector<HTMLElement>('#panel-code')!;
   const codePart = root.querySelector<HTMLElement>('#code-part')!;
+  const codeSplit = root.querySelector<HTMLElement>('.code-split')!;
   const codeToggle = root.querySelector<HTMLButtonElement>('.code-toggle')!;
   const video = root.querySelector<HTMLVideoElement>('#cam')!;
   const canvas = root.querySelector<HTMLCanvasElement>('#overlay')!;
@@ -42,12 +45,15 @@ export function createLayout(root: HTMLElement): Layout {
   // Resizer leaves panels with the class it checks out of the row; no panel takes it, so all three stay.
   new Resize({ resizableElements: panels, resizerClassList: 'resize-handle', saveName: 'gibber-hands', classToCheck: 'panel-hidden' });
 
+  mountCodeGuideSplit(codePanel, codePart, codeSplit);
+
   let codeShown = true;
   function showCode(shown: boolean) {
     // The C key can hide the code under a focused Copy button: focus would fall back to the page.
     if (!shown && codePanel.contains(document.activeElement)) codeToggle.focus();
     codeShown = shown;
     codePart.hidden = !shown;
+    codeSplit.hidden = !shown;
     codeToggle.textContent = shown ? 'Hide code' : 'Show code';
     codeToggle.setAttribute('aria-expanded', String(shown));
   }

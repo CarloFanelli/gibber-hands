@@ -4,4 +4,4 @@
 02-octave-down-sign: DONE
 03-slider-octave-choice: DONE
 04-gesture-guide: DONE
-05-code-guide-divider: TODO
+05-code-guide-divider: DONE

@@ -45,3 +45,7 @@ The divider looks and works like the bars between panels: drag, arrow keys, size
 - Browser storage blocked, or the saved split unreadable → half and half; dragging still works, for that visit (REQ-14)
 - Code hidden → the guide fills the panel and the divider hides (REQ-15)
 - Code shown again → the split returns where it was (REQ-15)
+
+## Notes from implementation
+
+- **Known limitation**: AC 3 is checked from what the page tells assistive tools, not with a screen reader: in headless Chromium the divider is a horizontal separator named "Resize code and gesture guide", with the code's share from 0 to 100 as its position, updated on every move. A finger drag was checked with emulated touch, not on a phone. /dev, 2026-11-05.

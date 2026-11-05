@@ -71,12 +71,23 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 .audio-toggle.prominent, .retry.prominent { min-height: 88px; font-size: 20px; box-shadow: 0 0 0 3px rgb(125 211 252 / 0.35); }
 .retry.prominent { align-self: stretch; }
 .status-line { margin: 0; font-size: 13px; color: var(--muted); }
-/* The code panel: the live code above the gesture guide, half and half, each scrolling on its own; the guide
-   fills the panel while the code is hidden. The code's tools sit on top, the snippet scrolls under them,
-   wrapped so it never scrolls sideways. */
-.panel-code { display: flex; flex-direction: column; }
-/* A 50% basis, not 0: the guide's padding then comes out of its half instead of being added to it. */
-.code-part, .guide-part { flex: 1 1 50%; min-height: 0; }
+/* The code panel: the live code above the gesture guide, each scrolling on its own, split by the code's share
+   of the height (codeGuideSplit.ts); the guide fills the panel while the code is hidden. The code's tools
+   sit on top, the snippet scrolls under them, wrapped so it never scrolls sideways. */
+.panel-code { display: flex; flex-direction: column; container: code / size; --code-share: 0.5; }
+/* Percent bases that add up to 100%, not 0: the guide's padding then comes out of its share instead of being
+   added to it. */
+.code-part, .guide-part { min-height: 120px; }
+.code-part { flex: 1 1 calc(var(--code-share) * 100%); }
+.guide-part { flex: 1 1 calc((1 - var(--code-share)) * 100%); }
+/* As the bars between panels, turned on its side: no room taken, so the shares add up to 100%. */
+.code-split { position: relative; z-index: 1; flex: none; height: 6px; margin: -3px 0; background: #1f2937; cursor: row-resize; touch-action: none; }
+.code-split:hover { background: var(--accent); }
+/* Too short for 120 px each: no divider, half and half. */
+@container code (max-height: 239.98px) {
+  .code-split { display: none; }
+  .code-part, .guide-part { flex-basis: 50%; min-height: 0; }
+}
 .code-part { display: flex; flex-direction: column; }
 .guide-part { overflow-y: auto; padding: 16px; border-top: 1px solid #1f2937; font-size: 14px; }
 .guide-part h2 { margin: 0 0 8px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }

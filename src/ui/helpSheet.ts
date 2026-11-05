@@ -44,6 +44,7 @@ const CONTENT = `
     <dt><kbd>Esc</kbd></dt><dd>Close this help</dd>
     <dt><kbd>Tab</kbd></dt><dd>Move between controls; <kbd>Space</kbd> or <kbd>Enter</kbd> presses one</dd>
     <dt><kbd>←</kbd> <kbd>→</kbd></dt><dd>Move the bar between panels that has focus</dd>
+    <dt><kbd>↑</kbd> <kbd>↓</kbd></dt><dd>Move the divider between the code and the gesture guide, once it has focus</dd>
   </dl>
   <h3>Mouse and touch</h3>
   <dl>
@@ -54,6 +55,7 @@ const CONTENT = `
     <dt>Open gibber.cc</dt><dd>Opens the Gibber playground in a new tab, to paste the code and run it</dd>
     <dt>Selecting the code</dt><dd>Keeps it still until you click elsewhere</dd>
     <dt>The bars between panels</dt><dd>Drag to resize the panels; the sizes are remembered</dd>
+    <dt>The divider between code and guide</dt><dd>Drag to share the panel between the code and the gesture guide; the split is remembered</dd>
     <dt>Sliders, without a camera</dt><dd>Stand in for your hand: palm center, pinches and gesture; the Octave choice (Down, Normal, Up) and the reverb or echo amount stand in for the second hand in shape mode</dd>
   </dl>
 `;
