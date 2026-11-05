@@ -3,7 +3,7 @@ feature: note-range
 version: 1.1
 status: approved
 base: 552abfe58e22dffc0022d42a48be36e324c09ead
-completed: false
+completed: true
 ---
 
 # Note range

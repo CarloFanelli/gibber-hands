@@ -1,14 +1,14 @@
 ---
 feature: note-range
-status: DRAFT
+status: APPROVED
 reviewed: 2026-11-05
 head: 552abfe58e22dffc0022d42a48be36e324c09ead
 ---
 
 # Review — note-range
 
-**Scope**: 26 files (Fallback B — the file lists of the note-range plan, plus `src/mapping/notes.ts`, `src/ui/liveCode.ts` and `test/shortcuts.test.ts`, which /dev also touched). The diff since base `552abfe5` lists 47 files, mostly two-hand play work that is still uncommitted and was reviewed on its own, and the spec was never committed, so there are no feature-window commits. 25 workflow artifacts under `.ai/` excluded.
-**Findings**: 0 must-fix · 1 should-fix · 1 nit
+**Scope**: re-verification of 2 files changed since the review of `552abfe5` (`src/ui/gestureGuide.ts`, `src/ui/overlay.ts`). Nothing is committed yet, so the script's delta lists all 47 files of the base diff again; the other note-range files are unchanged since the first pass read them in full (26 files from the plan's file lists). 26 workflow artifacts under `.ai/` excluded.
+**Findings**: 0 must-fix · 0 should-fix · 0 nit
 
 ## Findings
 
