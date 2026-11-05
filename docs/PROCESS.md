@@ -114,8 +114,45 @@ All four were written in one session, through one interview per milestone.
 - **Decided by me:** `main` stays the main branch, with one branch and one pull request per milestone. I considered a `dev` branch and dropped it, because the deploy workflow and the launch spec already build on `main`.
 - **Still to check before merging:** 25 fps on both laptops, and the middle pinch at 80 cm with a real hand.
 
-### M2 — Sound
-- …
+### M2 — Sound (2026-11-03)
+
+- **Plan:** the agent split the [spec](../.ai/features/hand-to-sound/SPEC.md) into three tasks: squeeze to play (start, stop and volume), note lanes and brightness, and the live-code snippet. I approved the tasks and the technical plan, with two answers to questions it raised:
+  - The darkest brightness stays at 200 Hz. The spec gave the wrong reason for it ("the cutoff stays above the note"), since the lowest note, A3, is 220 Hz. The note is still clearly audible, about 4 dB quieter, and the task now says so.
+  - The placeholder preset buttons are gone until milestone 3, so the instrument panel shows only Start audio.
+- **The technical plan read Gibber's source before any code was written** and found four traps in version 2.1.4:
+  - The package's main file has no start function, but the prebuilt bundle has one. The setup check had only built Gibber, never run it.
+  - Gibber builds its audio on the next click or key press after starting, so it misses the click that started it. The engine now sends that event itself.
+  - A sound worklet that fails to load hangs the start forever. The engine now downloads it first, with a timeout.
+  - Every setting change is an instant jump, which clicks. The voice is a custom instrument whose pitch and brightness glide sample by sample.
+- **Implementation in autopilot.** I stopped it after task 1, then let it finish tasks 2 and 3.
+- **Changed from the plan by the agent,** recorded in the task notes:
+  - The volume is a browser audio gain placed after the reverb, not a glide inside Gibber. Silence then cuts the reverb tail too.
+  - The snippet doesn't use Gibber's stock Synth, which the plan suggested. Its envelope also scales the volume and the brightness, and at full sustain it plays silence. The snippet rebuilds the engine's chain instead: a sawtooth, the ladder filter, then the reverb.
+- **Found while building:**
+  - About one start in three was silent. Gibber's worklet could render once before it knew its output, and then stopped for good while still answering messages. The fix: a silent placeholder, sent the moment the worklet exists. After it, 12 of 12 starts in development and 5 of 5 in the production build played.
+  - Gibber's start hangs unless the library is also on `window`, because its music theory module looks for it there.
+  - Starting the audio adds about 460 MB to the tab, because Gibber reserves a fixed 20-minute sound buffer.
+  - The first test recorder dropped audio buffers, and the gaps sounded like clicks. The agent switched to recording inside an audio worklet.
+  - The agent's click measure couldn't detect zipper noise on the brightness, but spectrograms could. Instant steps leave one stripe each, and the 15 ms ramp leaves none.
+- **How it was checked:**
+  - 109 unit tests in all. They cover the volume curve, the fist, the lost hand, note lanes and their hysteresis, the brightness curve, states from the sliders, ramp times, engine failure reasons, the snippet and the throttle on the code panel.
+  - The agent drove headless Chromium through the sliders and checked:
+    - starting by mouse, keyboard and touch, and double clicks;
+    - the volume curve, the fist and Stop fades, and resume;
+    - the peak level: about −6 dBFS, against a −3 dBFS limit;
+    - a blocked or slow worklet download, and a browser without audio worklets;
+    - note glides, jumps while silent, and brightness sweeps.
+  - A snippet copied from the panel and run in a local copy of Gibber 2.1.4 matched the app's level within 0.03 dB.
+- **Review:**
+  - The first review found two minor issues. The code panel stayed blank until the camera and the hand model were ready, and no test locked the two tuned glide times. Both were fixed in one commit, and a re-check approved it.
+  - A second full review found nothing. It also compared the Gibber that the gibber.cc playground runs with 2.1.4. Everything the snippet uses behaves the same. The two differences, a reverb wrapper and a cap on resonance at 1, don't affect it.
+- **Backlog:** I approved one follow-up: cut the 460 MB that Gibber adds, which means patching its bundle.
+- **Still to check before merging:**
+  - listening for clicks;
+  - the lane highlight with a real hand;
+  - pasting a loud and a silent snippet into gibber.cc;
+  - 25 fps with audio on, on both laptops;
+  - Edge, Firefox and Safari.
 
 ### M3 — Instrument UI
 - …
