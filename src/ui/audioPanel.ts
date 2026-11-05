@@ -1,6 +1,6 @@
 /**
  * Instrument panel audio controls: the Start / Stop audio button, and why the audio engine couldn't start,
- * with Try again when retrying can help.
+ * with Try again when retrying can help. Until audio first starts, the button that starts it stands out.
  */
 import type { EngineStatus, SynthEngine } from '../synth/engine';
 import type { EngineFailure } from '../synth/engineFailure';
@@ -11,12 +11,18 @@ const FAILURE_TEXT: Record<Exclude<EngineFailure['reason'], 'other'>, string> = 
   network: "Audio engine couldn't load: network"
 };
 
+/** The class of the button that starts audio, until it first does: larger, with a ring. */
+const PROMINENT = 'prominent';
+
 export interface AudioPanel {
   show(status: EngineStatus): void;
+  /** Presses the button that starts or stops audio, Try again after a failure, if it can be pressed now. */
+  startOrStop(): void;
 }
 
 export function createAudioPanel(root: HTMLElement, engine: Pick<SynthEngine, 'start' | 'stop'>): AudioPanel {
   let current: EngineStatus = { kind: 'off' };
+  let started = false;
   const toggle = document.createElement('button');
   toggle.type = 'button';
   toggle.className = 'audio-toggle';
@@ -29,6 +35,9 @@ export function createAudioPanel(root: HTMLElement, engine: Pick<SynthEngine, 's
       // After a failure the card stays during the next attempt, its Try again disabled until it settles.
       const retrying = status.kind === 'starting' && current.kind === 'failed';
       current = status;
+      if (status.kind === 'on') started = true;
+      toggle.classList.toggle(PROMINENT, !started);
+      failure.retry.classList.toggle(PROMINENT, !started);
       failure.card.hidden = !(status.kind === 'failed' || retrying);
       toggle.hidden = !failure.card.hidden;
       toggle.disabled = status.kind === 'starting';
@@ -42,6 +51,10 @@ export function createAudioPanel(root: HTMLElement, engine: Pick<SynthEngine, 's
       } else if (retrying) {
         failure.retry.disabled = true;
       }
+    },
+    startOrStop() {
+      const button = failure.card.hidden ? toggle : failure.retry;
+      if (!button.hidden && !button.disabled) button.click();
     }
   };
 }

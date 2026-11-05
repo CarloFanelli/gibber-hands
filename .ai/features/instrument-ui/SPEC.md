@@ -2,7 +2,8 @@
 feature: instrument-ui
 version: 1.0
 status: approved
-completed: false
+base: b38d33763046b375d7bdf8ca3b23459229dbcb44
+completed: true
 ---
 
 # Instrument UI

@@ -1,7 +1,7 @@
 /** The parts of Gibber's prebuilt bundle the engine uses. The package ships no types. */
 declare module 'gibber.audio.lib/dist/gibber.audio.js' {
   /** A sound object living in the audio worklet: property writes and method calls are forwarded there. */
-  interface GibberishUgen {
+  export interface GibberishUgen {
     [property: string]: unknown;
     connect(target?: GibberishUgen): GibberishUgen;
   }
@@ -16,9 +16,15 @@ declare module 'gibber.audio.lib/dist/gibber.audio.js' {
         type: 'Ugen';
         properties: Record<string, number>;
         constructor: () => unknown;
-      }): () => GibberishUgen;
+      }): (props?: Record<string, number>) => GibberishUgen;
     };
-    fx: { Freeverb(props: Record<string, unknown>): GibberishUgen };
+    fx: {
+      Freeverb(props: Record<string, unknown>): GibberishUgen;
+      /** `time` in samples. */
+      Delay(props: Record<string, unknown>): GibberishUgen;
+    };
+    /** Sound objects that combine two others, sample by sample; a stereo one stays stereo. */
+    binops: { Mul(a: GibberishUgen, b: GibberishUgen): GibberishUgen };
   }
 
   interface Gibber {

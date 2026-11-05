@@ -154,8 +154,64 @@ All four were written in one session, through one interview per milestone.
   - 25 fps with audio on, on both laptops;
   - Edge, Firefox and Safari.
 
-### M3 — Instrument UI
-- …
+### M3 — Instrument UI (2026-11-03)
+
+- **Plan:** the agent split the [spec](../.ai/features/instrument-ui/SPEC.md) into six tasks: resizable panels, six presets, dragging a preset onto "Now playing", first-visit guidance, keyboard and help, and the code panel tools. I approved the tasks and the technical plan. The plan raised four gaps, and I took the recommended answer each time:
+  - Every preset uses only stock Gibber pieces (one oscillator, the ladder filter, a reverb or a delay), so the live-code snippet still runs at gibber.cc for all six.
+  - While a step hint says "Allow the camera" or "Raise your hand", the camera view's own message saying the same thing is hidden.
+  - Opening gibber.cc with the camera on hides this tab, so the hand counts as gone and the sound fades. Audio stays on and plays again on return.
+  - The bars between panels stay mouse-only. I changed this later (see below).
+- **The technical plan read the code first** and found five traps:
+  - The panels' CSS ignored the widths Resizer sets.
+  - Hiding the code panel made Resizer rescale the saved sizes by position. Camera and instrument would have got 67.5% and 37.5% of the row, 105% in all.
+  - Gibber reads a Delay's time in measures at 140 BPM, so the engine converts it the same way, or the snippet's echo would not match the app's.
+  - drag-kit fires a click on the card when a drag ends, which would pick the card even when it was dropped elsewhere.
+  - The code panel is rewritten up to 10 times a second, so a selection made to copy the code by hand would vanish while the hand moves. The panel now holds still while a selection touches it.
+- **Implementation in autopilot,** in two runs: tasks 1 to 5, then task 6. Every task passed the tests, the type check and the build before its commit.
+- **Decided by me during the work:** in task 5, the agent pointed out that the keyboard requirement covers every control, including the bars between panels. I reversed my planning answer and chose arrow keys. The copied Resizer got it as a ninth listed fix.
+- **Found while building:**
+  - Switching back to a resting preset replayed its old note from its reverb. In Warm Pad it was only 4.6 dB under the new note. Each resting preset now also closes its way into its effect, and what is left is 28 to 39 dB under the new note.
+  - Three drag-kit traps:
+    - In a grid, a dragged card jumped to the list's corner, so the cards sit in plain block flow.
+    - drag-kit's faded copy of the card painted on top of it, so a plain click on a card did nothing. The copy now ignores the mouse.
+    - Releasing a drag clicks the card, so a click after a move of more than 4 px is ignored.
+  - Grey text over a white background in the camera view had a contrast of 2.47:1. A darker backing brought it to 5.11:1, above the 4.5:1 the spec asks for.
+  - On phones the help sheet opened scrolled to the bottom, because its Close button came last. Close is now at the top.
+- **How it was checked:**
+  - 165 unit tests in all, up from 109. The new ones cover:
+    - the preset table and note frequencies;
+    - the mapping and the snippet for every preset;
+    - the step-hint order and the first second of sound;
+    - the status words, the shortcut keys, browser storage and the code colours.
+  - The agent drove headless Chromium through the sliders and a fake camera:
+    - Panels: resizing, the 160 px stop, a release outside the window, unreadable saved sizes, blocked storage, and the switch to stacked panels at 720 px.
+    - Sound: every preset peaks at −4.8 dBFS or lower, against a −3 dBFS limit. Average loudness is within 0.7 dB across the six at middle brightness, and within 2.9 dB at the brightest. After a switch, the old sound was 40 dB down within 64–93 ms, counting the message's trip to the audio worklet and the measuring window. No click was found at any switch.
+    - Keys 1, 2 and 3 pressed within 9 ms ended on preset 3.
+    - Each preset's snippet, run in Gibber 2.1.4, matched the app within 0.02 dB.
+    - Dragging with real mouse events, and tapping with touch emulated.
+    - The step hints with blocked storage, an unanswered camera prompt, a camera with no hand in view, an audio failure, a narrow camera view and reduced motion.
+    - Every shortcut, keys held down, the Tab order with its focus outlines, and the contrast of every text colour, computed.
+    - Copy, with the clipboard working, missing or refused, and the gibber.cc link opening a new tab that has no access back to this one.
+- **Review:**
+  - Four reviewer agents each read a different part of the code. The main agent checked every claim against the code and found no issue that needed fixing.
+  - It rejected four claims:
+    - a line break added at the end of one copied Resizer file;
+    - a line moved by one of the listed fixes;
+    - a removal that another listed fix already covers;
+    - two type names nothing imports, which the rest of the code also does.
+  - It noted a style rule nothing has used since milestone 1. I had it deleted.
+- **Backlog:** I approved four follow-ups, all small problems on phones and for mouse-only use:
+  - a visible Help button, since today only the "?" key opens the help sheet;
+  - the privacy note covering the sliders at phone width;
+  - "Hide code" out of sight below the presets when panels are stacked;
+  - the step hint covering the camera's status card on phones.
+- **Still to check before merging:**
+  - 25 fps on both laptops while resizing a panel with audio on;
+  - the six presets on real speakers: loudness was measured, not heard, and Deep Bass may sound quieter than it measures;
+  - three people who have never seen the app, of whom at least two must make a sound within 30 seconds without help;
+  - Edge, Firefox, Safari, a screen reader and a real touch screen;
+  - pasting a copied snippet into gibber.cc;
+  - opening gibber.cc while playing with a real hand.
 
 ### M4 — Ship
 - …

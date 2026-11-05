@@ -16,6 +16,8 @@ export function rampTimeConstant(ms: number): number {
 export const PITCH_SLIDE_MS = 40;
 /** Cutoff changes ramp over this long, in ms. Tuned by ear. */
 export const CUTOFF_RAMP_MS = 15;
+/** A preset switch crossfades the old and the new sound over this long, in ms. */
+export const CROSSFADE_MS = 60;
 
 /**
  * Length, in samples, of a Gibberish slide that comes within 1% of its target in `ms`. The slide moves

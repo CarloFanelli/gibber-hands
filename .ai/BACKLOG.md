@@ -31,3 +31,19 @@
 ### B-8 · open
 - **What**: Cut the memory that starting the audio adds to the tab, about 460 MB measured in headless Chromium. Gibber reserves a fixed 20-minute sound buffer on the page and in its audio worklet, and its start function can't make it smaller. A fix means patching or vendoring that part of Gibber's bundle.
 - **From**: hand-to-sound (dev task 01, 2026-11-02)
+
+### B-9 · open
+- **What**: A visible Help button that opens the help sheet. Today only the "?" key opens it, so phone users and people using only a mouse can't open it.
+- **From**: instrument-ui (dev task 05, 2026-11-03)
+
+### B-10 · open
+- **What**: At phone width, the "Video stays on your device" note in the corner of the camera panel covers the bottom of the sliders that replace the camera.
+- **From**: instrument-ui (dev task 02, 2026-11-03)
+
+### B-11 · open
+- **What**: When the panels are stacked (narrow window or phone), the "Hide code" button sits at the bottom of the instrument panel, below the six preset cards, so it is out of sight until that panel is scrolled.
+- **From**: instrument-ui (dev task 05, 2026-11-03)
+
+### B-12 · open
+- **What**: At phone width the camera panel is short, so the step hint at its top (for example "Start audio") sits over the camera's status card, such as "No camera found", and hides its Try again button. The button still works under it, but it can't be seen.
+- **From**: instrument-ui (dev task 06, 2026-11-03)

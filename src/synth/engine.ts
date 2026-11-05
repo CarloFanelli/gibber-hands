@@ -1,19 +1,22 @@
 /**
  * The audio engine, and the only file that imports Gibber.
  *
- * One voice built in Gibber's audio worklet (a sawtooth into a resonant low-pass filter, both gliding to
- * new settings), then Gibber's reverb at a fixed 30% mix, then the volume. The volume sits after the reverb, so silence silences the
- * reverb's tail too. It is a Web Audio gain with exponential ramps: Gibber itself changes a setting in
- * one jump, which clicks.
+ * One voice per preset, built in Gibber's audio worklet: its oscillator into a resonant low-pass filter,
+ * both gliding to new settings, then the preset's reverb or delay, then the preset's level. Only the
+ * current preset's level is up; a switch glides one down and the other up, a crossfade that also ends the
+ * old preset's echoes. A resting voice still runs, so its way into the effect closes too: otherwise the
+ * effect would fill with its old note and replay it when the preset comes back. After all of them comes
+ * the volume, so silence silences every tail too. It is a Web Audio gain with exponential ramps: Gibber
+ * itself changes a setting in one jump, which clicks.
  *
  * Browsers allow audio only from a user gesture: start() must be called from the click handler.
  */
-import Gibber, { type Gibberish } from 'gibber.audio.lib/dist/gibber.audio.js';
+import Gibber, { type Gibberish, type GibberishUgen } from 'gibber.audio.lib/dist/gibber.audio.js';
 import workletUrl from 'gibber.audio.lib/dist/gibberish_worklet.js?url';
 import type { SynthParams } from '../mapping/handToSynth';
 import { EngineDownloadError, audioSupported, engineFailure, type EngineFailure } from './engineFailure';
-import { CUTOFF_RAMP_MS, PITCH_SLIDE_MS, TOGGLE_RAMP_MS, rampTimeConstant, slideSamples } from './ramp';
-import { FULL_VOLUME, RESONANCE, REVERB } from './sound';
+import { CROSSFADE_MS, CUTOFF_RAMP_MS, PITCH_SLIDE_MS, TOGGLE_RAMP_MS, rampTimeConstant, slideSamples } from './ramp';
+import { PRESETS, delaySamples, reverbMix, type Oscillator, type Preset } from './presets';
 
 export type EngineStatus = { kind: 'off' | 'starting' | 'on' } | { kind: 'failed'; failure: EngineFailure };
 
@@ -26,6 +29,8 @@ export interface SynthEngine {
   stop(): void;
   /** The sound the hand asks for, heard while the engine is on. */
   update(p: SynthParams): void;
+  /** Crossfades to preset `index` (a PRESETS index), or starts on it if the engine isn't running yet. */
+  setPreset(index: number): void;
 }
 
 /** A stalled download of the sound worklet counts as failed after this long. */
@@ -33,33 +38,45 @@ const DOWNLOAD_TIMEOUT_MS = 15_000;
 /** Gibber's start reports no errors: one that takes longer than this has failed. */
 const INIT_TIMEOUT_MS = 10_000;
 
-/** The worklet's global Gibberish, as voiceGraph sees it. */
+/** The worklet's global Gibberish, as the graphs below see it. */
 declare const Gibberish: {
   genish: { in(name: string): unknown; slide(input: unknown, up: unknown, down: unknown): unknown };
-  oscillators: { factory(type: 'saw', frequency: unknown, antialias: boolean): unknown };
+  oscillators: { factory(shape: Oscillator['shape'], frequency: unknown, antialias: boolean): unknown };
   filters: { factory(input: unknown, cutoff: unknown, saturation: number, props: { filterModel: number }): unknown };
 };
 
 /**
- * The voice's graph. Its source text is sent to the audio worklet and run there, so it can use only the
- * worklet's globals: every setting the engine changes comes in as a named input.
+ * A voice's graph. Its source text is sent to the audio worklet and run there, so it can use only the
+ * worklet's globals and its argument: every setting the engine changes comes in as a named input.
  */
-function voiceGraph() {
+function voiceGraph(shape: Oscillator['shape']) {
   const g = Gibberish.genish;
   // A setting glides to each new value over its `…Slide` input, a length in samples (1 jumps at once).
   const glide = (name: string) => {
     const samples = g.in(name + 'Slide');
     return g.slide(g.in(name), samples, samples);
   };
-  const saw = Gibberish.oscillators.factory('saw', glide('frequency'), false);
+  // Only the pulse wave is antialiased: the plain one swings 0..1, and its offset would thump with the volume.
+  const oscillator = Gibberish.oscillators.factory(shape, glide('frequency'), shape === 'pwm');
   // Filter model 1 is Gibberish's 24 dB ladder (Moog) filter, as in its stock Synth. Its resonance is the
   // `Q` input, and its cutoff a fraction of the Nyquist frequency.
-  return Gibberish.filters.factory(saw, glide('cutoff'), 0, { filterModel: 1 });
+  return Gibberish.filters.factory(oscillator, glide('cutoff'), 0, { filterModel: 1 });
+}
+
+/**
+ * A level that glides to each new value like the voice's settings: a voice's way into its effect, or a
+ * preset's output. Runs in the worklet too.
+ */
+function levelGraph() {
+  const g = Gibberish.genish;
+  const samples = g.in('levelSlide');
+  return g.slide(g.in('level'), samples, samples);
 }
 
 interface Engine {
-  /** Moves the sound to `p` (silence when null), the volume ramping over `rampMs`. */
+  /** Moves the current preset's sound to `p` (silence when null), the volume ramping over `rampMs`. */
   play(p: SynthParams | null, rampMs: number): void;
+  setPreset(index: number): void;
 }
 
 export function createSynth(): SynthEngine {
@@ -67,6 +84,7 @@ export function createSynth(): SynthEngine {
   let listener: ((s: EngineStatus) => void) | null = null;
   let engine: Engine | null = null;
   let wanted: SynthParams | null = null;
+  let preset = 0;
 
   function setStatus(s: EngineStatus) {
     status = s;
@@ -98,9 +116,11 @@ export function createSynth(): SynthEngine {
         return;
       }
       setStatus({ kind: 'starting' });
-      bootEngine(ctx).then(
+      bootEngine(ctx, preset).then(
         (booted) => {
           engine = booted;
+          // A preset picked while the engine started.
+          booted.setPreset(preset);
           booted.play(wanted, TOGGLE_RAMP_MS);
           setStatus({ kind: 'on' });
         },
@@ -118,11 +138,15 @@ export function createSynth(): SynthEngine {
     update(p) {
       wanted = p;
       if (status.kind === 'on') engine?.play(p, p.ampRampMs);
+    },
+    setPreset(index) {
+      preset = index;
+      engine?.setPreset(index);
     }
   };
 }
 
-async function bootEngine(ctx: AudioContext): Promise<Engine> {
+async function bootEngine(ctx: AudioContext, initialPreset: number): Promise<Engine> {
   const workletPath = await download(workletUrl);
   // Gibber's music theory module reads the library from window.Gibber, where a <script> tag would put it.
   Object.assign(window, { Gibber });
@@ -139,41 +163,102 @@ async function bootEngine(ctx: AudioContext): Promise<Engine> {
   G.worklet.disconnect();
   G.worklet.connect(volume).connect(ctx.destination);
 
-  const Voice = G.utilities.Make({
-    name: 'HandVoice',
+  const rate = ctx.sampleRate;
+  // Make runs a graph's constructor from its source text, without arguments: one per shape, the shape baked in.
+  const voiceTypes = new Map<Oscillator['shape'], ReturnType<typeof G.utilities.Make>>();
+  const voiceType = (oscillator: Oscillator) => {
+    const known = voiceTypes.get(oscillator.shape);
+    if (known) return known;
+    const made = G.utilities.Make({
+      name: `HandVoice_${oscillator.shape}`,
+      type: 'Ugen',
+      properties: {
+        frequency: 440,
+        frequencySlide: 1,
+        cutoff: 0.05,
+        cutoffSlide: 1,
+        Q: 0.5,
+        ...pulseWidth(oscillator)
+      },
+      constructor: new Function(`return (${voiceGraph})(${JSON.stringify(oscillator.shape)})`) as () => unknown
+    });
+    voiceTypes.set(oscillator.shape, made);
+    return made;
+  };
+  const Level = G.utilities.Make({
+    name: 'PresetLevel',
     type: 'Ugen',
-    properties: {
-      frequency: 440,
-      frequencySlide: 1,
-      cutoff: 0.05,
-      cutoffSlide: slideSamples(CUTOFF_RAMP_MS, ctx.sampleRate),
-      Q: RESONANCE
-    },
-    constructor: voiceGraph
+    properties: { level: 0, levelSlide: slideSamples(CROSSFADE_MS, rate) },
+    constructor: levelGraph
   });
-  const voice = Voice();
-  G.fx.Freeverb({ input: voice, ...REVERB }).connect();
 
-  const nyquist = ctx.sampleRate / 2;
-  let sent = { frequency: NaN, cutoff: NaN, amp: NaN, rampMs: NaN };
+  const voices = PRESETS.map((preset) => {
+    const sound = voiceType(preset.oscillator)({ Q: preset.resonance, ...pulseWidth(preset.oscillator) });
+    const send = Level();
+    const level = Level();
+    G.binops.Mul(effect(G, preset, G.binops.Mul(sound, send), rate), level).connect();
+    // What was last sent to this voice; NaN until it plays, so its first note and brightness jump.
+    return { preset, sound, send, level, frequency: NaN, cutoff: NaN, rising: false };
+  });
+
+  const nyquist = rate / 2;
+  let active = voices[initialPreset]!;
+  active.rising = true;
+  let sent = { amp: NaN, rampMs: NaN };
   return {
     play(p, rampMs) {
       const amp = p ? p.amp : 0;
-      if (p && p.frequency !== sent.frequency) {
+      if (p && p.frequency !== active.frequency) {
         // Only a note being heard slides to the next one. From silence (fingers apart, Stop, the first
-        // start), the new note starts at once instead of gliding in from the old one.
-        voice.frequencySlide = slideSamples(sent.amp > 0 ? PITCH_SLIDE_MS : 0, ctx.sampleRate);
-        voice.frequency = p.frequency;
+        // start), and on the voice a preset switch brings in, the new note starts at once instead of
+        // gliding in from an old one.
+        const heard = sent.amp > 0 && !Number.isNaN(active.frequency);
+        active.sound.frequencySlide = slideSamples(heard ? PITCH_SLIDE_MS : 0, rate);
+        active.sound.frequency = p.frequency;
+        active.frequency = p.frequency;
       }
-      if (p && p.cutoff !== sent.cutoff) voice.cutoff = p.cutoff / nyquist;
+      if (p && p.cutoff !== active.cutoff) {
+        active.sound.cutoffSlide = slideSamples(Number.isNaN(active.cutoff) ? 0 : CUTOFF_RAMP_MS, rate);
+        active.sound.cutoff = p.cutoff / nyquist;
+        active.cutoff = p.cutoff;
+      }
+      if (p && active.rising) {
+        // Only now, after its note and brightness: the worklet may render between two messages, and a
+        // level sent first would let the voice's old note through for one block.
+        active.send.level = 1;
+        active.level.level = active.preset.gain;
+        active.rising = false;
+      }
       if (amp !== sent.amp || rampMs !== sent.rampMs) {
         const now = ctx.currentTime;
         volume.gain.cancelScheduledValues(now);
-        volume.gain.setTargetAtTime(amp * FULL_VOLUME, now, rampTimeConstant(rampMs));
+        volume.gain.setTargetAtTime(amp, now, rampTimeConstant(rampMs));
       }
-      sent = { frequency: p?.frequency ?? sent.frequency, cutoff: p?.cutoff ?? sent.cutoff, amp, rampMs };
+      sent = { amp, rampMs };
+    },
+    setPreset(index) {
+      const next = voices[index]!;
+      if (next === active) return;
+      active.send.level = active.level.level = 0;
+      active.rising = false;
+      next.frequency = next.cutoff = NaN;
+      next.rising = true;
+      active = next;
     }
   };
+}
+
+/** The pulse wave's width setting; other shapes have none. */
+function pulseWidth(oscillator: Oscillator): Record<string, number> {
+  return oscillator.shape === 'pwm' ? { pulsewidth: oscillator.pulsewidth } : {};
+}
+
+/** The preset's reverb or delay, taking `input`. */
+function effect(G: Gibberish, preset: Preset, input: GibberishUgen, sampleRate: number): GibberishUgen {
+  const fx = preset.effect;
+  return fx.kind === 'reverb'
+    ? G.fx.Freeverb({ input, ...reverbMix(fx.mix) })
+    : G.fx.Delay({ input, time: delaySamples(fx.measures, sampleRate), feedback: fx.feedback, wetdry: fx.mix });
 }
 
 /**
