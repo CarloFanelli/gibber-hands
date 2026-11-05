@@ -34,3 +34,8 @@ The live code is the project's bridge to Gibber: what plays should be what the v
 - Loop stopped, or muted → the live code leaves the drums out (REQ-17)
 - Loop muted → the live code leaves the drums out but still sets the tempo, so the pasted echo keeps the app's timing (REQ-14, REQ-17 · from code)
 - Snippet copied with Hip-hop at 2 layers → pasted at gibber.cc, it plays kick and snare at 90 BPM, with the notes over it (REQ-17)
+
+## Notes from implementation
+
+- **Known limitation**: pasted at gibber.cc, one drum can start a few milliseconds after the others. Gibber starts each drum's sequence when its line reaches the audio thread, and has no stock call to start several together. The snippet builds every drum before starting any; on the app's own Gibber 2.1.4, in a busy headless browser, that kept all drums within 4 samples of each other in 5 runs of 6, and in the sixth the snare and hi-hats came 9 ms after the kick. /dev, 2026-11-05.
+- **Known limitation**: the paste at gibber.cc itself is still a manual check, as for the voices. The drum code was run on the app's own Gibber 2.1.4, where every pattern at the layers tried played the app's steps and loudness at the right tempo; that build lacks gibber.cc's editor, which gives arrays the `addPattern` method Gibber's sequences call, so the check stood it in with an empty one. /dev, 2026-11-05.

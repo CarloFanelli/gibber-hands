@@ -115,8 +115,14 @@ function boot() {
   const gestures = createGestureGuide(ui.guide, lead);
   const showCode = throttle(({ sounds, effect }: Played) => {
     const hands = roles(sounds, lead);
-    liveCode.show(gibberSnippet([hands.lead, hands.second], PRESETS[preset]!, effect));
+    const codeDrums = drums.playing && heard ? { ...heard, muted: drums.muted } : null;
+    liveCode.show(gibberSnippet([hands.lead, hands.second], PRESETS[preset]!, effect, codeDrums));
   }, LIVE_CODE_PERIOD_MS);
+  let lastPlayed: Played | null = null;
+  /** Shows the live code again for a drum loop change, which comes with no hand pair. */
+  const showDrumsCode = () => {
+    if (lastPlayed) showCode(lastPlayed);
+  };
 
   // Hand pairs start only once tracking or the sliders run: until then, no hand plays silence.
   let pair: HandPair = emptyPair(0);
@@ -167,6 +173,7 @@ function boot() {
     sliders?.showNote(leading.lane === null ? null : raiseOctave(lanes[leading.lane]!.name, octave));
     const played = { sounds: next, effect: effectAmount(pair[secondSide].state, shaping, presetEffect.mix) };
     synth.update(next, played.effect);
+    lastPlayed = played;
     showCode(played);
     guide();
     return played;
@@ -221,8 +228,11 @@ function boot() {
     guide();
   });
   synth.onDrums((next) => {
+    // A report still on its way as audio or the loop stops is no longer heard.
+    if (engineStatus.kind !== 'on' || !drums.playing) return;
     heard = next;
     drumPanel.show(drums, heard, engineStatus);
+    showDrumsCode();
   });
   /** Plays `next`, unless the audio engine has failed, and shows it. */
   function useDrums(next: DrumLoop) {
@@ -233,6 +243,7 @@ function boot() {
     }
     drumPanel.show(drums, heard, engineStatus);
     synth.setDrums(drums.playing ? drums : null);
+    showDrumsCode();
   }
 
   function selectPreset(index: number) {
