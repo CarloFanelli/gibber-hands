@@ -1,6 +1,6 @@
 ---
 feature: launch
-version: 1.0
+version: 1.1
 status: approved
 completed: false
 ---
@@ -9,7 +9,7 @@ completed: false
 
 ## Overview
 
-This milestone ships gibber-hands. GitHub Actions deploys the site to GitHub Pages on every push to main, and only when typecheck, tests and build pass. On the live site, the targets of the three earlier specs are measured again in four desktop browsers. The README opens with a silent 5-second GIF of a hand playing, shows the final controls and links the live demo. It also adds a "New in gibber-hands" list next to the pre-AI toolbox. Shared links get a title, a description and a preview image, and nothing is tracked. PROCESS.md closes with a log entry per milestone and the three decisions Carlo didn't delegate.
+This milestone ships gibber-hands. GitHub Actions deploys the site to GitHub Pages on every push to main, and only when typecheck, tests and build pass. A pull request runs the same checks and can't merge until they pass. On the live site, the targets of the three earlier specs are measured again in four desktop browsers. The README opens with a silent 5-second GIF of a hand playing, shows the final controls and links the live demo. It also adds a "New in gibber-hands" list next to the pre-AI toolbox. Shared links get a title, a description and a preview image, and nothing is tracked. PROCESS.md closes with a log entry per milestone and the three decisions Carlo didn't delegate.
 
 ## Project Context
 
@@ -19,6 +19,7 @@ This milestone ships gibber-hands. GitHub Actions deploys the site to GitHub Pag
 - The camera needs HTTPS, which github.io provides.
 - The GIF and the preview still need Carlo's hand and camera, so Carlo records them.
 - Changes visible outside the repo (enabling Pages, editing the About box) happen with Carlo's go-ahead at that moment.
+- Version 1.1 adds the pull-request check and records the rules on main that Carlo asked for: he pushes to main directly, everyone else opens a pull request.
 
 ## Functional Requirements
 
@@ -27,6 +28,8 @@ This milestone ships gibber-hands. GitHub Actions deploys the site to GitHub Pag
 - REQ-1: The site is published at https://carlofanelli.github.io/gibber-hands/ over HTTPS, deployed by GitHub Actions from main.
 - REQ-2: Every push to main runs typecheck, tests and build; the site deploys only if all three pass.
 - REQ-3: A failed run leaves the previously deployed site live and unchanged.
+- REQ-12: A pull request to main runs typecheck, tests and build, and GitHub refuses to merge it until all three pass. A pull request never deploys.
+- REQ-13: Only Carlo pushes to main directly; anyone else changes it through a pull request. Nobody can force-push to main or delete it.
 - REQ-4: On the live site, milestone 1–3 requirements are re-checked in current desktop Chrome, Edge, Firefox and Safari, results logged in PROCESS.md.
 
 ### README
@@ -72,6 +75,12 @@ This milestone ships gibber-hands. GitHub Actions deploys the site to GitHub Pag
 | Two pushes in quick succession | The older run is cancelled; the newer one deploys | REQ-2 |
 | A test fails | No deploy; the previous version stays live; the failed run is visible in Actions | REQ-3 |
 | GitHub Actions outage | Site unchanged until a later run succeeds | REQ-3 |
+| Pull request from a fork | The check runs with read-only access and deploys nothing | REQ-12 |
+| A pull request's check fails | GitHub refuses the merge; the live site stays as it is | REQ-12 |
+| New push to an open pull request | Its older check is cancelled; a deploy in progress is not | REQ-12 |
+| Check required before the workflow runs on pull requests | Every pull request would wait forever, so GitHub requires the check only once the workflow change is on main | REQ-12 |
+| Carlo pushes to main directly | Allowed, flagged by GitHub as a bypassed rule; the push deploys as before | REQ-13 |
+| Force-push or deletion of main, by anyone | Refused; a history rewrite first needs Carlo to switch that rule off | REQ-13 |
 | A browser fails a check | Fixed before launch, or listed under "Known limitations" in the README with what fails | REQ-4 |
 | Machine without a camera | The slider path is checked instead | REQ-4 |
 | GIF over 4 MB | Re-encoded (fewer colours or frames) before commit | REQ-5 |
