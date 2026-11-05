@@ -84,8 +84,35 @@ All four were written in one session, through one interview per milestone.
   - editable live code;
   - picking presets with the hand.
 
-### M1 — Tracking
-- …
+### M1 — Tracking (2026-11-02)
+
+- **Plan:** the agent split the [spec](../.ai/features/hand-tracking/SPEC.md) into five tasks: camera view, hand model loading, tracked-hand overlay, pinch and gestures, slider fallback. I approved the tasks and the technical plan without changes.
+- **Gaps the technical plan found in the spec.** I took the recommended answer both times:
+  - Switching to another tab stops the video frames. The hand now counts as gone at once, so in milestone 2 a held note can't keep sounding in a background tab.
+  - If the camera stops mid-session (unplugged, or taken by another app), the sliders appear, as they do when the camera fails on page load.
+- **Proposed and accepted:** a One Euro filter for the palm center instead of the skeleton's moving average. An average steady enough for the 0.3% target lags two frames or more. On synthetic noise the filter halves still-hand jitter (standard deviation 0.0047 → 0.0022) and lags half a frame or less.
+- **Implementation in autopilot.** The agent ran its own checks and committed each task without waiting for my approval. I reviewed the milestone as a whole at the end.
+- **How it was checked:**
+  - Unit tests cover every piece that needs no browser: camera errors, model failures, palm center, pinch, presence, smoothing, gesture debounce, sliders and startup. There are 71 in all.
+  - In the browser, the agent drove headless Chromium with a fake camera that showed MediaPipe's own sample hand photos to the real model.
+  - It tried every failure: camera blocked and then allowed, each model file blocked, a corrupt model, offline, a tab switch, camera loss, and phone width.
+  - The model recognised thumb up (69%), pointing up (85%), closed fist (92%) and victory (77–80%).
+- **Found while building:**
+  - The browser test caught a bug the unit tests missed. The code reset the gesture on every new hand, not only when the hand was gone as the plan said. Below about 7 fps every frame counts as a new hand, so no gesture was ever confirmed.
+  - At phone width, Try again was 35 px tall (now 44), and the "Video stays on your device" line covered the gesture menu.
+  - This environment emulates graphics in software. MediaPipe took about 450 ms per frame on that path against 50 ms on the processor, so tracking ran at 2–3 fps. The 25 fps target has to be measured by hand.
+  - On a half-size photo the middle pinch moved 20%, more than the 15% allowed between 40 and 80 cm. The formula doesn't depend on hand size, so this is landmark noise on a small hand. It needs a check with a real hand.
+  - A stall in MediaPipe's runtime files can't be detected, because its loader reports no progress. A failed download is still reported, with the file name.
+- **Backlog:** I approved two follow-ups:
+  - run tracking on the processor when graphics are emulated in software;
+  - steady the middle pinch if the real-hand check fails.
+- **Review:**
+  - Three reviewer agents each read a different part of the code. The main agent checked every claim against the code before writing it down.
+  - It kept five findings. The one that mattered: the logic choosing between camera and sliders had no test. The other four were minor.
+  - It rejected two claims. One called a version constant unused, but a test imports it. The other wanted the gesture reset after a gap in frames, which would break gestures again below 7 fps.
+  - All five were fixed in one commit, and a second review approved it.
+- **Decided by me:** `main` stays the main branch, with one branch and one pull request per milestone. I considered a `dev` branch and dropped it, because the deploy workflow and the launch spec already build on `main`.
+- **Still to check before merging:** 25 fps on both laptops, and the middle pinch at 80 cm with a real hand.
 
 ### M2 — Sound
 - …

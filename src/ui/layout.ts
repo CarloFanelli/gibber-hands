@@ -9,14 +9,12 @@
  *  - keyboard shortcuts: 1–6 select preset, M mute, Space hold, ? shows the shortcut sheet
  *  - mobile: panels stack vertically; camera panel shows sliders when no webcam
  */
-import type { HandState } from '../hands/types';
 import type { Preset } from '../synth/presets';
 
 export interface Layout {
-  camera: { root: HTMLElement; video: HTMLVideoElement; canvas: HTMLCanvasElement };
+  camera: { root: HTMLElement; video: HTMLVideoElement; canvas: HTMLCanvasElement; status: HTMLElement };
   presets: { render(list: Preset[], onPick: (p: Preset) => void): void };
   liveCode: { show(code: string): void };
-  overlay: { draw(s: HandState): void };
 }
 
 export function createLayout(root: HTMLElement): Layout {
@@ -24,6 +22,8 @@ export function createLayout(root: HTMLElement): Layout {
     <section class="panel panel-camera" id="panel-camera">
       <video id="cam" playsinline muted></video>
       <canvas id="overlay"></canvas>
+      <div class="camera-status" id="camera-status"></div>
+      <p class="camera-privacy">Video stays on your device</p>
     </section>
     <section class="panel panel-instrument" id="panel-instrument">
       <button id="start">Start audio</button>
@@ -39,7 +39,7 @@ export function createLayout(root: HTMLElement): Layout {
   const codeEl = root.querySelector<HTMLElement>('#livecode')!;
 
   return {
-    camera: { root: root.querySelector('#panel-camera')!, video, canvas },
+    camera: { root: root.querySelector('#panel-camera')!, video, canvas, status: root.querySelector('#camera-status')! },
     presets: {
       render(list, onPick) {
         presetsEl.innerHTML = '';
@@ -52,12 +52,6 @@ export function createLayout(root: HTMLElement): Layout {
         }
       }
     },
-    liveCode: { show: (code) => { codeEl.textContent = code; } },
-    overlay: {
-      draw(s) {
-        // TODO (milestone 1): draw landmarks + gesture label on `canvas`, mirrored like the video.
-        void s;
-      }
-    }
+    liveCode: { show: (code) => { codeEl.textContent = code; } }
   };
 }

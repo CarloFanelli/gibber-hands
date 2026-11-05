@@ -19,3 +19,11 @@
 ### B-5 · open
 - **What**: Pick a preset with the hand: hover it with the palm and squeeze to grab it, using drag-kit's geometric hit-testing.
 - **From**: instrument-ui (interview, 2026-11-02)
+
+### B-6 · open
+- **What**: When the browser only has software-emulated graphics (no real graphics card, e.g. in a virtual machine), run hand tracking on the processor: measured on the i5-1240P under headless Chromium, about 50 ms per frame against 450 ms.
+- **From**: hand-tracking (dev task 03, 2026-11-02)
+
+### B-7 · open
+- **What**: If the middle pinch varies by more than 15% between 40 cm and 80 cm with a real hand, measure hand size from several palm segments instead of one, so small, distant hands give steadier values.
+- **From**: hand-tracking (dev task 04, 2026-11-02)
