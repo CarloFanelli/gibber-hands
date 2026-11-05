@@ -1,14 +1,14 @@
 ---
 feature: drum-loop
-status: DRAFT
+status: APPROVED
 reviewed: 2026-11-05
-head: 2b46b6cd04192b8143d0ead84b59702f95f7e874
+head: 1e81e668588bd52571b7ce7e171645dfa67ac118
 ---
 
 # Review — drum-loop
 
-**Scope**: 28 files (fallback A — commits since the drum-loop spec was added, `0cb422b`; the diff since base `552abfe5` was rejected: 55 files, mostly the two-hand-play and note-range work that shares that base; 13 workflow artifacts under `.ai/` excluded)
-**Findings**: 0 must-fix · 0 should-fix · 3 nit
+**Scope**: 5 files (delta since the review of `2b46b6cd`; 1 workflow artifact under `.ai/` excluded)
+**Findings**: 0 must-fix · 0 should-fix · 0 nit
 
 ## Findings
 
