@@ -1,0 +1,7 @@
+# Task Progress - note-range
+
+01-more-note-lanes: DONE
+02-octave-down-sign: DONE
+03-slider-octave-choice: DONE
+04-gesture-guide: DONE
+05-code-guide-divider: DONE

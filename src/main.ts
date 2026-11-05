@@ -12,34 +12,38 @@
  * A HandPair holds a HandState per side, right and left, and each hand plays its own note: the engine
  * has a voice per side. mapping/roles says which side is the lead hand, and ui/leadHandSwitch swaps the
  * roles, remembered in browser storage. mapping/shape follows the second hand: a Victory sign switches it
- * to shape mode, where it plays no note, its squeeze raises every note an octave and its height sets the
- * reverb or echo amount.
+ * to shape mode, where it plays no note, its squeeze raises every note an octave, its thumbs-down lowers
+ * them one and its height sets the reverb or echo amount.
  *
  * The "no camera" path uses ui/sliders to produce the same HandPair shape, with the sliders as the lead
  * hand and their shape controls as the second hand, always in shape mode, so everything downstream works
  * identically on a phone.
  *
  * ui/presetList picks the preset: its notes go to the mapping and the overlay, its sound to the engine
- * and the live code. The choice is remembered in browser storage.
+ * and the live code. The choice is remembered in browser storage. ui/zoneWidth measures the camera picture
+ * on screen: the wider it is, the more of the preset's notes the note lanes play (mapping's laneCount).
  *
  * A first visit is guided: ui/statusLine says what is on, and ui/stepHints shows the next step over the
  * camera view until a first sound has lasted a second, then teaches the second hand's Victory switch until
  * it first switches. Browser storage remembers both.
  *
- * ui/shortcuts maps keys to the same actions as the controls: presets, audio, the code panel and ui/helpSheet.
+ * ui/gestureGuide lists every gesture below the live code, naming the hands by their roles.
+ *
+ * ui/shortcuts maps keys to the same actions as the controls: presets, audio, the live code and ui/helpSheet.
  */
 import { createStartup, type StartupStatus } from './hands/startup';
 import { SIDES, emptyPair, type HandPair, type Side } from './hands/types';
-import { mapHandToSynth, type SynthParams } from './mapping/handToSynth';
+import { laneCount, mapHandToSynth, type SynthParams } from './mapping/handToSynth';
 import { raiseOctave } from './mapping/notes';
 import { leadSide, otherSide, roles } from './mapping/roles';
-import { SECOND_HAND_START, asPlayed, effectAmount, followSecondHand, octaveRaised, secondHandAfterSwap } from './mapping/shape';
+import { SECOND_HAND_START, asPlayed, effectAmount, followSecondHand, octaveShift, secondHandAfterSwap, type Octave } from './mapping/shape';
 import { createSynth, type EngineStatus, type Sounds } from './synth/engine';
 import { PRESETS, presetIndex } from './synth/presets';
 import { gibberSnippet } from './synth/snippet';
 import { createAudioPanel } from './ui/audioPanel';
 import { createLayout } from './ui/layout';
 import { createCameraPanel } from './ui/cameraPanel';
+import { createGestureGuide } from './ui/gestureGuide';
 import { createHelpSheet } from './ui/helpSheet';
 import { createLeadHandSwitch } from './ui/leadHandSwitch';
 import { createLiveCode } from './ui/liveCode';
@@ -51,6 +55,7 @@ import { FIRST_SOUND_MS, SHAPE_HINT_MS, createStepHints, holdTimer, stepToShow }
 import { listenForShortcuts } from './ui/shortcuts';
 import { readStored, writeStored } from './ui/storage';
 import { throttle } from './ui/throttle';
+import { watchZoneWidth } from './ui/zoneWidth';
 
 /** The live code panel updates at most this often, in ms. */
 const LIVE_CODE_PERIOD_MS = 100;
@@ -85,6 +90,7 @@ function boot() {
   let preset = presetIndex(readStored(PRESET_KEY));
   const presets = createPresetList(ui.instrument, selectPreset);
   const liveCode = createLiveCode(ui.code);
+  const gestures = createGestureGuide(ui.guide, lead);
   const showCode = throttle(({ sounds, effect }: Played) => {
     const hands = roles(sounds, lead);
     liveCode.show(gibberSnippet([hands.lead, hands.second], PRESETS[preset]!, effect));
@@ -93,25 +99,31 @@ function boot() {
   // Hand pairs start only once tracking or the sliders run: until then, no hand plays silence.
   let pair: HandPair = emptyPair(0);
   let sounds: Sounds | null = null;
-  // The second hand's mode lasts the visit, out of view too; the octave follows its squeeze.
+  // The second hand's mode lasts the visit, out of view too; the octave follows its squeeze or thumbs-down.
   let second = SECOND_HAND_START;
-  let raised = false;
+  let octave: Octave = 0;
   /** The octave the lane names show. */
   let laneOctave = 0;
-  /** Maps each hand of the last pair with the current preset's notes in the current octave, and plays them. */
+  /** How many note lanes the playing zone holds, from its width on screen (null without a camera picture). */
+  let laneTotal = laneCount(null);
+  let zonePx: number | null = null;
+  /** The notes of the note lanes in play: the current preset's first ones. */
+  const lanesInPlay = () => PRESETS[preset]!.lanes.slice(0, laneTotal);
+  /** Whether the sliders send the hands: through a camera or model retry too, while the status no longer says "Sliders". */
+  const slidersPlay = () => !startupStatus.tracking && sliders !== null;
+  /** Maps each hand of the last pair with the notes of the note lanes in play in the current octave, and plays them. */
   function playHands(): Played {
-    const { lanes, effect: presetEffect } = PRESETS[preset]!;
+    const lanes = lanesInPlay();
+    const presetEffect = PRESETS[preset]!.effect;
     const secondSide = otherSide(lead);
     second = followSecondHand(second, pair[secondSide].state);
     if (second.mode === 'shape' && !shapeSwitched) {
       shapeSwitched = true;
       writeStored(SHAPE_HINT_DONE_KEY, '1');
     }
-    // The sliders' second hand only shapes, for as long as the sliders send the hands: through a camera or
-    // model retry too, while the status no longer says "Sliders".
-    const shaping = !startupStatus.tracking && sliders !== null ? SLIDERS_SECOND_HAND : second;
-    raised = octaveRaised(raised, pair[secondSide].state, shaping);
-    const octave = raised ? 1 : 0;
+    // The sliders' second hand only shapes.
+    const shaping = slidersPlay() ? SLIDERS_SECOND_HAND : second;
+    octave = octaveShift(octave, pair[secondSide].state, shaping);
     const previous = sounds;
     const map = (side: Side): SynthParams => {
       const state = side === secondSide ? asPlayed(pair[side].state, shaping) : pair[side].state;
@@ -149,11 +161,12 @@ function boot() {
     guide();
   });
   /**
-   * The status line, and the step hint for the first step not done until a first sound has lasted a second,
-   * then for the second hand's switch.
+   * The status line, the gesture guide's line about the sliders, and the step hint for the first step not
+   * done until a first sound has lasted a second, then for the second hand's switch.
    */
   function guide() {
     statusLine.show(startupStatus, engineStatus);
+    gestures.showSliders(slidersPlay());
     const audioOn = engineStatus.kind === 'on';
     firstSound.update(audioOn && SIDES.some((side) => (sounds?.[side].amp ?? 0) > 0));
     const hand = SIDES.some((side) => pair[side].state.present);
@@ -169,6 +182,7 @@ function boot() {
     startupStatus = status;
     panel.show(status);
     overlay.setVisible(status.tracking);
+    countLanes();
     guide();
   });
   synth.onStatus((status) => {
@@ -184,7 +198,14 @@ function boot() {
     usePreset();
   }
   function showLanes() {
-    overlay.setLanes(PRESETS[preset]!.lanes.map((n) => raiseOctave(n.name, laneOctave)));
+    overlay.setLanes(lanesInPlay().map((n) => raiseOctave(n.name, laneOctave)));
+  }
+  /** The lane count for the playing zone's width; 8 while the sliders play, with no picture to widen. */
+  function countLanes() {
+    const total = laneCount(slidersPlay() ? null : zonePx);
+    if (total === laneTotal) return;
+    laneTotal = total;
+    showLanes();
   }
   function usePreset() {
     presets.show(preset);
@@ -194,15 +215,20 @@ function boot() {
     playHands();
   }
   usePreset();
+  watchZoneWidth(ui.camera.canvas, ui.camera.video, (px) => {
+    zonePx = px;
+    countLanes();
+  });
 
   const help = createHelpSheet(document.body, lead);
   createLeadHandSwitch(ui.instrument, lead, (side) => {
     lead = side;
     writeStored(LEAD_HAND_KEY, side);
     second = secondHandAfterSwap(pair[otherSide(side)].state);
-    raised = false;
+    octave = 0;
     sliders?.setLeadSide(side);
     help.setLeadSide(side);
+    gestures.setLeadSide(side);
     // The shape step's hint names the second hand.
     guide();
   });
@@ -210,7 +236,7 @@ function boot() {
   listenForShortcuts((action) => {
     if (action.kind === 'preset') selectPreset(action.index);
     else if (action.kind === 'audio') audio.startOrStop();
-    else if (action.kind === 'code') ui.toggleCodePanel();
+    else if (action.kind === 'code') ui.toggleCode();
     else help.toggle();
   });
 
@@ -220,7 +246,7 @@ function boot() {
     const played = playHands();
     const lanes = SIDES.flatMap((side) => (played.sounds[side].lane === null ? [] : [played.sounds[side].lane]));
     const effect = { kind: PRESETS[preset]!.effect.kind, amount: played.effect };
-    overlay.draw(pair, lanes, { side: otherSide(lead), mode: second.mode, octaveUp: raised, effect });
+    overlay.draw(pair, lanes, { side: otherSide(lead), mode: second.mode, octave, effect });
   });
 }
 

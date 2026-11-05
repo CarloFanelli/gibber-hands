@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { noteFrequency } from '../src/mapping/notes';
-import { LANE_COUNT } from '../src/mapping/handToSynth';
+import { LANES } from '../src/mapping/handToSynth';
 import { PRESETS, delaySamples, presetIndex, reverbMix } from '../src/synth/presets';
 
 describe('PRESETS', () => {
@@ -15,17 +15,17 @@ describe('PRESETS', () => {
     ]);
   });
 
-  it('plays each scale across the 8 note lanes, left to right', () => {
+  it('plays each scale across the note lanes, left to right, carrying it on above the eighth lane', () => {
     expect(PRESETS.map((p) => p.lanes.map((n) => n.name).join(' '))).toEqual([
-      'A3 C4 D4 E4 G4 A4 C5 D5',
-      'C4 D4 E4 G4 A4 C5 D5 E5',
-      'D4 E4 F4 G4 A4 B4 C5 D5',
-      'E2 G2 A2 B2 D3 E3 G3 A3',
-      'F3 G3 A3 B♭3 C4 D4 E4 F4',
-      'A3 C4 D4 E♭4 E4 G4 A4 C5'
+      'A3 C4 D4 E4 G4 A4 C5 D5 E5 G5 A5 C6 D6 E6 G6 A6',
+      'C4 D4 E4 G4 A4 C5 D5 E5 G5 A5 C6 D6 E6 G6 A6 C7',
+      'D4 E4 F4 G4 A4 B4 C5 D5 E5 F5 G5 A5 B5 C6 D6 E6',
+      'E2 G2 A2 B2 D3 E3 G3 A3 B3 D4 E4 G4 A4 B4 D5 E5',
+      'F3 G3 A3 B♭3 C4 D4 E4 F4 G4 A4 B♭4 C5 D5 E5 F5 G5',
+      'A3 C4 D4 E♭4 E4 G4 A4 C5 D5 E♭5 E5 G5 A5 C6 D6 E♭6'
     ]);
     for (const p of PRESETS) {
-      expect(p.lanes).toHaveLength(LANE_COUNT);
+      expect(p.lanes).toHaveLength(LANES.max);
       for (const n of p.lanes) expect(n.frequency).toBe(noteFrequency(n.name));
     }
   });

@@ -1,11 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import { mapHandToSynth, type SynthParams } from '../src/mapping/handToSynth';
+import { laneCount, mapHandToSynth, type SynthParams } from '../src/mapping/handToSynth';
+import { noteFrequency } from '../src/mapping/notes';
 import { EMPTY_HAND, type HandState } from '../src/hands/types';
 import { PRESETS } from '../src/synth/presets';
 import { INITIAL_SLIDERS, sliderHandState } from '../src/ui/sliders';
 
-const SAW_LEAD = PRESETS[0]!.lanes;
-const ORGAN = PRESETS[2]!.lanes;
+/** The first `count` note lanes of a preset: 8 is what a laptop's default layout plays. */
+const first = (preset: number, count: number) => PRESETS[preset]!.lanes.slice(0, count);
+const SAW_LEAD = first(0, 8);
+const ORGAN = first(2, 8);
 /** Maps with Saw Lead's note lanes unless told otherwise. */
 const map = (s: HandState, previous: SynthParams | null, lanes = SAW_LEAD) => mapHandToSynth(s, previous, lanes);
 
@@ -146,6 +149,46 @@ describe('mapHandToSynth note lanes', () => {
   });
 });
 
+describe('laneCount', () => {
+  it('gives one note lane per 80 px of playing zone, rounded down', () => {
+    expect([719, 720, 799, 800, 1279].map((px) => laneCount(px))).toEqual([8, 9, 9, 10, 15]);
+  });
+
+  it('holds 8 to 16 lanes', () => {
+    expect([0, 500, 639, 1280, 4000].map((px) => laneCount(px))).toEqual([8, 8, 8, 16, 16]);
+  });
+
+  it('holds 8 without a camera picture', () => {
+    expect(laneCount(null)).toBe(8);
+  });
+});
+
+describe('mapHandToSynth with more note lanes', () => {
+  it('divides the playing zone into one lane per note it is given, the extra ones carrying on the scale', () => {
+    const eleven = first(0, 11);
+    const centers = eleven.map((_, i) => 0.1 + ((i + 0.5) * 0.8) / 11);
+    expect(centers.map((x) => map(at(x), null, eleven).lane)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    expect(centers.slice(8).map((x) => map(at(x), null, eleven).frequency)).toEqual(['E5', 'G5', 'A5'].map(noteFrequency));
+  });
+
+  it('plays the top lane at the right edge with 16 lanes', () => {
+    expect(map(at(0.9), null, first(1, 16))).toMatchObject({ lane: 15, frequency: noteFrequency('C7') });
+  });
+
+  it('holds the lane being played after the count changes, until the palm center is 20% of a lane past its border', () => {
+    // With 9 lanes, 0.55 lies 6% of a lane past lane 4's right border, and 0.57 29%.
+    const eight = map(at(0.55), null);
+    expect(map(at(0.55), eight, first(0, 9)).lane).toBe(4);
+    expect(map(at(0.57), eight, first(0, 9)).lane).toBe(5);
+  });
+
+  it('plays the lane under the palm center when the lane being played is gone', () => {
+    const nine = map(at(0.9), null, first(0, 9));
+    expect(nine.lane).toBe(8);
+    expect(map(at(0.9), nine)).toMatchObject({ lane: 7, frequency: SAW_LEAD[7]!.frequency });
+  });
+});
+
 describe('mapHandToSynth brightness', () => {
   const cutoff = (y: number) => map(at(0.5, y), null).cutoff;
 
@@ -188,5 +231,31 @@ describe('mapHandToSynth octave', () => {
     const playing = up(at(0.85), null);
     expect(up(EMPTY_HAND, playing)).toMatchObject({ frequency: playing.frequency, cutoff: playing.cutoff, octave: 1 });
     expect(map(EMPTY_HAND, playing)).toMatchObject({ frequency: playing.frequency / 2, cutoff: playing.cutoff / 2, octave: 0 });
+  });
+});
+
+describe('mapHandToSynth octave lowered', () => {
+  const down = (s: HandState, previous: SynthParams | null) => mapHandToSynth(s, previous, SAW_LEAD, -1);
+
+  it('plays the same lane one octave down, half as bright', () => {
+    const normal = map(at(0.35, 0.4), null);
+    const lowered = down(at(0.35, 0.4), null);
+    expect([lowered.lane, lowered.octave]).toEqual([normal.lane, -1]);
+    expect(lowered.frequency).toBe(normal.frequency / 2);
+    expect(lowered.cutoff).toBeCloseTo(normal.cutoff / 2, 9);
+  });
+
+  it('runs the brightness from 100 Hz to 3.2 kHz with the octave lowered', () => {
+    expect(down(at(0.5, 0.9), null).cutoff).toBeCloseTo(100, 9);
+    expect(down(at(0.5, 0.1), null).cutoff).toBeCloseTo(3200, 9);
+  });
+
+  it('plays Deep Bass’s lowest lane as E1', () => {
+    expect(mapHandToSynth(at(0.15), null, first(3, 8), -1).frequency).toBe(noteFrequency('E1'));
+  });
+
+  it('keeps the note while a lost hand fades, moving it from the raised to the lowered octave at once', () => {
+    const raised = mapHandToSynth(at(0.85), null, SAW_LEAD, 1);
+    expect(down(EMPTY_HAND, raised)).toMatchObject({ frequency: raised.frequency / 4, cutoff: raised.cutoff / 4, octave: -1 });
   });
 });

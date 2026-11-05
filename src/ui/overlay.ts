@@ -1,32 +1,33 @@
 /**
  * Draws over the video: the note lanes with the played ones highlighted, what the tracker sees of each
  * hand (21 landmarks, their connections and the palm center), each hand's gesture with its confidence on
- * its own side, the second hand's mode, and while it shapes the effect amount and the raised octave,
+ * its own side, the second hand's mode, and while it shapes the effect amount and the octave it changed,
  * beside its gesture, the "Raise your hand" hint and the frame rate. Landmarks and lanes are in the player's mirrored view already, so
  * nothing here flips them; they are placed inside the letterboxed video's rectangle.
  */
 import { HAND_CONNECTIONS } from '../hands/tracker';
 import { SIDES, type HandPair, type Point, type Side, type TrackedHand } from '../hands/types';
-import { LANE_COUNT, PLAYING_ZONE } from '../mapping/handToSynth';
-import type { SecondHand } from '../mapping/shape';
+import { PLAYING_ZONE } from '../mapping/handToSynth';
+import type { Octave, SecondHand } from '../mapping/shape';
 import { EFFECT_NAME, type Effect } from '../synth/presets';
 import { createFpsMeter } from './fpsMeter';
 import { gestureText } from './gestureLabels';
+import { containRect, type Rect } from './zoneWidth';
 
 const NO_FPS = '— fps';
 /** In a camera panel narrower than this, in CSS pixels, the lanes go without their note names. */
 const NAMES_MIN_WIDTH = 320;
 
-type Rect = { x: number; y: number; w: number; h: number };
-
 /** The second hand's mode as the camera view shows it: an icon, and words a narrow view leaves out. */
 const MODE_WORDS: Record<SecondHand['mode'], [icon: string, words: string]> = { notes: ['♪', 'Notes'], shape: ['✌', 'Shape'] };
+/** The octave the second hand raised or lowered, as the camera view shows it. */
+const OCTAVE_WORDS: Record<'up' | 'down', [icon: string, words: string]> = { up: ['↑', 'Octave up'], down: ['↓', 'Octave down'] };
 
 /** What the camera view says about the second hand. */
 interface SecondHandView {
   side: Side;
   mode: SecondHand['mode'];
-  octaveUp: boolean;
+  octave: Octave;
   /** The current preset's effect and its amount, 0..1. */
   effect: { kind: Effect['kind']; amount: number };
 }
@@ -36,7 +37,7 @@ export interface Overlay {
   draw(pair: HandPair, played: readonly number[], second: SecondHandView): void;
   /** Shown only while the tracker runs. */
   setVisible(visible: boolean): void;
-  /** Names the note lanes, left to right: the current preset's notes. */
+  /** Names the note lanes, left to right: one name per lane, so as many lanes as names. */
   setLanes(names: readonly string[]): void;
   /** Hides the "Raise your hand" label while a step hint says it. */
   hideRaiseHand(hidden: boolean): void;
@@ -89,7 +90,6 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
     const effectPercent = document.createElement('span');
     effect.append(effectName, ' ', effectPercent);
     const octave = pill('overlay-octave');
-    showWords(octave, '↑', 'Octave up');
     group.append(gesture, mode, effect, octave);
     panel.append(group);
     return { group, gesture, mode, effect, effectName, effectPercent, octave };
@@ -101,12 +101,7 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
 
   /** Where the video frame sits inside the canvas with object-fit: contain, in CSS pixels. */
   function videoRect(): Rect {
-    const cw = canvas.clientWidth;
-    const ch = canvas.clientHeight;
-    const scale = Math.min(cw / video.videoWidth, ch / video.videoHeight);
-    const w = video.videoWidth * scale;
-    const h = video.videoHeight * scale;
-    return { x: (cw - w) / 2, y: (ch - h) / 2, w, h };
+    return containRect(canvas.clientWidth, canvas.clientHeight, video.videoWidth, video.videoHeight);
   }
 
   function render() {
@@ -159,11 +154,12 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
     ctx.restore();
   }
 
-  /** The note lanes across the playing zone, each named at its foot. */
+  /** The note lanes across the playing zone, one per name, each named at its foot. */
   function drawLanes(r: Rect, played: readonly number[]) {
     const size = PLAYING_ZONE.end - PLAYING_ZONE.start;
     const zone = { x: r.x + PLAYING_ZONE.start * r.w, y: r.y + PLAYING_ZONE.start * r.h, w: size * r.w, h: size * r.h };
-    const laneWidth = zone.w / LANE_COUNT;
+    const count = laneNames.length;
+    const laneWidth = zone.w / count;
 
     // Two hands in one lane light it once, no brighter.
     ctx.globalAlpha = 0.25;
@@ -174,7 +170,7 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
     // One path, stroked once, so the borders two lanes share are no brighter than the outer ones.
     ctx.beginPath();
     ctx.rect(zone.x, zone.y, zone.w, zone.h);
-    for (let i = 1; i < LANE_COUNT; i++) {
+    for (let i = 1; i < count; i++) {
       ctx.moveTo(zone.x + i * laneWidth, zone.y);
       ctx.lineTo(zone.x + i * laneWidth, zone.y + zone.h);
     }
@@ -225,7 +221,12 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
           setText(labels.effectName, EFFECT_NAME[second.effect.kind]);
           setText(labels.effectPercent, `${Math.round(second.effect.amount * 100)}%`);
         }
-        labels.octave.hidden = !isSecond || !second.octaveUp;
+        labels.octave.hidden = !isSecond || second.octave === 0;
+        const shift = second.octave > 0 ? 'up' : 'down';
+        if (!labels.octave.hidden && labels.octave.dataset.shift !== shift) {
+          labels.octave.dataset.shift = shift;
+          showWords(labels.octave, ...OCTAVE_WORDS[shift]);
+        }
       }
       render();
     },
@@ -242,6 +243,8 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
       render();
     },
     setLanes(names) {
+      // Lanes lit for another count would light the wrong strip, or one past the zone: none until the next draw().
+      if (last && names.length !== laneNames.length) last = { ...last, played: [] };
       laneNames = names;
       render();
     },

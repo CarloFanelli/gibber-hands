@@ -25,6 +25,12 @@ describe('raiseOctave', () => {
   it('names the same note octaves up', () => {
     expect(raiseOctave('B♭3', 1)).toBe('B♭4');
     expect(raiseOctave('D5', 1)).toBe('D6');
+    expect(raiseOctave('C7', 1)).toBe('C8');
     expect(raiseOctave('E2', 0)).toBe('E2');
+  });
+
+  it('names the same note octaves down with a negative count', () => {
+    expect(raiseOctave('E2', -1)).toBe('E1');
+    expect(raiseOctave('E♭6', -1)).toBe('E♭5');
   });
 });

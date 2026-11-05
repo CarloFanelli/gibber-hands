@@ -50,9 +50,10 @@
 - **What**: At phone width the camera panel is short, so the step hint at its top (for example "Start audio") sits over the camera's status card, such as "No camera found", and hides its Try again button. The button still works under it, but it can't be seen.
 - **From**: instrument-ui (dev task 06, 2026-11-03)
 
-### B-13 · open
+### B-13 · picked-up
 - **What**: A way to play every note an octave lower, e.g. a second gesture of the shaping hand.
 - **From**: two-hand-play (interview, 2026-11-04)
+- **Picked up by**: note-range (2026-11-05)
 
 ### B-14 · open
 - **What**: Let each hand play its own preset, e.g. Deep Bass on the left and Saw Lead on the right.

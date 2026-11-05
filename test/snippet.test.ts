@@ -7,6 +7,7 @@ const byName = (name: string) => PRESETS.find((p) => p.name === name)!;
 const SAW_LEAD = byName('Saw Lead');
 const WARM_PAD = byName('Warm Pad');
 const ORGAN = byName('Organ');
+const DEEP_BASS = byName('Deep Bass');
 const BLUES_REED = byName('Blues Reed');
 const params = (over: Partial<SynthParams>): SynthParams => ({ lane: 4, frequency: 392, cutoff: 1131, amp: 1, ampRampMs: 15, octave: 0, ...over });
 /** The snippet at the preset's own effect amount, unless another is given. */
@@ -143,6 +144,13 @@ describe('gibberSnippet', () => {
     const [, , echo, , , echo2] = play(code);
     expect([echo!.props.wetdry, echo2!.props.wetdry]).toEqual([0.45, 0.45]);
     expect(code).toMatch(/^\/\/ Second hand: .*, echo 45%$/m);
+  });
+
+  it('names the note in the lowered octave, and plays it there', () => {
+    const lowest = DEEP_BASS.lanes[0]!.frequency;
+    const code = snippet([params({ lane: 0, frequency: lowest / 2, cutoff: 100, octave: -1 })], DEEP_BASS);
+    expect(code.split('\n')[0]).toMatch(/Deep Bass: E1, brightness 100 Hz/);
+    expect(play(code)[0]!.props.frequency).toBe(Math.round((lowest / 2) * 100) / 100);
   });
 
   it('names the note in the octave being played, and plays it there', () => {

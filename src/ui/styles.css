@@ -12,17 +12,14 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 /* One focus outline for every control, shown when the keyboard moves focus. */
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 #app { position: relative; display: flex; height: 100%; }
-/* Widths are the flex basis, so the widths Resizer sets apply. Grow factors match the default widths: with
-   nothing saved and the code panel hidden, camera and instrument share its space 45:25. */
+/* Widths are the flex basis, so the widths Resizer sets apply. */
 .panel { position: relative; flex: 1 1 auto; min-width: 160px; background: var(--panel); overflow: hidden; }
-.panel-camera { width: 45%; flex-grow: 45; container: camera / inline-size; }
-.panel-instrument { width: 25%; flex-grow: 25; }
-.panel-code { width: 30%; flex-grow: 30; }
-.panel.panel-hidden { display: none; }
+.panel-camera { width: 45%; container: camera / inline-size; }
+.panel-instrument { width: 25%; }
+.panel-code { width: 30%; }
 /* Negative margins: the handle takes no room in the row, so the widths add up to 100% and grabbing it moves nothing. */
 .resize-handle { position: relative; z-index: 1; flex: none; width: 6px; margin: 0 -3px; background: #1f2937; cursor: col-resize; }
 .resize-handle:hover { background: var(--accent); }
-.resize-handle:has(+ .panel-hidden) { display: none; }
 .panel-camera video, .panel-camera canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 /* The only CSS mirror: the overlay is mirrored in the hand coordinates instead. Contain = letterbox, never crop. */
 .panel-camera video { object-fit: contain; transform: scaleX(-1); background: #000; }
@@ -35,8 +32,10 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 .sliders label > span { display: flex; justify-content: space-between; }
 .slider-note { color: var(--fg); font-weight: 600; }
 .sliders input[type="range"] { width: 100%; height: 44px; margin: 0; accent-color: var(--accent); }
-.sliders .slider-switch { display: flex; align-items: center; gap: 10px; min-height: 44px; color: var(--fg); }
-.slider-switch input { width: 22px; height: 22px; margin: 0; accent-color: var(--accent); }
+.slider-octave { display: flex; flex-wrap: wrap; column-gap: 16px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.slider-octave legend { padding: 0; font-size: 14px; color: var(--muted); }
+.sliders .slider-octave label { display: flex; align-items: center; gap: 8px; min-height: 44px; color: var(--fg); }
+.slider-octave input { width: 22px; height: 22px; margin: 0; accent-color: var(--accent); }
 .sliders select { min-height: 44px; padding: 0 10px; border: 1px solid #334155; border-radius: 8px; background: var(--panel); color: var(--fg); font: inherit; }
 .status-card { display: flex; flex-direction: column; align-items: center; gap: 10px; max-width: 36ch; padding: 14px 18px; border-radius: 8px; background: rgb(11 15 20 / 0.9); text-align: center; pointer-events: auto; }
 .status-card p { margin: 0; }
@@ -72,12 +71,34 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 .audio-toggle.prominent, .retry.prominent { min-height: 88px; font-size: 20px; box-shadow: 0 0 0 3px rgb(125 211 252 / 0.35); }
 .retry.prominent { align-self: stretch; }
 .status-line { margin: 0; font-size: 13px; color: var(--muted); }
-/* The code panel: its tools on top, the snippet scrolling under them, wrapped so it never scrolls sideways. */
-.panel-code { display: flex; flex-direction: column; }
+/* The code panel: the live code above the gesture guide, each scrolling on its own, split by the code's share
+   of the height (codeGuideSplit.ts); the guide fills the panel while the code is hidden. The code's tools
+   sit on top, the snippet scrolls under them, wrapped so it never scrolls sideways. */
+.panel-code { display: flex; flex-direction: column; container: code / size; --code-share: 0.5; }
+/* Percent bases that add up to 100%, not 0: the guide's padding then comes out of its share instead of being
+   added to it. */
+.code-part, .guide-part { min-height: 120px; }
+.code-part { flex: 1 1 calc(var(--code-share) * 100%); }
+.guide-part { flex: 1 1 calc((1 - var(--code-share)) * 100%); }
+/* As the bars between panels, turned on its side: no room taken, so the shares add up to 100%. */
+.code-split { position: relative; z-index: 1; flex: none; height: 6px; margin: -3px 0; background: #1f2937; cursor: row-resize; touch-action: none; }
+.code-split:hover { background: var(--accent); }
+/* Too short for 120 px each: no divider, half and half. */
+@container code (max-height: 239.98px) {
+  .code-split { display: none; }
+  .code-part, .guide-part { flex-basis: 50%; min-height: 0; }
+}
+.code-part { display: flex; flex-direction: column; }
+.guide-part { overflow-y: auto; padding: 16px; border-top: 1px solid #1f2937; font-size: 14px; }
+.guide-part h2 { margin: 0 0 8px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.guide-part p { margin: 0 0 8px; }
+.guide-part dl { margin: 0; }
+.guide-part dt { font-weight: 600; }
+.guide-part dd { margin: 0 0 8px; color: var(--muted); }
 .code-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 16px 16px 0; }
 .code-open { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
 .code-note { font-size: 13px; color: var(--muted); }
-.panel-code pre { flex: 1 1 auto; margin: 0; padding: 16px; overflow-y: auto; font: 13px/1.5 ui-monospace, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+.code-part pre { flex: 1 1 auto; margin: 0; padding: 16px; overflow-y: auto; font: 13px/1.5 ui-monospace, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
 .code-keyword { color: var(--accent); }
 .code-number { color: #fcd34d; }
 .code-comment { color: var(--muted); font-style: italic; }

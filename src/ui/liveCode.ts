@@ -1,5 +1,5 @@
 /**
- * The live code panel: the Gibber snippet in colour, a Copy button and a link to the gibber.cc playground.
+ * The live code: the Gibber snippet in colour, a Copy button and a link to the gibber.cc playground.
  * While a selection touches the snippet it holds still, so it can be copied by hand while the hand moves;
  * the latest snippet shows once the selection leaves it.
  */

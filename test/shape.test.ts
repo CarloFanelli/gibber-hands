@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { EMPTY_HAND, type GestureName, type HandState } from '../src/hands/types';
-import { SECOND_HAND_START, asPlayed, effectAmount, followSecondHand, octaveRaised, secondHandAfterSwap, type SecondHand } from '../src/mapping/shape';
+import { EMPTY_HAND, GESTURE_NAMES, type GestureName, type HandState } from '../src/hands/types';
+import { SECOND_HAND_START, asPlayed, effectAmount, followSecondHand, octaveShift, secondHandAfterSwap, type SecondHand } from '../src/mapping/shape';
 
 const hand = (over: Partial<HandState>): HandState => ({ ...EMPTY_HAND, present: true, ...over });
 const showing = (gesture: GestureName | null) => hand({ gesture, gestureScore: gesture ? 0.9 : 0 });
@@ -40,29 +40,53 @@ describe('octave', () => {
   const shaping: SecondHand = { mode: 'shape', lastGesture: null };
   const squeeze = (pinch: number, over: Partial<HandState> = {}) => hand({ pinch, ...over });
 
+  const thumbsDown = (over: Partial<HandState> = {}) => hand({ gesture: 'Thumb_Down', gestureScore: 0.9, ...over });
+
   it('rises at the full-volume squeeze in shape mode', () => {
-    expect(octaveRaised(false, squeeze(0.2), shaping)).toBe(true);
-    expect(octaveRaised(false, squeeze(0.21), shaping)).toBe(false);
+    expect(octaveShift(0, squeeze(0.2), shaping)).toBe(1);
+    expect(octaveShift(0, squeeze(0.21), shaping)).toBe(0);
   });
 
   it('stays up until the squeeze opens clearly past that level, so a hovering squeeze does not flicker', () => {
-    expect(octaveRaised(true, squeeze(0.25), shaping)).toBe(true);
-    expect(octaveRaised(true, squeeze(0.3), shaping)).toBe(true);
-    expect(octaveRaised(true, squeeze(0.31), shaping)).toBe(false);
+    expect(octaveShift(1, squeeze(0.25), shaping)).toBe(1);
+    expect(octaveShift(1, squeeze(0.3), shaping)).toBe(1);
+    expect(octaveShift(1, squeeze(0.31), shaping)).toBe(0);
   });
 
-  it('stays normal while the second hand plays notes', () => {
-    expect(octaveRaised(false, squeeze(0), SECOND_HAND_START)).toBe(false);
-    expect(octaveRaised(true, squeeze(0), SECOND_HAND_START)).toBe(false);
+  it('stays normal while the second hand plays notes, whatever it shows', () => {
+    expect(octaveShift(0, squeeze(0), SECOND_HAND_START)).toBe(0);
+    expect(octaveShift(1, squeeze(0), SECOND_HAND_START)).toBe(0);
+    expect(octaveShift(0, thumbsDown(), SECOND_HAND_START)).toBe(0);
   });
 
   it('takes a closed fist for no squeeze', () => {
-    expect(octaveRaised(false, squeeze(0.1, { gesture: 'Closed_Fist' }), shaping)).toBe(false);
-    expect(octaveRaised(true, squeeze(0.1, { gesture: 'Closed_Fist' }), shaping)).toBe(false);
+    expect(octaveShift(0, squeeze(0.1, { gesture: 'Closed_Fist' }), shaping)).toBe(0);
+    expect(octaveShift(1, squeeze(0.1, { gesture: 'Closed_Fist' }), shaping)).toBe(0);
   });
 
-  it('drops at once when the shaping hand leaves', () => {
-    expect(octaveRaised(true, EMPTY_HAND, shaping)).toBe(false);
+  it('drops one octave below normal while the shaping hand shows a thumbs-down', () => {
+    expect(octaveShift(0, thumbsDown(), shaping)).toBe(-1);
+    expect(octaveShift(-1, thumbsDown(), shaping)).toBe(-1);
+  });
+
+  it('comes back to normal at once when the thumbs-down drops', () => {
+    expect(octaveShift(-1, hand({ gesture: null }), shaping)).toBe(0);
+    expect(octaveShift(-1, hand({ gesture: 'Open_Palm' }), shaping)).toBe(0);
+  });
+
+  it('goes from up to down at once on a squeeze straight into a thumbs-down', () => {
+    expect(octaveShift(1, thumbsDown({ pinch: 0.1 }), shaping)).toBe(-1);
+  });
+
+  it('is lowered by no other gesture', () => {
+    for (const gesture of GESTURE_NAMES.filter((g) => g !== 'Thumb_Down')) {
+      expect(octaveShift(0, hand({ gesture, gestureScore: 0.9 }), shaping)).toBe(0);
+    }
+  });
+
+  it('comes back to normal at once when the shaping hand leaves', () => {
+    expect(octaveShift(1, EMPTY_HAND, shaping)).toBe(0);
+    expect(octaveShift(-1, EMPTY_HAND, shaping)).toBe(0);
   });
 });
 
