@@ -213,7 +213,7 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
         const labels = hands[side];
         const isSecond = side === second.side;
         labels.group.hidden = !visible || !state.present;
-        labels.gesture.textContent = gestureText(state.gesture, state.gestureScore);
+        setText(labels.gesture, gestureText(state.gesture, state.gestureScore));
         labels.mode.hidden = !isSecond;
         if (isSecond && labels.mode.dataset.mode !== second.mode) {
           labels.mode.dataset.mode = second.mode;

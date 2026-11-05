@@ -107,7 +107,9 @@ function boot() {
       shapeSwitched = true;
       writeStored(SHAPE_HINT_DONE_KEY, '1');
     }
-    const shaping = cameraMode(startupStatus) === 'sliders' ? SLIDERS_SECOND_HAND : second;
+    // The sliders' second hand only shapes, for as long as the sliders send the hands: through a camera or
+    // model retry too, while the status no longer says "Sliders".
+    const shaping = !startupStatus.tracking && sliders !== null ? SLIDERS_SECOND_HAND : second;
     raised = octaveRaised(raised, pair[secondSide].state, shaping);
     const octave = raised ? 1 : 0;
     const previous = sounds;
