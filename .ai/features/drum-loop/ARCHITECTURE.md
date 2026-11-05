@@ -1,6 +1,6 @@
 ---
 feature: drum-loop
-spec-version: 1.0
+spec-version: 2.0
 status: approved
 ---
 
@@ -10,26 +10,26 @@ status: approved
 
 ### Overview
 
-The loop runs inside Gibber's audio worklet. A step function, sent there as source text like the voice graphs, triggers Gibberish's synthesized Kick, Snare and Hat on the worklet's per-sample scheduler. It applies a waiting drum pattern (with its tempo and the echo times) at a bar start, and waiting drum layers at a beat start, then reports what it applied. The page only sends wishes (playing, drum pattern, drum layers, muted) and shows what the worklet reports, so tracking jitter never touches timing. The rules (pattern data and step hits, pattern and layer bands, the second hand's three modes, the loop's state) are pure modules tested in Node; `main.ts` wires them. No new dependency: the kit uses Gibber's stock instruments, so the live code rebuilds it at gibber.cc.
+The loop runs inside Gibber's audio worklet. A step function, sent there as source text like the voice graphs, triggers Gibberish's synthesized Kick, Snare and Hat on the worklet's per-sample scheduler. It applies a waiting drum pattern (with its tempo and the echo times) at a bar start, and waiting drum layers at a beat start, then reports what it applied. The page only sends wishes (playing, drum pattern, drum layers) and shows what the worklet reports, so tracking jitter never touches timing. The rules (pattern data and step hits, the loop's state and its button steps, the panel's words) are pure modules tested in Node; `main.ts` wires them. Spec 2.0 dropped drum mode: the panel's buttons choose the beat, and no gesture reaches the loop. No new dependency: the kit uses Gibber's stock instruments, so the live code rebuilds it at gibber.cc.
 
 ### Shared Concerns
 
 #### Wiring only in main
 
-- **Appears in**: Task 01, Task 02, Task 03, Task 04, Task 05, Task 06
+- **Appears in**: Task 01, Task 03, Task 05, Task 06
 - **Reference example**: `src/main.ts:115-145`
-- **Rule**: modules expose small interfaces and `main.ts` connects them; the loop's state (playing, drum pattern, drum layers, muted) lives there beside the second hand's mode.
+- **Rule**: modules expose small interfaces and `main.ts` connects them; the loop's state (playing, drum pattern, drum layers) lives there.
 - **Watch out for**: `startup.onHand` keeps one listener (`src/main.ts:243-250`); extend it.
 
 #### Pure core, thin shell
 
-- **Appears in**: Task 01, Task 02, Task 03, Task 04, Task 05, Task 06
+- **Appears in**: Task 01, Task 03, Task 05, Task 06
 - **Reference example**: `src/mapping/shape.ts` with `test/shape.test.ts`; `src/ui/statusLine.ts:25-27` with `test/statusLine.test.ts`
-- **Rule**: every spec rule lives in a pure module tested in Node (`vite.config.ts:8`, environment `node`): mode switches, bands, loop state, step hits, panel words, snippet text.
+- **Rule**: every spec rule lives in a pure module tested in Node (`vite.config.ts:8`, environment `node`): loop state and button steps, step hits, panel words and which buttons are disabled, snippet text.
 
 #### Timing in the worklet
 
-- **Appears in**: Task 01, Task 03, Task 04
+- **Appears in**: Task 01, Task 03
 - **Reference example**: `voiceGraph` sent as source (`src/synth/engine.ts:58-70`, `:204`); `eval` messages (`src/synth/engine.ts:341`, handled at `node_modules/gibberish-dsp/js/workletProcessor.js:255`); worklet-to-page reports via `Gibberish.utilities.workletHandlers` (`node_modules/gibberish-dsp/js/utilities.js:78-81`)
 - **Rule**: hits, bar and beat boundaries, tempo and echo-time changes happen in the worklet; page messages only set the latest wish. Levels glide through `levelGraph` (`src/synth/engine.ts:76-80`).
 - **Watch out for**: worklet code sees only worklet globals and ugens by id (`Gibberish.processor.ugens.get`), never page closures.
@@ -62,74 +62,32 @@ The loop runs inside Gibber's audio worklet. A step function, sent there as sour
 
 ---
 
-### Task 02: drum-mode-switch
-
-**Files to modify:**
-- `src/mapping/shape.ts:15-29` — `mode` gains `'drums'`. `followSecondHand`: Victory toggles notes and shape mode and takes drum mode to shape; the rock sign toggles notes and drum mode and takes shape mode to drums; once per sign through `lastGesture`.
-- `src/mapping/shape.ts:57-60` — `asPlayed` plays drum mode as a lost hand too.
-- `test/shape.test.ts` — the transition table, held and short signs, swap.
-- `src/main.ts:119-125` — entering drum mode starts a stopped loop (drumLoop); "Stop drums" sets the mode back to notes.
-- `src/ui/overlay.ts:22` — `MODE_WORDS` gains drums, icon 🤟.
-
-**Patterns to reuse:**
-- The `modes()` helper in `test/shape.test.ts`.
-
-**Key decisions:**
-- The rock sign is MediaPipe's `ILoveYou` (`src/hands/types.ts:8`); the debounce (`src/hands/gesture.ts:8-9`) is the confirmation time.
-- `shape.ts` stays free of loop state: main starts the loop on the mode change.
-- `octaveShift` and `effectAmount` already give 0 and the preset's amount outside shape mode (`src/mapping/shape.ts:38-55`).
-
-**Watch out for:**
-- `asPlayed` tests `=== 'shape'` (`src/mapping/shape.ts:58-59`): drum mode would still play notes → treat every non-notes mode as lost; test: drum mode maps to a silent hand.
-- "Stop drums" re-enters drum mode at once if the reset clears `lastGesture` while the sign is held → keep it; test: Stop drums during a held rock sign stays in notes.
-
----
-
 ### Task 03: pattern-and-layers
 
 **Files to modify:**
-- `src/synth/drumPatterns.ts` — House 124, Hip-hop 90, Breakbeat 130; the bar and beat rule that applies a waiting change; hits tuned by ear.
-- `src/mapping/handToSynth.ts:86-100` — export the band-with-hysteresis rule `noteLane` uses, so patterns (four across) and drum layers (four up, via `zoneHeight`, `:107`) reuse its 20%.
-- `src/mapping/drumLoop.ts` — the drum pattern and drum layers under the second hand; the last ones kept for the next start.
-- `src/synth/engine.ts` — the step loop applies the waiting pattern, its tempo and the echo times at step 0, layers at each beat, and reports both.
-- `src/main.ts`, `src/ui/drumPanel.ts` — send the choice in drum mode; show the reported pattern and tempo.
-- `src/ui/overlay.ts:74-95,213-230` — a drum label, "Rock 3/4", built with `showWords` (`:265`).
-- Tests: `test/drumPatterns.test.ts`, `test/drumLoop.test.ts`, `test/mapping.test.ts`.
+- `src/synth/drumPatterns.ts` — House 124, Hip-hop 90, Breakbeat 130; hits tuned by ear.
+- `src/synth/drumClock.ts` — the bar and beat rule that applies a waiting change; reports what it applied.
+- `src/synth/engine.ts` — the step loop applies the waiting pattern, its tempo and the echo times at step 0, layers at each beat.
+- Tests: `test/drumPatterns.test.ts`, `test/drumClock.test.ts`.
 
 **Key decisions:**
 - The worklet reports what it applied; the page never computes the bar.
 - Echo times change inside the step loop, so they land on the bar.
 
 **Watch out for:**
-- Exporting the band rule changes note lanes if its edge rounding moves (`src/mapping/handToSynth.ts:93-98`) → keep `noteLane`'s behavior; test: existing `test/mapping.test.ts` lane cases pass unchanged.
 - Two wishes within one bar must leave only the latest waiting → the waiting slot is overwritten, never queued; test: Rock → House → Hip-hop within a bar applies Hip-hop.
 
----
-
-### Task 04: fist-mutes-drums
-
-**Files to modify:**
-- `src/mapping/drumLoop.ts` — muted while the second hand, present and in drum mode, shows a closed fist; the mute ends when the hand leaves, the mode changes, audio stops or the loop stops.
-- `src/synth/engine.ts` — mute glides the drum bus Level to 0 and back; the step loop keeps running, so the drums return in time.
-- `src/ui/drumPanel.ts` — "· muted".
-- `src/main.ts` — an engine status other than on ends the mute.
-- `test/drumLoop.test.ts`.
-
-**Patterns to reuse:**
-- The fist's 30 ms ramp (`RAMP_MS`, `src/mapping/handToSynth.ts:28`) as the mute glide.
-
-**Watch out for:**
-- "Stop audio" ramps the drum bus down (Task 01); "Start audio" must bring it back unmuted (`src/synth/engine.ts:114-120`) → the replayed wish carries `muted: false`; test: mute, Stop audio, Start audio → drums heard.
+_Spec 2.0: the hand's pattern and height bands, and the band rule exported from `handToSynth.ts` for them, were removed; `noteLane` is private again._
 
 ---
 
 ### Task 05: drum-live-code
 
 **Files to modify:**
-- `src/synth/snippet.ts:25-30` — `gibberSnippet` takes the loop heard: tempo, drums, or null. While it plays it starts with `Clock.bpm = …`; unmuted, one stock instrument per layer playing follows, each sequenced on sixteenths; `STOCK_NAMES` (`:18`) gains them.
+- `src/synth/snippet.ts:25-30` — `gibberSnippet` takes the loop heard: tempo, drums, or null. While it plays it starts with `Clock.bpm = …`, then one stock instrument per layer playing, each sequenced on sixteenths; `STOCK_NAMES` (`:18`) gains them.
 - `src/synth/drumPatterns.ts` — the snippet reads the same step data and kit settings as the engine.
-- `src/main.ts:94-97` — `showCode` passes the reported loop: tempo only while muted, null when stopped.
-- `test/snippet.test.ts` — Hip-hop at 2 layers; stopped; muted keeps the tempo line.
+- `src/main.ts:94-97` — `showCode` passes the reported loop, or null when stopped.
+- `test/snippet.test.ts` — Hip-hop at 2 layers; stopped.
 
 **Patterns to reuse:**
 - `voiceCode` and `settings()` (`src/synth/snippet.ts:32-69`).
@@ -143,23 +101,28 @@ The loop runs inside Gibber's audio worklet. A step function, sent there as sour
 
 ---
 
-### Task 06: slider-drum-controls
+### Task 06: drum-buttons
 
 **Files to modify:**
-- `src/ui/sliders.ts:113-131` — a drum pattern radio group in a fieldset, as the Octave choice, and a 1–4 drum layers range; both call a drums callback.
-- `src/main.ts:82` — pass that callback; the sliders' choice goes where the hand's would.
-- `src/ui/styles.css`, `test/sliders.test.ts`.
+- `src/mapping/drumLoop.ts` — `stepPattern` (wrapping over `DRUM_PATTERNS`) and `stepLayers` (1–4, the same loop at either end); `startDrums`, `steerDrums`, `muteDrums` and `muted` removed.
+- `src/ui/drumPanel.ts` — ◀ Start/Stop ▶, then − and +, then the line; `drumWords(loop)` and `drumControls(loop, engine)` pure, for Node tests. Pattern: `src/ui/audioPanel.ts:23-45`.
+- `src/mapping/shape.ts` — back to two modes; `secondHandWithoutDrums` removed.
+- `src/synth/engine.ts`, `src/synth/snippet.ts` — `Drums | null` instead of `DrumsToPlay`; the drum level goes up on start, down on stop.
+- `src/ui/overlay.ts` — the drum label removed.
+- `src/main.ts`, `src/ui/styles.css`; tests `test/drumLoop.test.ts`, `test/drumPanel.test.ts`, `test/shape.test.ts`, `test/snippet.test.ts`.
 
 **Key decisions:**
-- The sliders set the drum pattern and drum layers directly: their second hand stays in shape mode (`src/ui/sliders.ts:40`), so drum mode isn't needed.
+- The panel line shows the loop's choice, not the worklet's report, so a pattern chosen mid-bar is named at once; the live code still shows what is heard.
+- The no-camera path needs no drum controls of its own: the buttons work without a hand.
+
+**Watch out for:**
+- A step at a bound must not resend the loop → `stepLayers` returns the same object; test: 1 with −, 4 with +.
 
 ---
 
 ### Task 07: drum-guidance
 
 **Files to modify:**
-- `src/ui/gestureGuide.ts:16-30` — rows for the second hand's rock sign and drum mode's left–right, up–down and closed fist.
-- `src/ui/helpSheet.ts:28-60` — the same rows under "With two hands", <kbd>D</kbd> under Keys, "Start drums / Stop drums" under Mouse and touch, the sliders' pattern and layers.
+- `src/ui/helpSheet.ts:28-60` — <kbd>D</kbd> under Keys; "Start drums / Stop drums", ◀ ▶ and − + under Mouse and touch.
 
-**Patterns to reuse:**
-- `data-hand="second"` spans named by `nameHands` (`src/ui/handWords.ts`), which already follow the swap.
+_Spec 2.0: no drum gesture, so `src/ui/gestureGuide.ts` stays as it is._
