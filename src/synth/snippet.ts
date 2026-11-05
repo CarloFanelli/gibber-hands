@@ -13,8 +13,7 @@
  */
 import type { SynthParams } from '../mapping/handToSynth';
 import { raiseOctave } from '../mapping/notes';
-import { DRUM_PATTERNS, KIT, STEPS, drumSteps, type Drum } from './drumPatterns';
-import type { DrumsToPlay } from './engine';
+import { DRUM_PATTERNS, KIT, STEPS, drumSteps, type Drum, type Drums } from './drumPatterns';
 import { EFFECT_NAME, reverbMix, type Oscillator, type Preset } from './presets';
 
 /** Gibber's constructor for each oscillator shape; the snippet names its variable after the shape. */
@@ -32,10 +31,9 @@ export const STOCK_NAMES: readonly string[] = [
 /**
  * `sounds` are the hands' sounds, the lead hand's first. Every sounding hand gets its own voice, the second
  * one's names ending in 2; while no hand sounds, the lead hand's voice is shown silent. `effect` is the
- * reverb or echo amount, 0..1, for every voice. `drums` is the drum loop heard, null while none sounds;
- * muted, it sets the tempo alone, so a pasted echo keeps the app's timing.
+ * reverb or echo amount, 0..1, for every voice. `drums` is the drum loop heard, null while none sounds.
  */
-export function gibberSnippet(sounds: readonly SynthParams[], preset: Preset, effect: number, drums: DrumsToPlay | null): string {
+export function gibberSnippet(sounds: readonly SynthParams[], preset: Preset, effect: number, drums: Drums | null): string {
   const sounding = sounds.filter((p) => gainOf(p, preset) > 0);
   const voices = sounding.length > 0 ? sounding : sounds.slice(0, 1);
   const mix = round(effect, 3);
@@ -43,12 +41,11 @@ export function gibberSnippet(sounds: readonly SynthParams[], preset: Preset, ef
   return [...(drums ? [drumCode(drums)] : []), ...voices.map((p, i) => voiceCode(p, preset, i, mix))].join('\n');
 }
 
-/** The tempo, then, unless muted, each drum in play on its stock instrument, sequenced on sixteenths. */
-function drumCode({ pattern, layers, muted }: DrumsToPlay): string {
+/** The tempo, then each drum in play on its stock instrument, sequenced on sixteenths. */
+function drumCode({ pattern, layers }: Drums): string {
   const drumPattern = DRUM_PATTERNS[pattern]!;
   const { name, bpm } = drumPattern;
-  const lines = [`// Drums: ${name}, ${bpm} BPM, ${muted ? 'muted' : `${layers} of 4 drum layers`}`, `Clock.bpm = ${bpm}`];
-  if (muted) return lines.join('\n');
+  const lines = [`// Drums: ${name}, ${bpm} BPM, ${layers} of 4 drum layers`, `Clock.bpm = ${bpm}`];
   const steps = new Map<Drum, number[]>();
   drumSteps(drumPattern, layers).forEach((hits, step) => {
     for (const { drum, loudness } of hits) {

@@ -13,9 +13,7 @@
  * has a voice per side. mapping/roles says which side is the lead hand, and ui/leadHandSwitch swaps the
  * roles, remembered in browser storage. mapping/shape follows the second hand: a Victory sign switches it
  * to shape mode, where it plays no note, its squeeze raises every note an octave, its thumbs-down lowers
- * them one and its height sets the reverb or echo amount. A rock sign switches it to drum mode, where it
- * plays no note either: the drum loop starts, and mapping/drumLoop lets its palm center pick the drum
- * pattern, its height the drum layers, and its closed fist mute the drums.
+ * them one and its height sets the reverb or echo amount.
  *
  * The "no camera" path uses ui/sliders to produce the same HandPair shape, with the sliders as the lead
  * hand and their shape controls as the second hand, always in shape mode, so everything downstream works
@@ -31,15 +29,15 @@
  *
  * ui/gestureGuide lists every gesture below the live code, naming the hands by their roles.
  *
- * ui/drumPanel starts and stops the drum loop, whose state for the visit mapping/drumLoop keeps; the engine
- * plays it once audio is on. Stopping it takes the second hand out of drum mode.
+ * ui/drumPanel starts and stops the drum loop and steps its drum pattern and drum layers, whose state for the
+ * visit mapping/drumLoop keeps; the engine plays it once audio is on. No gesture changes the drums.
  *
  * ui/shortcuts maps keys to the same actions as the controls: presets, audio, the drums, the live code and
  * ui/helpSheet.
  */
 import { createStartup, type StartupStatus } from './hands/startup';
 import { SIDES, emptyPair, type HandPair, type Side } from './hands/types';
-import { DRUMS_START, drumsWithEngine, muteDrums, startDrums, steerDrums, toggleDrums, type DrumLoop } from './mapping/drumLoop';
+import { DRUMS_START, drumsWithEngine, stepLayers, stepPattern, toggleDrums, type DrumLoop } from './mapping/drumLoop';
 import { laneCount, mapHandToSynth, type SynthParams } from './mapping/handToSynth';
 import { raiseOctave } from './mapping/notes';
 import { leadSide, otherSide, roles } from './mapping/roles';
@@ -50,10 +48,9 @@ import {
   followSecondHand,
   octaveShift,
   secondHandAfterSwap,
-  secondHandWithoutDrums,
   type Octave
 } from './mapping/shape';
-import { DRUM_PATTERNS, type Drums } from './synth/drumPatterns';
+import type { Drums } from './synth/drumPatterns';
 import { createSynth, type EngineStatus, type Sounds } from './synth/engine';
 import { PRESETS, presetIndex } from './synth/presets';
 import { gibberSnippet } from './synth/snippet';
@@ -108,15 +105,18 @@ function boot() {
   let drums = DRUMS_START;
   /** The drum pattern and drum layers the engine last reported playing; null while it plays none. */
   let heard: Drums | null = null;
-  const drumPanel = createDrumPanel(ui.instrument, () => useDrums(toggleDrums(drums)));
+  const drumPanel = createDrumPanel(ui.instrument, {
+    toggle: () => useDrums(toggleDrums(drums)),
+    pattern: (step) => useDrums(stepPattern(drums, step)),
+    layers: (step) => useDrums(stepLayers(drums, step))
+  });
   let preset = presetIndex(readStored(PRESET_KEY));
   const presets = createPresetList(ui.instrument, selectPreset);
   const liveCode = createLiveCode(ui.code);
   const gestures = createGestureGuide(ui.guide, lead);
   const showCode = throttle(({ sounds, effect }: Played) => {
     const hands = roles(sounds, lead);
-    const codeDrums = drums.playing && heard ? { ...heard, muted: drums.muted } : null;
-    liveCode.show(gibberSnippet([hands.lead, hands.second], PRESETS[preset]!, effect, codeDrums));
+    liveCode.show(gibberSnippet([hands.lead, hands.second], PRESETS[preset]!, effect, drums.playing ? heard : null));
   }, LIVE_CODE_PERIOD_MS);
   let lastPlayed: Played | null = null;
   /** Shows the live code again for a drum loop change, which comes with no hand pair. */
@@ -144,13 +144,7 @@ function boot() {
     const lanes = lanesInPlay();
     const presetEffect = PRESETS[preset]!.effect;
     const secondSide = otherSide(lead);
-    const before = second.mode;
     second = followSecondHand(second, pair[secondSide].state);
-    // Drum mode starts the loop, then the hand steers it, and its closed fist mutes it.
-    const secondHand = pair[secondSide].state;
-    const steered = second.mode === 'drums' ? steerDrums(before === 'drums' ? drums : startDrums(drums), secondHand) : drums;
-    const loop = muteDrums(steered, secondHand, second, engineStatus);
-    if (loop !== drums) useDrums(loop);
     if (second.mode === 'shape' && !shapeSwitched) {
       shapeSwitched = true;
       writeStored(SHAPE_HINT_DONE_KEY, '1');
@@ -231,17 +225,13 @@ function boot() {
     // A report still on its way as audio or the loop stops is no longer heard.
     if (engineStatus.kind !== 'on' || !drums.playing) return;
     heard = next;
-    drumPanel.show(drums, heard, engineStatus);
     showDrumsCode();
   });
   /** Plays `next`, unless the audio engine has failed, and shows it. */
   function useDrums(next: DrumLoop) {
     drums = drumsWithEngine(next, engineStatus);
-    if (!drums.playing) {
-      heard = null;
-      second = secondHandWithoutDrums(second);
-    }
-    drumPanel.show(drums, heard, engineStatus);
+    if (!drums.playing) heard = null;
+    drumPanel.show(drums, engineStatus);
     synth.setDrums(drums.playing ? drums : null);
     showDrumsCode();
   }
@@ -302,8 +292,7 @@ function boot() {
     const played = playHands();
     const lanes = SIDES.flatMap((side) => (played.sounds[side].lane === null ? [] : [played.sounds[side].lane]));
     const effect = { kind: PRESETS[preset]!.effect.kind, amount: played.effect };
-    const drumLabel = { name: DRUM_PATTERNS[drums.pattern]!.name, layers: drums.layers };
-    overlay.draw(pair, lanes, { side: otherSide(lead), mode: second.mode, octave, effect, drums: drumLabel });
+    overlay.draw(pair, lanes, { side: otherSide(lead), mode: second.mode, octave, effect });
   });
 }
 

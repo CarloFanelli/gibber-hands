@@ -7,7 +7,7 @@ import { highlight } from '../src/ui/highlight';
 const playing: SynthParams = { lane: 4, frequency: 392, cutoff: 1131, amp: 0.8, ampRampMs: 15, octave: 0 };
 const silent: SynthParams = { ...playing, amp: 0 };
 const snippets = PRESETS.flatMap((preset) => [
-  gibberSnippet([playing, playing], preset, 0.45, { pattern: 3, layers: 4, muted: false }),
+  gibberSnippet([playing, playing], preset, 0.45, { pattern: 3, layers: 4 }),
   gibberSnippet([silent], preset, preset.effect.mix, null)
 ]);
 

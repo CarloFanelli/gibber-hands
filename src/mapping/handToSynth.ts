@@ -16,7 +16,7 @@ export const PLAYING_ZONE = { start: 0.1, end: 0.9 };
 export const LANES = { min: 8, max: 16 };
 /** One note lane per this many CSS px of the playing zone's width on screen. Tuned by ear. */
 const LANE_PX = 80;
-/** A note lane, drum pattern or drum layers band changes only once the palm center is this far past its border, in bands. Tuned by ear. */
+/** A note lane changes only once the palm center is this far past its border, in lanes. Tuned by ear. */
 const LANE_HYSTERESIS = 0.2;
 /** Filter cutoff at the bottom and at the top of the playing zone, Hz. */
 const CUTOFF = { bottom: 200, top: 6400 };
@@ -79,29 +79,17 @@ export function mapHandToSynth(s: HandState, previous: SynthParams | null, lanes
 }
 
 function soundAt(palm: Point, currentLane: number | null, lanes: readonly Note[], scale: number) {
-  const lane = zoneColumn(palm.x, currentLane, lanes.length);
+  const lane = noteLane(palm.x, currentLane, lanes.length);
   return { lane, frequency: lanes[lane]!.frequency * scale, cutoff: brightness(palm.y) * scale };
 }
 
 /**
- * The column of the playing zone under `x`, one of `count` side by side, left to right: a note lane, or a
- * drum pattern in drum mode.
+ * The note lane under `x`, one of `count` side by side across the playing zone, except that the current lane
+ * holds until the palm center is LANE_HYSTERESIS past its borders. A current lane the count no longer has
+ * is gone: the lane under `x` counts.
  */
-export function zoneColumn(x: number, current: number | null, count: number): number {
-  return band((x - PLAYING_ZONE.start) / ((PLAYING_ZONE.end - PLAYING_ZONE.start) / count), current, count);
-}
-
-/** The row of the playing zone at `y`, one of `count` stacked bottom to top: the drum layers in drum mode. */
-export function zoneRow(y: number, current: number | null, count: number): number {
-  return band(zoneHeight(y) * count, current, count);
-}
-
-/**
- * The band of `count` at `position`, measured in bands from the first one's start, except that the current
- * band holds until `position` is LANE_HYSTERESIS past its borders. A current band the count no longer has is
- * gone: the band at `position` counts.
- */
-function band(position: number, current: number | null, count: number): number {
+function noteLane(x: number, current: number | null, count: number): number {
+  const position = (x - PLAYING_ZONE.start) / ((PLAYING_ZONE.end - PLAYING_ZONE.start) / count);
   const holds = current !== null && current < count;
   if (holds && position >= current - LANE_HYSTERESIS && position <= current + 1 + LANE_HYSTERESIS) {
     return current;

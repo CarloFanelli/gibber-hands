@@ -2,8 +2,9 @@
  * Draws over the video: the note lanes with the played ones highlighted, what the tracker sees of each
  * hand (21 landmarks, their connections and the palm center), each hand's gesture with its confidence on
  * its own side, the second hand's mode, and while it shapes the effect amount and the octave it changed,
- * or in drum mode the drum pattern under it and its drum layers, beside its gesture, the "Raise your hand" hint and the frame rate. Landmarks and lanes are in the player's mirrored view already, so
- * nothing here flips them; they are placed inside the letterboxed video's rectangle.
+ * beside its gesture, the "Raise your hand" hint and the frame rate. Landmarks and lanes are in the
+ * player's mirrored view already, so nothing here flips them; they are placed inside the letterboxed
+ * video's rectangle.
  */
 import { HAND_CONNECTIONS } from '../hands/tracker';
 import { SIDES, type HandPair, type Point, type Side, type TrackedHand } from '../hands/types';
@@ -21,8 +22,7 @@ const NAMES_MIN_WIDTH = 320;
 /** The second hand's mode as the camera view shows it: an icon, and words a narrow view leaves out. */
 const MODE_WORDS: Record<SecondHand['mode'], [icon: string, words: string]> = {
   notes: ['♪', 'Notes'],
-  shape: ['✌', 'Shape'],
-  drums: ['🤟', 'Drums']
+  shape: ['✌', 'Shape']
 };
 /** The octave the second hand raised or lowered, as the camera view shows it. */
 const OCTAVE_WORDS: Record<'up' | 'down', [icon: string, words: string]> = { up: ['↑', 'Octave up'], down: ['↓', 'Octave down'] };
@@ -34,8 +34,6 @@ interface SecondHandView {
   octave: Octave;
   /** The current preset's effect and its amount, 0..1. */
   effect: { kind: Effect['kind']; amount: number };
-  /** In drum mode, the drum pattern under the hand and its drum layers. */
-  drums: { name: string; layers: number };
 }
 
 export interface Overlay {
@@ -78,8 +76,8 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
   }
 
   /**
-   * A side's labels in its top corner: its gesture, then for the second hand its mode, the effect amount, the
-   * octave, and the drum pattern with its drum layers.
+   * A side's labels in its top corner: its gesture, then for the second hand its mode, the effect amount and
+   * the octave.
    */
   function handLabels(side: Side) {
     const group = document.createElement('div');
@@ -99,15 +97,9 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
     const effectPercent = document.createElement('span');
     effect.append(effectName, ' ', effectPercent);
     const octave = pill('overlay-octave');
-    // Likewise the drum pattern's name; its drum layers, out of 4, always show.
-    const drums = pill('overlay-drums');
-    const drumsName = document.createElement('span');
-    drumsName.className = 'label-words';
-    const drumsLayers = document.createElement('span');
-    drums.append(drumsName, ' ', drumsLayers);
-    group.append(gesture, mode, effect, octave, drums);
+    group.append(gesture, mode, effect, octave);
     panel.append(group);
-    return { group, gesture, mode, effect, effectName, effectPercent, octave, drums, drumsName, drumsLayers };
+    return { group, gesture, mode, effect, effectName, effectPercent, octave };
   }
 
   function anyHand() {
@@ -235,12 +227,6 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
         if (shaping) {
           setText(labels.effectName, EFFECT_NAME[second.effect.kind]);
           setText(labels.effectPercent, `${Math.round(second.effect.amount * 100)}%`);
-        }
-        const drumming = isSecond && second.mode === 'drums';
-        labels.drums.hidden = !drumming;
-        if (drumming) {
-          setText(labels.drumsName, second.drums.name);
-          setText(labels.drumsLayers, `${second.drums.layers}/4`);
         }
         labels.octave.hidden = !isSecond || second.octave === 0;
         const shift = second.octave > 0 ? 'up' : 'down';

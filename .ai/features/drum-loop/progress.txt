@@ -3,5 +3,5 @@
 01-drum-loop-toggle: DONE
 03-pattern-and-layers: DONE
 05-drum-live-code: DONE
-06-drum-buttons: TODO
+06-drum-buttons: DONE
 07-drum-guidance: TODO

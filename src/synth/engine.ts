@@ -9,9 +9,9 @@
  * closes too: otherwise the effect would fill with its old note and replay it when the preset comes back.
  * After all of a hand's voices comes its volume, so its silence silences its tails too, whatever the other
  * hand plays. Every setting glides in the worklet: Gibber itself changes a setting in one jump, which clicks.
- * The drum loop plays Gibberish's synthesized kick, snare and hi-hats through a level of their own, down while
- * muted. A clock in the worklet triggers them, so tracking never moves a hit, and it runs on while the drums are
- * muted; while it plays, each echo's time follows its tempo.
+ * The drum loop plays Gibberish's synthesized kick, snare and hi-hats through a level of their own, which glides
+ * up as the loop starts and down as it stops. A clock in the worklet triggers them, so tracking never moves a
+ * hit; while it plays, each echo's time follows its tempo.
  * Two loud hands and the drums can add up past full scale: a limiter after the worklet keeps their peaks down.
  *
  * Browsers allow audio only from a user gesture: start() must be called from the click handler.
@@ -40,7 +40,7 @@ export interface SynthEngine {
   /** Crossfades to preset `index` (a PRESETS index), or starts on it if the engine isn't running yet. */
   setPreset(index: number): void;
   /** The drum loop to play while the engine is on, or null for none. */
-  setDrums(drums: DrumsToPlay | null): void;
+  setDrums(drums: Drums | null): void;
   /** Calls `cb` with each drum pattern and drum layers the loop starts playing, on the bar or beat they land. */
   onDrums(cb: (heard: Drums) => void): void;
 }
@@ -97,17 +97,12 @@ interface Engine {
   /** Glides the current preset's reverb or echo amount to `amount`, 0..1. */
   setEffect(amount: number): void;
   setPreset(index: number): void;
-  /** Starts, steers, mutes or stops the drum loop, each echo's time following its tempo. */
-  playDrums(drums: DrumsToPlay | null): void;
+  /** Starts, changes or stops the drum loop, each echo's time following its tempo. */
+  playDrums(drums: Drums | null): void;
 }
 
 /** What each hand asks for, by side. */
 export type Sounds = Record<Side, SynthParams>;
-
-/** A drum loop to play: its drum pattern and drum layers, and whether a closed fist mutes it. */
-export interface DrumsToPlay extends Drums {
-  muted: boolean;
-}
 
 export function createSynth(): SynthEngine {
   let status: EngineStatus = { kind: 'off' };
@@ -116,7 +111,7 @@ export function createSynth(): SynthEngine {
   let wanted: Sounds | null = null;
   let effect: number | null = null;
   let preset = 0;
-  let drums: DrumsToPlay | null = null;
+  let drums: Drums | null = null;
   let drumsListener: ((heard: Drums) => void) | null = null;
 
   function setStatus(s: EngineStatus) {
@@ -285,7 +280,7 @@ async function bootEngine(ctx: AudioContext, initialPreset: number, onDrums: (he
   const echoTimes = (bpm: number): [number, number][] =>
     echoes.flatMap((echo) => (echo ? [[echo.time.id, delaySamples(echo.measures, bpm, rate)]] : []));
   /** The drum loop last asked for. */
-  let sent: DrumsToPlay | null = null;
+  let sent: Drums | null = null;
 
   const nyquist = rate / 2;
   let current = initialPreset;
@@ -358,8 +353,7 @@ async function bootEngine(ctx: AudioContext, initialPreset: number, onDrums: (he
         drumLevel.level = 0;
         return post(`Gibberish.drumClock.stop(${JSON.stringify(echoTimes(GIBBER_BPM))})`);
       }
-      // Muted, the clock plays on unheard, so the drums come back in time.
-      if (drums.muted !== sent?.muted) drumLevel.level = drums.muted ? 0 : 1;
+      if (!sent) drumLevel.level = 1;
       if (sent?.pattern !== drums.pattern || sent.layers !== drums.layers) {
         const pattern = DRUM_PATTERNS[drums.pattern]!;
         const wish: DrumWish = {
@@ -372,7 +366,7 @@ async function bootEngine(ctx: AudioContext, initialPreset: number, onDrums: (he
         if (sent) post(`Gibberish.drumClock.wish(${JSON.stringify(wish)})`);
         else post(`Gibberish.drumClock.play(${JSON.stringify(wish)}, ${drumLead})`);
       }
-      sent = { pattern: drums.pattern, layers: drums.layers, muted: drums.muted };
+      sent = { pattern: drums.pattern, layers: drums.layers };
     }
   };
 }

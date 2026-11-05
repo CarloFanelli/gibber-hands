@@ -45,3 +45,7 @@ Spec 2.0 replaces drum mode, where the second hand chose the beat: played, chang
 - No camera → the drum buttons and the D key work as with one (REQ-4, REQ-6)
 - Narrow instrument panel → − and + wrap to the next row (REQ-6 · from code)
 
+## Notes from implementation
+
+- Drum mode (1.x Tasks 02 and 04, and the hand steering of Task 03) was removed: `shape.ts` is back to two modes, `drumLoop.ts` lost `startDrums`, `steerDrums` and `muteDrums`, the engine and the snippet lost the mute, and the overlay its drum label. /dev, 2026-11-05.
+- Checked in headless Chromium against the dev server, without a camera: wrap-around both ways, − and + bounds, choices made while stopped and before "Start audio", the line naming a pattern at once while the live code follows a bar later, Tab order, and the layout at 1280 px and 390 px with no sideways scroll. /dev, 2026-11-05.

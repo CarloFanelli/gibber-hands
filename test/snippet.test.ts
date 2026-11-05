@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { SynthParams } from '../src/mapping/handToSynth';
-import { DRUM_PATTERNS, KIT, drumSteps, type Drum, type DrumLayers } from '../src/synth/drumPatterns';
-import type { DrumsToPlay } from '../src/synth/engine';
+import { DRUM_PATTERNS, KIT, drumSteps, type Drum, type DrumLayers, type Drums } from '../src/synth/drumPatterns';
 import { PRESETS, reverbMix, type Preset } from '../src/synth/presets';
 import { gibberSnippet } from '../src/synth/snippet';
 
@@ -13,7 +12,7 @@ const DEEP_BASS = byName('Deep Bass');
 const BLUES_REED = byName('Blues Reed');
 const params = (over: Partial<SynthParams>): SynthParams => ({ lane: 4, frequency: 392, cutoff: 1131, amp: 1, ampRampMs: 15, octave: 0, ...over });
 /** The snippet at the preset's own effect amount, unless another is given, without drums unless given. */
-const snippet = (sounds: SynthParams[], preset: Preset, effect = preset.effect.mix, drums: DrumsToPlay | null = null) =>
+const snippet = (sounds: SynthParams[], preset: Preset, effect = preset.effect.mix, drums: Drums | null = null) =>
   gibberSnippet(sounds, preset, effect, drums);
 
 interface Made {
@@ -210,7 +209,7 @@ describe('gibberSnippet', () => {
 
 describe('gibberSnippet drums', () => {
   const note = params({});
-  const loop = (pattern: number, layers: DrumLayers, muted = false): DrumsToPlay => ({ pattern, layers, muted });
+  const loop = (pattern: number, layers: DrumLayers): Drums => ({ pattern, layers });
   const playedDrums = (drums: Record<string, Drummed | undefined>) => Object.keys(drums).filter((name) => drums[name]);
 
   it('plays Hip-hop at 2 drum layers as kick and snare at 90 BPM, then the notes over it', () => {
@@ -255,15 +254,6 @@ describe('gibberSnippet drums', () => {
   it('sets the tempo before the echo is built, so the pasted echo keeps the app’s timing', () => {
     const kinds = play(snippet([note], ORGAN, 0.45, loop(0, 4))).map((m) => m.kind);
     expect(kinds.slice(0, kinds.indexOf('Delay'))).toContain('Clock.bpm');
-  });
-
-  it('leaves the drums out while they are muted, but still sets the tempo', () => {
-    const code = snippet([note], ORGAN, 0.45, loop(0, 3, true));
-    const { made, drums } = run(code);
-    expect(made.map((m) => m.kind)).toEqual(['Clock.bpm', 'Square', 'Filter24Moog', 'Delay']);
-    expect(made[0]!.props.bpm).toBe(110);
-    expect(playedDrums(drums)).toEqual([]);
-    expect(code.split('\n')[0]).toBe('// Drums: Rock, 110 BPM, muted');
   });
 
   it('leaves the drums and the tempo out while no drum loop plays', () => {
