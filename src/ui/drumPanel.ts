@@ -1,6 +1,7 @@
 /**
  * Instrument panel drum controls: the Start drums / Stop drums button, and the loop's state in words, for
- * example "Drums: Rock · 110 BPM". The button can't be pressed while the audio engine has failed.
+ * example "Drums: Rock · 110 BPM", or "Drums: Rock · 110 BPM · muted" under the fist. The button can't be
+ * pressed while the audio engine has failed.
  */
 import type { DrumLoop } from '../mapping/drumLoop';
 import type { EngineStatus } from '../synth/engine';
@@ -10,7 +11,7 @@ import { DRUM_PATTERNS, type Drums } from '../synth/drumPatterns';
 export function drumWords(loop: DrumLoop, heard: Drums | null = null): string {
   if (!loop.playing) return 'Drums off';
   const { name, bpm } = DRUM_PATTERNS[(heard ?? loop).pattern]!;
-  return `Drums: ${name} · ${bpm} BPM`;
+  return `Drums: ${name} · ${bpm} BPM${loop.muted ? ' · muted' : ''}`;
 }
 
 export interface DrumPanel {

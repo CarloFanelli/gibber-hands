@@ -3,7 +3,7 @@
 01-drum-loop-toggle: DONE
 02-drum-mode-switch: DONE
 03-pattern-and-layers: DONE
-04-fist-mutes-drums: TODO
+04-fist-mutes-drums: DONE
 05-drum-live-code: TODO
 06-slider-drum-controls: TODO
 07-drum-guidance: TODO

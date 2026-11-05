@@ -1,22 +1,25 @@
 /**
- * The drum loop's state for the visit: whether it plays, and which drum pattern with how many drum layers.
- * A reload starts with the drums stopped.
+ * The drum loop's state for the visit: whether it plays, which drum pattern with how many drum layers, and
+ * whether the second hand's closed fist mutes it. A reload starts with the drums stopped.
  */
 import type { HandState } from '../hands/types';
 import type { EngineStatus } from '../synth/engine';
 import { DRUM_PATTERNS, type DrumLayers, type Drums } from '../synth/drumPatterns';
 import { zoneColumn, zoneRow } from './handToSynth';
+import type { SecondHand } from './shape';
 
 export interface DrumLoop extends Drums {
   playing: boolean;
+  /** Silent while its time runs on, so the drums come back in time. */
+  muted: boolean;
 }
 
 /** Stopped; a first loop of the visit plays Rock with all 4 drum layers. */
-export const DRUMS_START: DrumLoop = { playing: false, pattern: 0, layers: 4 };
+export const DRUMS_START: DrumLoop = { playing: false, pattern: 0, layers: 4, muted: false };
 
-/** Starts or stops the loop: "Start drums", "Stop drums" or the D key. A start resumes the last pattern and layers. */
+/** Starts or stops the loop: "Start drums", "Stop drums" or the D key. A start resumes the last pattern and layers, unmuted. */
 export function toggleDrums(loop: DrumLoop): DrumLoop {
-  return { ...loop, playing: !loop.playing };
+  return { ...loop, playing: !loop.playing, muted: false };
 }
 
 /** Starts the loop if it isn't playing, as the second hand switches to drum mode; a playing loop goes on. */
@@ -37,9 +40,19 @@ export function steerDrums(loop: DrumLoop, hand: HandState): DrumLoop {
 }
 
 /**
+ * The loop muted while audio is on and the second hand, in view and in drum mode, closes its fist; anything
+ * else ends the mute. A squeeze is no fist.
+ */
+export function muteDrums(loop: DrumLoop, hand: HandState, second: SecondHand, engine: EngineStatus): DrumLoop {
+  const muted = loop.playing && engine.kind === 'on' && second.mode === 'drums' && hand.present && hand.gesture === 'Closed_Fist';
+  return muted === loop.muted ? loop : { ...loop, muted };
+}
+
+/**
  * The loop once the audio engine reports `engine`: a failed engine can't play it, so it stops. Audio off
- * keeps it, silent, so "Start audio" brings it back.
+ * keeps it, silent and unmuted, so "Start audio" brings the drums back.
  */
 export function drumsWithEngine(loop: DrumLoop, engine: EngineStatus): DrumLoop {
-  return engine.kind === 'failed' && loop.playing ? { ...loop, playing: false } : loop;
+  if (engine.kind === 'failed' && loop.playing) return { ...loop, playing: false, muted: false };
+  return engine.kind !== 'on' && loop.muted ? { ...loop, muted: false } : loop;
 }

@@ -15,7 +15,7 @@
  * to shape mode, where it plays no note, its squeeze raises every note an octave, its thumbs-down lowers
  * them one and its height sets the reverb or echo amount. A rock sign switches it to drum mode, where it
  * plays no note either: the drum loop starts, and mapping/drumLoop lets its palm center pick the drum
- * pattern and its height the drum layers.
+ * pattern, its height the drum layers, and its closed fist mute the drums.
  *
  * The "no camera" path uses ui/sliders to produce the same HandPair shape, with the sliders as the lead
  * hand and their shape controls as the second hand, always in shape mode, so everything downstream works
@@ -39,7 +39,7 @@
  */
 import { createStartup, type StartupStatus } from './hands/startup';
 import { SIDES, emptyPair, type HandPair, type Side } from './hands/types';
-import { DRUMS_START, drumsWithEngine, startDrums, steerDrums, toggleDrums, type DrumLoop } from './mapping/drumLoop';
+import { DRUMS_START, drumsWithEngine, muteDrums, startDrums, steerDrums, toggleDrums, type DrumLoop } from './mapping/drumLoop';
 import { laneCount, mapHandToSynth, type SynthParams } from './mapping/handToSynth';
 import { raiseOctave } from './mapping/notes';
 import { leadSide, otherSide, roles } from './mapping/roles';
@@ -140,11 +140,11 @@ function boot() {
     const secondSide = otherSide(lead);
     const before = second.mode;
     second = followSecondHand(second, pair[secondSide].state);
-    // Drum mode starts the loop, then the hand steers it.
-    if (second.mode === 'drums') {
-      const steered = steerDrums(before === 'drums' ? drums : startDrums(drums), pair[secondSide].state);
-      if (steered !== drums) useDrums(steered);
-    }
+    // Drum mode starts the loop, then the hand steers it, and its closed fist mutes it.
+    const secondHand = pair[secondSide].state;
+    const steered = second.mode === 'drums' ? steerDrums(before === 'drums' ? drums : startDrums(drums), secondHand) : drums;
+    const loop = muteDrums(steered, secondHand, second, engineStatus);
+    if (loop !== drums) useDrums(loop);
     if (second.mode === 'shape' && !shapeSwitched) {
       shapeSwitched = true;
       writeStored(SHAPE_HINT_DONE_KEY, '1');
