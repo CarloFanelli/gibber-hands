@@ -17,6 +17,11 @@ export function toggleDrums(loop: DrumLoop): DrumLoop {
   return { ...loop, playing: !loop.playing };
 }
 
+/** Starts the loop if it isn't playing, as the second hand switches to drum mode; a playing loop goes on. */
+export function startDrums(loop: DrumLoop): DrumLoop {
+  return loop.playing ? loop : { ...loop, playing: true };
+}
+
 /**
  * The loop once the audio engine reports `engine`: a failed engine can't play it, so it stops. Audio off
  * keeps it, silent, so "Start audio" brings it back.

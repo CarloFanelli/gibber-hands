@@ -1,8 +1,9 @@
 /**
- * The second hand's shape mode. A Victory sign by the second hand switches it between playing notes and
- * shape mode, once per sign; it starts every visit playing notes. In shape mode it plays no note, holding
- * its squeeze closed raises every note one octave, holding a thumbs-down lowers them one, and its height
- * sets the reverb or echo amount.
+ * The second hand's modes. A Victory sign by the second hand switches it between playing notes and shape
+ * mode, a rock sign between playing notes and drum mode, once per sign; from one of those modes the other
+ * sign switches straight to the other mode. It starts every visit playing notes. In shape mode it plays no
+ * note, holding its squeeze closed raises every note one octave, holding a thumbs-down lowers them one, and
+ * its height sets the reverb or echo amount. In drum mode it plays no note either: it runs the drum loop.
  */
 import type { GestureName, HandState } from '../hands/types';
 import { PINCH_FULL, zoneHeight } from './handToSynth';
@@ -13,18 +14,21 @@ const OCTAVE_RELEASE = 0.3;
 const MAX_EFFECT = 0.8;
 
 export interface SecondHand {
-  mode: 'notes' | 'shape';
+  mode: 'notes' | 'shape' | 'drums';
   /** The gesture it showed last time, null without a hand: a sign counts when it first appears. */
   lastGesture: GestureName | null;
 }
 
 export const SECOND_HAND_START: SecondHand = { mode: 'notes', lastGesture: null };
 
+/** The mode each sign switches to, from the other modes; from its own mode it switches back to notes. */
+const SIGNS: Partial<Record<GestureName, SecondHand['mode']>> = { Victory: 'shape', ILoveYou: 'drums' };
+
 /** The second hand's mode after this frame. */
 export function followSecondHand(previous: SecondHand, hand: HandState): SecondHand {
   const gesture = hand.present ? hand.gesture : null;
-  const sign = gesture === 'Victory' && previous.lastGesture !== 'Victory';
-  const mode = sign ? (previous.mode === 'notes' ? 'shape' : 'notes') : previous.mode;
+  const to = gesture === null || gesture === previous.lastGesture ? undefined : SIGNS[gesture];
+  const mode = to === undefined ? previous.mode : to === previous.mode ? 'notes' : to;
   return { mode, lastGesture: gesture };
 }
 
@@ -54,12 +58,17 @@ export function effectAmount(hand: HandState, second: SecondHand, mix: number): 
   return mix + (top - mix) * (height - 0.5) * 2;
 }
 
-/** The second hand as the mapping plays it: in shape mode as a lost hand, so its note fades as one does. */
+/** The second hand as the mapping plays it: in shape or drum mode as a lost hand, so its note fades as one does. */
 export function asPlayed(hand: HandState, second: SecondHand): HandState {
-  return second.mode === 'shape' ? { ...hand, present: false } : hand;
+  return second.mode === 'notes' ? hand : { ...hand, present: false };
 }
 
-/** The new second hand after the roles swap: playing notes, and a Victory sign it already shows doesn't count. */
+/** The second hand once the drum loop stops: back from drum mode to playing notes. A rock sign it still shows doesn't count again. */
+export function secondHandWithoutDrums(second: SecondHand): SecondHand {
+  return second.mode === 'drums' ? { ...second, mode: 'notes' } : second;
+}
+
+/** The new second hand after the roles swap: playing notes, and a sign it already shows doesn't count. */
 export function secondHandAfterSwap(hand: HandState): SecondHand {
   return { mode: 'notes', lastGesture: hand.present ? hand.gesture : null };
 }

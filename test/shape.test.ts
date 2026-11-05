@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { EMPTY_HAND, GESTURE_NAMES, type GestureName, type HandState } from '../src/hands/types';
-import { SECOND_HAND_START, asPlayed, effectAmount, followSecondHand, octaveShift, secondHandAfterSwap, type SecondHand } from '../src/mapping/shape';
+import { SECOND_HAND_START, asPlayed, effectAmount, followSecondHand, octaveShift, secondHandAfterSwap, secondHandWithoutDrums, type SecondHand } from '../src/mapping/shape';
 
 const hand = (over: Partial<HandState>): HandState => ({ ...EMPTY_HAND, present: true, ...over });
 const showing = (gesture: GestureName | null) => hand({ gesture, gestureScore: gesture ? 0.9 : 0 });
@@ -23,8 +23,24 @@ describe('second hand mode', () => {
     expect(modes(['Victory', 'Victory', 'Victory'])).toEqual(['shape', 'shape', 'shape']);
   });
 
-  it('switches on no other gesture', () => {
-    expect(modes(['Open_Palm', 'Pointing_Up', 'Thumb_Up', 'Thumb_Down', 'ILoveYou', 'Closed_Fist', null])).toEqual(Array(7).fill('notes'));
+  it('switches on no other gesture than Victory and the rock sign', () => {
+    expect(modes(['Open_Palm', 'Pointing_Up', 'Thumb_Up', 'Thumb_Down', 'Closed_Fist', null])).toEqual(Array(6).fill('notes'));
+  });
+
+  it('switches to drum mode on a rock sign, and back to playing notes on the next one', () => {
+    expect(modes([null, 'ILoveYou', null, 'ILoveYou'])).toEqual(['notes', 'drums', 'drums', 'notes']);
+  });
+
+  it('switches once while the rock sign is held', () => {
+    expect(modes(['ILoveYou', 'ILoveYou', 'ILoveYou'])).toEqual(['drums', 'drums', 'drums']);
+  });
+
+  it('switches straight from drum mode to shape mode on a Victory sign, and back on a rock sign', () => {
+    expect(modes(['ILoveYou', 'Victory', 'ILoveYou'])).toEqual(['drums', 'shape', 'drums']);
+  });
+
+  it('keeps drum mode while the hand is out of view', () => {
+    expect(modes(['ILoveYou', 'gone', 'gone', null])).toEqual(['drums', 'drums', 'drums', 'drums']);
   });
 
   it('keeps its mode while the hand is out of view', () => {
@@ -57,6 +73,12 @@ describe('octave', () => {
     expect(octaveShift(0, squeeze(0), SECOND_HAND_START)).toBe(0);
     expect(octaveShift(1, squeeze(0), SECOND_HAND_START)).toBe(0);
     expect(octaveShift(0, thumbsDown(), SECOND_HAND_START)).toBe(0);
+  });
+
+  it('comes back to normal at once when a rock sign switches the shaping hand to drum mode', () => {
+    const drums: SecondHand = { mode: 'drums', lastGesture: 'ILoveYou' };
+    expect(octaveShift(1, squeeze(0, { gesture: 'ILoveYou' }), drums)).toBe(0);
+    expect(octaveShift(-1, squeeze(0, { gesture: 'ILoveYou' }), drums)).toBe(0);
   });
 
   it('takes a closed fist for no squeeze', () => {
@@ -122,6 +144,10 @@ describe('effect amount', () => {
     expect(effectAmount(at(0.1), SECOND_HAND_START, 0.3)).toBe(0.3);
     expect(effectAmount(EMPTY_HAND, shaping, 0.3)).toBe(0.3);
   });
+
+  it('is the preset’s own amount in drum mode', () => {
+    expect(effectAmount(at(0.1), { mode: 'drums', lastGesture: null }, 0.3)).toBe(0.3);
+  });
 });
 
 describe('the second hand as played', () => {
@@ -132,6 +158,27 @@ describe('the second hand as played', () => {
 
   it('plays nothing in shape mode, fading as a lost hand does', () => {
     expect(asPlayed(hand({ pinch: 0.1 }), { mode: 'shape', lastGesture: null }).present).toBe(false);
+  });
+
+  it('plays nothing in drum mode, fading as a lost hand does', () => {
+    expect(asPlayed(hand({ pinch: 0.1 }), { mode: 'drums', lastGesture: null }).present).toBe(false);
+  });
+});
+
+describe('the drum loop stopped', () => {
+  it('takes the second hand from drum mode back to playing notes', () => {
+    expect(secondHandWithoutDrums({ mode: 'drums', lastGesture: null }).mode).toBe('notes');
+  });
+
+  it('leaves the other modes as they are', () => {
+    const shaping: SecondHand = { mode: 'shape', lastGesture: 'Victory' };
+    expect(secondHandWithoutDrums(shaping)).toBe(shaping);
+    expect(secondHandWithoutDrums(SECOND_HAND_START)).toBe(SECOND_HAND_START);
+  });
+
+  it('does not switch back to drum mode while the rock sign is still held', () => {
+    const stopped = secondHandWithoutDrums({ mode: 'drums', lastGesture: 'ILoveYou' });
+    expect(modes(['ILoveYou', 'ILoveYou'], stopped)).toEqual(['notes', 'notes']);
   });
 });
 

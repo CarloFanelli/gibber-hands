@@ -13,7 +13,8 @@
  * has a voice per side. mapping/roles says which side is the lead hand, and ui/leadHandSwitch swaps the
  * roles, remembered in browser storage. mapping/shape follows the second hand: a Victory sign switches it
  * to shape mode, where it plays no note, its squeeze raises every note an octave, its thumbs-down lowers
- * them one and its height sets the reverb or echo amount.
+ * them one and its height sets the reverb or echo amount. A rock sign switches it to drum mode, where it
+ * plays no note either and the drum loop starts.
  *
  * The "no camera" path uses ui/sliders to produce the same HandPair shape, with the sliders as the lead
  * hand and their shape controls as the second hand, always in shape mode, so everything downstream works
@@ -30,18 +31,27 @@
  * ui/gestureGuide lists every gesture below the live code, naming the hands by their roles.
  *
  * ui/drumPanel starts and stops the drum loop, whose state for the visit mapping/drumLoop keeps; the engine
- * plays it once audio is on.
+ * plays it once audio is on. Stopping it takes the second hand out of drum mode.
  *
  * ui/shortcuts maps keys to the same actions as the controls: presets, audio, the drums, the live code and
  * ui/helpSheet.
  */
 import { createStartup, type StartupStatus } from './hands/startup';
 import { SIDES, emptyPair, type HandPair, type Side } from './hands/types';
-import { DRUMS_START, drumsWithEngine, toggleDrums, type DrumLoop } from './mapping/drumLoop';
+import { DRUMS_START, drumsWithEngine, startDrums, toggleDrums, type DrumLoop } from './mapping/drumLoop';
 import { laneCount, mapHandToSynth, type SynthParams } from './mapping/handToSynth';
 import { raiseOctave } from './mapping/notes';
 import { leadSide, otherSide, roles } from './mapping/roles';
-import { SECOND_HAND_START, asPlayed, effectAmount, followSecondHand, octaveShift, secondHandAfterSwap, type Octave } from './mapping/shape';
+import {
+  SECOND_HAND_START,
+  asPlayed,
+  effectAmount,
+  followSecondHand,
+  octaveShift,
+  secondHandAfterSwap,
+  secondHandWithoutDrums,
+  type Octave
+} from './mapping/shape';
 import { createSynth, type EngineStatus, type Sounds } from './synth/engine';
 import { PRESETS, presetIndex } from './synth/presets';
 import { gibberSnippet } from './synth/snippet';
@@ -124,7 +134,9 @@ function boot() {
     const lanes = lanesInPlay();
     const presetEffect = PRESETS[preset]!.effect;
     const secondSide = otherSide(lead);
+    const before = second.mode;
     second = followSecondHand(second, pair[secondSide].state);
+    if (second.mode === 'drums' && before !== 'drums') useDrums(startDrums(drums));
     if (second.mode === 'shape' && !shapeSwitched) {
       shapeSwitched = true;
       writeStored(SHAPE_HINT_DONE_KEY, '1');
@@ -196,11 +208,13 @@ function boot() {
   synth.onStatus((status) => {
     engineStatus = status;
     audio.show(status);
-    useDrums(drumsWithEngine(drums, status));
+    useDrums(drums);
     guide();
   });
+  /** Plays `next`, unless the audio engine has failed, and shows it. */
   function useDrums(next: DrumLoop) {
-    drums = next;
+    drums = drumsWithEngine(next, engineStatus);
+    if (!drums.playing) second = secondHandWithoutDrums(second);
     drumPanel.show(drums, engineStatus);
     synth.setDrums(drums.playing ? drums : null);
   }

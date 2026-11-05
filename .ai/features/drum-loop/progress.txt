@@ -1,7 +1,7 @@
 # Task Progress - drum-loop
 
 01-drum-loop-toggle: DONE
-02-drum-mode-switch: TODO
+02-drum-mode-switch: DONE
 03-pattern-and-layers: TODO
 04-fist-mutes-drums: TODO
 05-drum-live-code: TODO

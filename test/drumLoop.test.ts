@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DRUMS_START, drumsWithEngine, toggleDrums } from '../src/mapping/drumLoop';
+import { DRUMS_START, drumsWithEngine, startDrums, toggleDrums } from '../src/mapping/drumLoop';
 
 describe('toggleDrums', () => {
   it('starts a first loop of the visit on Rock with 4 drum layers', () => {
@@ -13,6 +13,17 @@ describe('toggleDrums', () => {
 
   it('starts again on the drum pattern and drum layers it last played', () => {
     expect(toggleDrums({ playing: false, pattern: 2, layers: 2 })).toEqual({ playing: true, pattern: 2, layers: 2 });
+  });
+});
+
+describe('startDrums', () => {
+  it('starts a stopped loop: Rock with 4 drum layers on a first loop of the visit', () => {
+    expect(startDrums(DRUMS_START)).toEqual({ playing: true, pattern: 0, layers: 4 });
+  });
+
+  it('lets a playing loop go on as it is', () => {
+    const playing = { playing: true, pattern: 1, layers: 2 } as const;
+    expect(startDrums(playing)).toBe(playing);
   });
 });
 
