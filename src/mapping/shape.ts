@@ -1,7 +1,8 @@
 /**
  * The second hand's shape mode. A Victory sign by the second hand switches it between playing notes and
  * shape mode, once per sign; it starts every visit playing notes. In shape mode it plays no note, holding
- * its squeeze closed raises every note one octave, and its height sets the reverb or echo amount.
+ * its squeeze closed raises every note one octave, holding a thumbs-down lowers them one, and its height
+ * sets the reverb or echo amount.
  */
 import type { GestureName, HandState } from '../hands/types';
 import { PINCH_FULL, zoneHeight } from './handToSynth';
@@ -27,10 +28,17 @@ export function followSecondHand(previous: SecondHand, hand: HandState): SecondH
   return { mode, lastGesture: gesture };
 }
 
-/** Whether the octave is raised after this frame, given whether it was. A closed fist is no squeeze. */
-export function octaveRaised(raised: boolean, hand: HandState, second: SecondHand): boolean {
-  if (second.mode !== 'shape' || !hand.present || hand.gesture === 'Closed_Fist') return false;
-  return hand.pinch <= (raised ? OCTAVE_RELEASE : PINCH_FULL);
+/** Octaves every note is played from the preset's own: lowered, normal or raised. */
+export type Octave = -1 | 0 | 1;
+
+/**
+ * The octave after this frame, given the one before. A thumbs-down wins over a squeeze, so a squeeze
+ * straight into one drops two octaves at once. A closed fist is no squeeze.
+ */
+export function octaveShift(previous: Octave, hand: HandState, second: SecondHand): Octave {
+  if (second.mode !== 'shape' || !hand.present || hand.gesture === 'Closed_Fist') return 0;
+  if (hand.gesture === 'Thumb_Down') return -1;
+  return hand.pinch <= (previous === 1 ? OCTAVE_RELEASE : PINCH_FULL) ? 1 : 0;
 }
 
 /**

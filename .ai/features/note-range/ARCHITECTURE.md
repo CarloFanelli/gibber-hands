@@ -1,6 +1,6 @@
 ---
 feature: note-range
-spec-version: 1.0
+spec-version: 1.1
 status: approved
 ---
 

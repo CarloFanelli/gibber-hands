@@ -1,14 +1,14 @@
 /**
  * Draws over the video: the note lanes with the played ones highlighted, what the tracker sees of each
  * hand (21 landmarks, their connections and the palm center), each hand's gesture with its confidence on
- * its own side, the second hand's mode, and while it shapes the effect amount and the raised octave,
+ * its own side, the second hand's mode, and while it shapes the effect amount and the octave it changed,
  * beside its gesture, the "Raise your hand" hint and the frame rate. Landmarks and lanes are in the player's mirrored view already, so
  * nothing here flips them; they are placed inside the letterboxed video's rectangle.
  */
 import { HAND_CONNECTIONS } from '../hands/tracker';
 import { SIDES, type HandPair, type Point, type Side, type TrackedHand } from '../hands/types';
 import { PLAYING_ZONE } from '../mapping/handToSynth';
-import type { SecondHand } from '../mapping/shape';
+import type { Octave, SecondHand } from '../mapping/shape';
 import { EFFECT_NAME, type Effect } from '../synth/presets';
 import { createFpsMeter } from './fpsMeter';
 import { gestureText } from './gestureLabels';
@@ -20,12 +20,14 @@ const NAMES_MIN_WIDTH = 320;
 
 /** The second hand's mode as the camera view shows it: an icon, and words a narrow view leaves out. */
 const MODE_WORDS: Record<SecondHand['mode'], [icon: string, words: string]> = { notes: ['♪', 'Notes'], shape: ['✌', 'Shape'] };
+/** The octave the second hand raised or lowered, as the camera view shows it. */
+const OCTAVE_WORDS: Record<'up' | 'down', [icon: string, words: string]> = { up: ['↑', 'Octave up'], down: ['↓', 'Octave down'] };
 
 /** What the camera view says about the second hand. */
 interface SecondHandView {
   side: Side;
   mode: SecondHand['mode'];
-  octaveUp: boolean;
+  octave: Octave;
   /** The current preset's effect and its amount, 0..1. */
   effect: { kind: Effect['kind']; amount: number };
 }
@@ -88,7 +90,6 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
     const effectPercent = document.createElement('span');
     effect.append(effectName, ' ', effectPercent);
     const octave = pill('overlay-octave');
-    showWords(octave, '↑', 'Octave up');
     group.append(gesture, mode, effect, octave);
     panel.append(group);
     return { group, gesture, mode, effect, effectName, effectPercent, octave };
@@ -220,7 +221,12 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
           setText(labels.effectName, EFFECT_NAME[second.effect.kind]);
           setText(labels.effectPercent, `${Math.round(second.effect.amount * 100)}%`);
         }
-        labels.octave.hidden = !isSecond || !second.octaveUp;
+        labels.octave.hidden = !isSecond || second.octave === 0;
+        const shift = second.octave > 0 ? 'up' : 'down';
+        if (!labels.octave.hidden && labels.octave.dataset.shift !== shift) {
+          labels.octave.dataset.shift = shift;
+          showWords(labels.octave, ...OCTAVE_WORDS[shift]);
+        }
       }
       render();
     },

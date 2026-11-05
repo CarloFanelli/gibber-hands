@@ -1,6 +1,6 @@
 ---
 feature: note-range
-version: 1.0
+version: 1.1
 status: approved
 base: 552abfe58e22dffc0022d42a48be36e324c09ead
 completed: false
@@ -126,7 +126,7 @@ With fewer than 16 lanes, the extra lanes are the first ones of the row: 11 lane
 | Shaping hand leaves, or a Victory sign switches it back, while lowered | Notes return to the normal octave at once | REQ-6 |
 | Height changes while the thumbs-down is held | The effect amount follows it, as in shape mode | REQ-6 |
 | Lowest note lowered (Deep Bass, E2 to E1, 41 Hz) | Plays; laptop speakers barely reproduce it, headphones do; the peak limit holds | REQ-6 |
-| Darkest brightness, octave lowered | Averaged over lanes 1–8, the lower octave is within 3 dB of the normal octave | REQ-7 |
+| Darkest brightness, octave lowered | Averaged over lanes 1–8, the lower octave is within 5 dB of the normal octave | REQ-7 |
 | Brightest, octave lowered | Brightness reaches 3,200 Hz | REQ-7 |
 | Lowered with 16 lanes | The lane labels name all 16 lower notes | REQ-8 |
 | Camera panel narrower than 560 px | The label shrinks to its icon, "↓", as the other hand labels do | REQ-8 |

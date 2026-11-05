@@ -6,7 +6,7 @@
  * note of the current preset, and height sets the brightness. There are 8 lanes, or up to 16 as the camera
  * picture widens on screen. Squeeze to play: thumb and index touching is
  * full volume, fingers apart is silence, so a relaxed hand is quiet. A closed fist and a lost hand fade to
- * silence. With the octave raised, every note and its brightness double.
+ * silence. With the octave raised, every note and its brightness double; lowered, they halve.
  */
 import type { HandState, Point } from '../hands/types';
 
@@ -44,7 +44,7 @@ export interface SynthParams {
   amp: number;
   /** Time for the volume to reach `amp`, ms. */
   ampRampMs: number;
-  /** Octaves above the preset's notes: 1 while the octave is raised, else 0. */
+  /** Octaves from the preset's notes: 1 while the octave is raised, −1 while it is lowered, else 0. */
   octave: number;
 }
 
@@ -57,7 +57,7 @@ export function laneCount(zoneWidthPx: number | null): number {
 /**
  * `previous` is what the last HandState asked for (null at first), which the note lane sticks to. `lanes`
  * are the notes of the note lanes in play, one per lane, so their number is the lane count; `octave` is 1
- * while the octave is raised.
+ * while the octave is raised and −1 while it is lowered.
  */
 export function mapHandToSynth(s: HandState, previous: SynthParams | null, lanes: readonly Note[], octave = 0): SynthParams {
   const scale = 2 ** octave;

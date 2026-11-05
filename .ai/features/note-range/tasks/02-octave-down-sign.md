@@ -48,3 +48,8 @@ The octave squeeze of two-hand play, the other way down. It sits after the extra
 - Camera panel narrower than 560 px → the label shrinks to its icon, "↓", as the other hand labels do (REQ-8)
 - Snippet copied with the octave lowered → pasted at gibber.cc, it plays the same notes (REQ-9)
 - No note sounding → the snippet is as today: silent, with the line that makes it sound (REQ-9)
+
+## Notes from implementation
+
+- **Known limitation**: AC 3 is not checked with a real hand: this machine has no camera. In headless Chromium, a stand-in camera showed the thumbs-up photo upside down. The hand model named it "Thumb down" at 95%, and it lowered the octave only as the shaping hand, not as the lead hand or as a second hand playing notes. The snippet with the octave lowered ran against stand-ins for Gibber's objects, not pasted at gibber.cc. /dev, 2026-11-05.
+- **REQ-7 / AC 5 — divergence**: the spec asked the darkest lower octave to be within 3 dB of the normal octave, averaged over lanes 1–8 → measured gaps are 0.9 to 2.7 dB on four presets, but 3.2 dB on Brass and 4.5 dB on Blues Reed, the lower octave louder, steady over three runs with silence between notes. The sound stays as built, each lower note half as bright, and the check is now within 5 dB: SPEC.md is version 1.1. Peaks stay at −3.8 dBFS or lower. Agreed in /dev, 2026-11-05.

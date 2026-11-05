@@ -14,7 +14,7 @@ export function noteFrequency(name: string): number {
   return 440 * 2 ** (semitonesFromA4 / 12);
 }
 
-/** The same note `octaves` octaves up: B♭3 one up is B♭4. */
+/** The same note `octaves` octaves up, or down for a negative count: B♭3 one up is B♭4, E2 one down E1. */
 export function raiseOctave(name: string, octaves: number): string {
   const match = NOTE_NAME.exec(name);
   if (!match) throw new Error(`Not a note name: "${name}"`);

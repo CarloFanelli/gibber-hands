@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { EMPTY_HAND } from '../src/hands/types';
 import { mapHandToSynth } from '../src/mapping/handToSynth';
-import { asPlayed, effectAmount, octaveRaised } from '../src/mapping/shape';
+import { asPlayed, effectAmount, octaveShift } from '../src/mapping/shape';
 import { PRESETS } from '../src/synth/presets';
 import { INITIAL_SLIDERS, SLIDERS_SECOND_HAND, sliderHandState, sliderPair } from '../src/ui/sliders';
 
@@ -47,14 +47,14 @@ describe('slider shape controls', () => {
   const second = (over: Partial<typeof INITIAL_SLIDERS>) => sliderPair({ ...INITIAL_SLIDERS, ...over }, 'right', 0).left.state;
 
   it('start with the octave switch off and the effect slider in the middle: the preset’s own amount', () => {
-    expect(octaveRaised(false, second({}), SLIDERS_SECOND_HAND)).toBe(false);
+    expect(octaveShift(0, second({}), SLIDERS_SECOND_HAND)).toBe(0);
     expect(effectAmount(second({}), SLIDERS_SECOND_HAND, 0.3)).toBeCloseTo(0.3, 12);
   });
 
   it('raise the octave while the switch is on, and drop it once it is off', () => {
-    expect(octaveRaised(false, second({ octaveUp: true }), SLIDERS_SECOND_HAND)).toBe(true);
-    expect(octaveRaised(true, second({ octaveUp: true }), SLIDERS_SECOND_HAND)).toBe(true);
-    expect(octaveRaised(true, second({ octaveUp: false }), SLIDERS_SECOND_HAND)).toBe(false);
+    expect(octaveShift(0, second({ octaveUp: true }), SLIDERS_SECOND_HAND)).toBe(1);
+    expect(octaveShift(1, second({ octaveUp: true }), SLIDERS_SECOND_HAND)).toBe(1);
+    expect(octaveShift(1, second({ octaveUp: false }), SLIDERS_SECOND_HAND)).toBe(0);
   });
 
   it('set the effect amount like a shaping hand’s height: none at one end, double at the other, at most 80%', () => {
@@ -67,7 +67,7 @@ describe('slider shape controls', () => {
   it('play one note, in the upper octave with the switch on: the shaping hand never plays one', () => {
     const lanes = PRESETS[0]!.lanes.slice(0, 8);
     const pair = sliderPair({ ...INITIAL_SLIDERS, pinch: 0, octaveUp: true }, 'right', 0);
-    const octave = octaveRaised(false, pair.left.state, SLIDERS_SECOND_HAND) ? 1 : 0;
+    const octave = octaveShift(0, pair.left.state, SLIDERS_SECOND_HAND);
     const lead = mapHandToSynth(pair.right.state, null, lanes, octave);
     expect(lead).toMatchObject({ amp: 1, frequency: lanes[lead.lane!]!.frequency * 2 });
     expect(mapHandToSynth(asPlayed(pair.left.state, SLIDERS_SECOND_HAND), null, lanes, octave).amp).toBe(0);

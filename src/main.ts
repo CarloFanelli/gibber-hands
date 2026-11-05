@@ -12,8 +12,8 @@
  * A HandPair holds a HandState per side, right and left, and each hand plays its own note: the engine
  * has a voice per side. mapping/roles says which side is the lead hand, and ui/leadHandSwitch swaps the
  * roles, remembered in browser storage. mapping/shape follows the second hand: a Victory sign switches it
- * to shape mode, where it plays no note, its squeeze raises every note an octave and its height sets the
- * reverb or echo amount.
+ * to shape mode, where it plays no note, its squeeze raises every note an octave, its thumbs-down lowers
+ * them one and its height sets the reverb or echo amount.
  *
  * The "no camera" path uses ui/sliders to produce the same HandPair shape, with the sliders as the lead
  * hand and their shape controls as the second hand, always in shape mode, so everything downstream works
@@ -34,7 +34,7 @@ import { SIDES, emptyPair, type HandPair, type Side } from './hands/types';
 import { laneCount, mapHandToSynth, type SynthParams } from './mapping/handToSynth';
 import { raiseOctave } from './mapping/notes';
 import { leadSide, otherSide, roles } from './mapping/roles';
-import { SECOND_HAND_START, asPlayed, effectAmount, followSecondHand, octaveRaised, secondHandAfterSwap } from './mapping/shape';
+import { SECOND_HAND_START, asPlayed, effectAmount, followSecondHand, octaveShift, secondHandAfterSwap, type Octave } from './mapping/shape';
 import { createSynth, type EngineStatus, type Sounds } from './synth/engine';
 import { PRESETS, presetIndex } from './synth/presets';
 import { gibberSnippet } from './synth/snippet';
@@ -95,9 +95,9 @@ function boot() {
   // Hand pairs start only once tracking or the sliders run: until then, no hand plays silence.
   let pair: HandPair = emptyPair(0);
   let sounds: Sounds | null = null;
-  // The second hand's mode lasts the visit, out of view too; the octave follows its squeeze.
+  // The second hand's mode lasts the visit, out of view too; the octave follows its squeeze or thumbs-down.
   let second = SECOND_HAND_START;
-  let raised = false;
+  let octave: Octave = 0;
   /** The octave the lane names show. */
   let laneOctave = 0;
   /** How many note lanes the playing zone holds, from its width on screen (null without a camera picture). */
@@ -119,8 +119,7 @@ function boot() {
     }
     // The sliders' second hand only shapes.
     const shaping = slidersPlay() ? SLIDERS_SECOND_HAND : second;
-    raised = octaveRaised(raised, pair[secondSide].state, shaping);
-    const octave = raised ? 1 : 0;
+    octave = octaveShift(octave, pair[secondSide].state, shaping);
     const previous = sounds;
     const map = (side: Side): SynthParams => {
       const state = side === secondSide ? asPlayed(pair[side].state, shaping) : pair[side].state;
@@ -221,7 +220,7 @@ function boot() {
     lead = side;
     writeStored(LEAD_HAND_KEY, side);
     second = secondHandAfterSwap(pair[otherSide(side)].state);
-    raised = false;
+    octave = 0;
     sliders?.setLeadSide(side);
     help.setLeadSide(side);
     // The shape step's hint names the second hand.
@@ -241,7 +240,7 @@ function boot() {
     const played = playHands();
     const lanes = SIDES.flatMap((side) => (played.sounds[side].lane === null ? [] : [played.sounds[side].lane]));
     const effect = { kind: PRESETS[preset]!.effect.kind, amount: played.effect };
-    overlay.draw(pair, lanes, { side: otherSide(lead), mode: second.mode, octaveUp: raised, effect });
+    overlay.draw(pair, lanes, { side: otherSide(lead), mode: second.mode, octave, effect });
   });
 }
 
