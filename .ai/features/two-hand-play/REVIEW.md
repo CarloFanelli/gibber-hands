@@ -1,6 +1,6 @@
 ---
 feature: two-hand-play
-status: DRAFT
+status: APPROVED
 reviewed: 2026-11-05
 head: 552abfe58e22dffc0022d42a48be36e324c09ead
 ---
@@ -8,7 +8,7 @@ head: 552abfe58e22dffc0022d42a48be36e324c09ead
 # Review — two-hand-play
 
 **Scope**: re-verification of 2 files changed since the review of `552abfe5` (`src/main.ts`, `src/ui/overlay.ts`). Nothing is committed yet, so the script's delta lists all 37 files of the first pass; the other 35 are unchanged since it read them in full. 19 workflow artifacts under `.ai/` excluded.
-**Findings**: 1 must-fix · 0 should-fix · 1 nit
+**Findings**: 0 must-fix · 0 should-fix · 0 nit
 
 ## Findings
 

@@ -3,7 +3,7 @@ feature: two-hand-play
 version: 1.3
 status: approved
 base: 552abfe58e22dffc0022d42a48be36e324c09ead
-completed: false
+completed: true
 ---
 
 # Two-hand play
