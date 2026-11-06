@@ -5,6 +5,6 @@
 03-late-log-entries: DONE
 04-sharing: IN_PROGRESS
 05-readme-gif: TODO
-06-live-chrome-check: TODO
+06-live-chrome-check: DONE
 07-readme-status: TODO
 08-launch-log-entry: TODO

@@ -40,3 +40,7 @@ The status still says the launch is in progress, and that Edge, Firefox and Safa
 - Technique already in the pre-AI toolbox (e.g. pinch) → listed as new only for what changed (scaling by hand size), with a pointer to the original (REQ-8)
 - Linked file renamed later → the link check before announcing catches it (REQ-8)
 - A Chrome check failed and wasn't fixed (Task 06) → listed under "Known limitations" with what fails (REQ-4)
+
+## Notes from implementation
+
+- **Impacts Task 07**: the README's "Known limitations" depends on Carlo's first-visit figure (Task 06) from his laptop. Every other check on the live site passed, so nothing else goes there. /dev, 2026-11-06.
