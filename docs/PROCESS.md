@@ -213,16 +213,118 @@ All four were written in one session, through one interview per milestone.
   - pasting a copied snippet into gibber.cc;
   - opening gibber.cc while playing with a real hand.
 
-### Note range (in progress)
+### Two-hand play (2026-11-04 to 2026-11-05)
+
+*Written on 2026-11-06, after the feature ended, from its [spec](../.ai/features/two-hand-play/SPEC.md), task notes and review. No notes were taken at the time.*
+
+- **Why:** it picks up two follow-ups from the first interviews, playing with two hands and setting the effect amount by hand. The launch waited for it.
+- **What it adds** (21 requirements):
+  - The second hand plays notes too, so two notes can sound at once.
+  - A Victory sign switches the second hand to shape mode. There, a held squeeze lifts every note an octave, and its height sets the reverb or echo amount.
+  - A swap control serves left-handed players, and one more step hint teaches the switch.
+- **Plan:** six tasks:
+  - both hands tracked;
+  - two notes at once;
+  - the octave squeeze;
+  - the effect by height;
+  - shape controls on the sliders;
+  - guidance for the second hand.
+
+  The technical plan added four edge cases from the code. One of them: a hand that leaves showing the Victory sign and comes back still showing it counts as one new sign.
+- **Changed during the work, and agreed with me** (spec 1.0 to 1.3):
+  - The octave's level check. Single upper notes on Warm Pad differ by up to 6.7 dB from the same lane below, because of the preset's reverb. The check became the average over a preset's eight lanes, and it holds on every preset (worst gap 1.1 dB).
+  - With the effect amount added, the second hand's labels in shape mode were 487 px long. On a phone they ran over the frame rate. Below 560 px they now show icons and numbers, and wrap to a second line.
+  - The shape step hint used up its 10 seconds while the hand model was still loading. Its time now counts only while a hand is in view.
+- **Tuned by ear, but not heard yet:** the effect amount glides over 50 ms, and the octave drops back at pinch 0.3. Both are starting values. The glide was checked for zipper noise by measurement only.
+- **How it was checked:**
+  - 219 unit tests in all, up from 165.
+  - The agent drove headless Chromium, with MediaPipe's sample photos as the camera:
+    - which hand the model calls right;
+    - two hands sounding without a break, with processor load going from 0.39 to 0.43 cores for 12 voices;
+    - the labels at six widths, from 300 to 620 px.
+  - The live code ran on the app's own Gibber and matched the app within 0.012 dB, except Blues Reed: it can differ by up to 0.13 dB, because Gibber's own mix moves by that much.
+- **Review:**
+  - One must-fix: during a camera or hand-model retry, the sliders' shaping hand played notes at full volume. Shape mode now follows where the hands come from, not the status words.
+  - One nit: a label was rewritten on every frame.
+  - Both were fixed in one commit, and a re-check approved it.
+- **Backlog:** I approved three follow-ups:
+  - every note an octave lower, done in note range;
+  - a preset for each hand, still open;
+  - a drum loop, done in drum loop.
+- **Still to check by hand:**
+  - the frame rate with two hands and audio on, on both laptops;
+  - a real right hand lighting the right-hand label;
+  - the two-voice code pasted at gibber.cc;
+  - the 50 ms glide, by ear.
+
+### Note range (2026-11-05)
 
 - **Decided by me during the work:** in the octave-down task, the darkest-brightness check missed its 3 dB target on two presets. With the octave lowered, Blues Reed played 4.5 dB louder on average over its eight lanes, and Brass 3.2 dB. I kept the sound as built, each lower note half as bright, and relaxed the check to 5 dB (spec version 1.1). Neighbouring lanes in the normal octave already differ by up to 11 dB.
 
-### Drum loop (in progress)
+*The rest was written on 2026-11-06, after the feature ended, from its [spec](../.ai/features/note-range/SPEC.md), task notes and review.*
+
+- **What it adds** (16 requirements):
+  - More note lanes on a wider camera picture: one per 80 px of playing zone, from 8 up to 16.
+  - A thumbs-down held by the second hand in shape mode plays every note an octave lower. This picks up a follow-up from two-hand play.
+  - A gesture guide below the live code, with a divider between the two. "Hide code" now hides only the code.
+- **Plan:** five tasks:
+  - more note lanes;
+  - the octave-down sign;
+  - the octave choice on the sliders;
+  - the gesture guide;
+  - the divider.
+- **Tuned by ear, but not heard yet:** the 80 px lane width, a starting value.
+- **How it was checked:**
+  - 250 unit tests in all, up from 219.
+  - The agent drove headless Chromium with a stand-in camera:
+    - The lane count followed the picture's width at five window sizes, while a bar was dragged, after a reload and with stacked panels.
+    - The hand model named an upside-down thumbs-up photo "Thumb down" at 95%. It lowered the octave only for the shaping hand, not for a hand playing notes.
+    - Two hands at full squeeze, brightest, on lanes 15 and 16, peaked at −3.8 dBFS or lower on every preset.
+    - Assistive tools see the divider as "Resize code and gesture guide". A finger drag worked with emulated touch.
+- **Review:**
+  - One should-fix: when the camera worked but the hand model had failed, the guide said "No camera". It now says the sliders stand in for the hand, without naming a cause.
+  - One nit: right after a change in the lane count, the lit lanes were drawn from the old count.
+  - Both were fixed in one commit, and a re-check approved it.
+- **Still to check by hand:**
+  - 16 lanes with a real hand on both laptops;
+  - the thumbs-down with a real hand;
+  - the divider with a screen reader and on a phone;
+  - the code with the octave lowered, pasted at gibber.cc.
+
+### Drum loop (2026-11-05)
 
 - **Proposed by the agent, rejected after I played it:** spec 1.x let the second hand steer the drums. A rock sign 🤟 switched it to drum mode, where its palm center picked one of four drum patterns, its height set 1 to 4 drum layers, and a closed fist muted the drums. It was built and tested through task 05. When I played it, changing the beat by hand didn't work.
 - **Decided by me:** buttons beside "Start drums" replace it (spec 2.0). ◀ and ▶ step through the patterns and − and + set the layers. I dropped the mute, since "Stop drums" ends the beat, and kept the D key for start and stop only.
 - **What went with it:** drum mode and the mute; the camera view's drum label; the band rule the note lanes had shared with the hand's pattern and height bands; and the planned slider drum controls. The buttons work without a camera, so the no-camera path needs nothing of its own. The help-sheet task stays, without drum gestures.
 - The agent checked the buttons in headless Chromium without a camera: wrap-around, the layer bounds, choices made while stopped, and the live code changing a bar after the panel.
+
+*The rest was written on 2026-11-06, after the feature ended, from its [spec](../.ai/features/drum-loop/SPEC.md), task notes and review.*
+
+- **What it adds** (13 requirements in spec 2.0):
+  - A drum loop to play over. Buttons start and stop it, and step through four drum patterns, Rock, House, Hip-hop and Breakbeat, each at its own tempo.
+  - Buttons add or remove drum layers, and the D key starts and stops the loop.
+  - The echo follows the drum tempo, and the live code plays the same beat.
+
+  This picks up the rhythm follow-up from two-hand play.
+- **Plan:** seven tasks at first. Spec 2.0 removed three: the drum-mode switch, the fist mute and the slider drum controls. A buttons task took their place, leaving five.
+- **Changed during the work:**
+  - The D key now acts while the help sheet is open, as 1–6 and C already did. The spec had assumed those keys were ignored there (spec 1.1, agreed in the technical plan).
+  - A tempo change glides the echo time over 250 ms, a new value tuned by ear, because a jump clicks. Echoes ringing during the glide bend in pitch, like a tape echo.
+- **Tuned by ear, but not heard yet:** the drum mix, the House, Hip-hop and Breakbeat hits, the open hi-hat and the 250 ms glide. They were set by measurement or from the spec's tables, not by listening. Four drum layers peak at −6.9 dBFS alone, and under −3 dBFS with two loud hands.
+- **How it was checked:**
+  - 297 unit tests in all, up from 250.
+  - Buttons, in headless Chromium without a camera:
+    - − and + stop at 1 and 4;
+    - a choice made while stopped plays on the next start;
+    - the panel names a pattern at once, while the live code follows a bar later;
+    - the Tab order, and the layout at 1280 and 390 px.
+  - The drum code ran on the app's own Gibber 2.1.4. Every pattern tried played the app's steps and loudness at the right tempo. In 5 runs of 6, all drums started within 4 samples of each other. In the sixth, snare and hi-hats came 9 ms after the kick.
+- **Review:**
+  - Three nits, all left over from removing drum mode: a test name, note-lane comments still worded for the removed bands, and lines rewritten with no change in behavior.
+  - They were fixed in one commit, and the review approved it.
+- **Still to check by hand:**
+  - listening to the drum mix and the three newer patterns;
+  - pasting the drum code at gibber.cc.
 
 ### M4 — Ship
 - …
