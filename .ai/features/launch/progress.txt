@@ -8,3 +8,4 @@
 06-live-chrome-check: DONE
 07-readme-status: TODO
 08-launch-log-entry: TODO
+09-gibber-credit-link: TODO

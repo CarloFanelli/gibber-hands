@@ -1,6 +1,6 @@
 ---
 feature: launch
-spec-version: 1.2
+spec-version: 1.3
 status: approved
 ---
 
@@ -179,3 +179,17 @@ The launch is mostly docs, repository settings and two assets from Carlo. Only T
 **Key decisions:**
 - The agent drafts the entry from spec 1.2, the task notes and the session, and Carlo approves it.
 - For the three decisions, the agent lists up to five candidates from the log, each with its line, and Carlo writes the words. Examples: the camera asked for on page load, six presets, drums by buttons after playing the gesture version, the Chrome-only claim.
+
+---
+
+### Task 09: gibber-credit-link
+
+**Files to modify:**
+- `src/ui/liveCode.ts:19` — the link's text becomes "Open gibber" and its address https://gibber.cc/; `target` and `rel` stay. The header comment says what the link is now.
+- `src/ui/helpSheet.ts:59` — the "Open gibber.cc" entry becomes "Open gibber", described as Gibber's home page, the library behind the sound.
+- `README.md:38` — the live-code line keeps Copy and calls the link a credit to Gibber.
+
+**Key decisions:**
+- No unit test: Vitest runs without a DOM and no test names the link. The check is the built page in Playwright Chromium: link text, address, `target` and `rel`.
+- Earlier PROCESS.md entries stay as written (REQ-11 edge cases); the launch entry (Task 08) records the change.
+
