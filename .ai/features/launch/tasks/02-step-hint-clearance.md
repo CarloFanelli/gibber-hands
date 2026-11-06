@@ -37,3 +37,7 @@ None
 - Hand model card shown with the camera card (e.g. no network) → both cards and the sliders start below the step hint (REQ-17)
 - A panel resized, or the window crossing into stacked panels, while a card is shown → no overlap after the change (REQ-17)
 - Window under 320×480 px → outside this guarantee; card and sliders still scroll (REQ-17)
+
+## Notes from implementation
+
+- **Known limitation**: at 320×480 the stacked camera panel leaves a strip about 53 px tall under the step hint, and about 21 px when the right hand's labels push the hint lower. Nothing is covered, and every card and control can be scrolled into the strip, but a two-line message shows only about 40% at a time in the lower case, and the "Video stays on your device" note sits over the strip's bottom (backlog B-10). The spec puts phones outside its targets and keeps the step hint in place. Measured in headless Chromium with the camera blocked: at 1536×730, 1280×720, 1920×1080, 720×480 and 375×667, nothing is covered and every control is fully visible at some scroll position. /dev, 2026-11-06.

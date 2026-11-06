@@ -119,9 +119,12 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 .overlay-gesture { font-weight: 600; }
 .overlay-octave { color: var(--accent); font-weight: 600; }
 .overlay-fps { top: 8px; right: 8px; color: var(--muted); font-variant-numeric: tabular-nums; }
-/* Step hints: under the top labels, never in the way of the sliders below. */
-.step-hint { position: absolute; top: 44px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; max-width: calc(100% - 24px); margin: 0; padding: 8px 14px; border-radius: 10px; background: rgb(11 15 20 / 0.85); font-size: 18px; font-weight: 600; white-space: nowrap; pointer-events: none; }
-.panel-camera:has(.overlay-hand-right:not([hidden])) .step-hint { top: 76px; }
+/* Step hints: under the top labels, lower when the right hand's labels show. While a step hint shows, the
+   status cards and the sliders scroll in the space below it, so it never covers them. */
+.panel-camera { --hint-top: 44px; --hint-height: 52px; }
+.panel-camera:has(.overlay-hand-right:not([hidden])) { --hint-top: 76px; }
+.step-hint { position: absolute; top: var(--hint-top); left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; max-width: calc(100% - 24px); height: var(--hint-height); margin: 0; padding: 8px 14px; border-radius: 10px; background: rgb(11 15 20 / 0.85); font-size: 18px; font-weight: 600; white-space: nowrap; pointer-events: none; }
+.panel-camera:has(.step-hint:not([hidden])) .camera-status { top: calc(var(--hint-top) + var(--hint-height)); }
 .step-hint-icon { flex: none; width: 36px; height: 36px; color: var(--accent); }
 .step-hint[data-step="hand"] .step-hint-icon { animation: hint-rise 1.4s ease-in-out infinite; }
 .step-hint[data-step="pinch-slider"] .step-hint-icon { animation: hint-lower 1.4s ease-in-out infinite; }
