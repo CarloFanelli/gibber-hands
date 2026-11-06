@@ -1,7 +1,8 @@
 ---
 feature: launch
-version: 1.1
+version: 1.2
 status: approved
+base: 8e6151cbefced46cc1899a80610dd5526752d4c7
 completed: false
 ---
 
@@ -9,17 +10,18 @@ completed: false
 
 ## Overview
 
-This milestone ships gibber-hands. GitHub Actions deploys the site to GitHub Pages on every push to main, and only when typecheck, tests and build pass. A pull request runs the same checks and can't merge until they pass. On the live site, the targets of the three earlier specs are measured again in four desktop browsers. The README opens with a silent 5-second GIF of a hand playing, shows the final controls and links the live demo. It also adds a "New in gibber-hands" list next to the pre-AI toolbox. Shared links get a title, a description and a preview image, and nothing is tracked. PROCESS.md closes with a log entry per milestone and the three decisions Carlo didn't delegate.
+This milestone ships gibber-hands. GitHub Actions deploys the site to GitHub Pages on every push to main, and only when typecheck, tests and build pass. A pull request runs the same checks and can't merge until they pass. On the live site, the first three milestones are re-checked in desktop Chrome only, and the README claims no other browser. The README opens with a silent 5-second GIF of a hand playing and links the live demo. Shared links get a title, a description and a preview image, and nothing is tracked. The step hint stops covering the camera's status card. PROCESS.md gets a finished entry for every feature and the three decisions Carlo didn't delegate.
 
 ## Project Context
 
-- The deploy workflow already exists. Pages must be enabled with Source set to GitHub Actions.
+- Pages is enabled with Source set to GitHub Actions. The site is live with HTTPS enforced (checked 2026-11-06).
 - The repo is public, as GitHub Pages on a free plan requires.
 - The site lives under `/gibber-hands/`, so every asset path depends on the repository name.
 - The camera needs HTTPS, which github.io provides.
-- The GIF and the preview still need Carlo's hand and camera, so Carlo records them.
-- Changes visible outside the repo (enabling Pages, editing the About box) happen with Carlo's go-ahead at that moment.
-- Version 1.1 adds the pull-request check and records the rules on main that Carlo asked for: he pushes to main directly, everyone else opens a pull request.
+- The GIF and the preview need Carlo's hand and camera, so Carlo records them.
+- Changes visible outside the repo (editing the About box) happen with Carlo's go-ahead at that moment.
+- Version 1.1 added the pull-request check and the rules on main: Carlo pushes to main directly, everyone else opens a pull request.
+- Version 1.2 narrows the browser check to Chrome (no other browser was ever tried), absorbs the step hint overlap (B-12), and logs all seven features.
 
 ## Functional Requirements
 
@@ -30,23 +32,30 @@ This milestone ships gibber-hands. GitHub Actions deploys the site to GitHub Pag
 - REQ-3: A failed run leaves the previously deployed site live and unchanged.
 - REQ-12: A pull request to main runs typecheck, tests and build, and GitHub refuses to merge it until all three pass. A pull request never deploys.
 - REQ-13: Only Carlo pushes to main directly; anyone else changes it through a pull request. Nobody can force-push to main or delete it.
-- REQ-4: On the live site, milestone 1–3 requirements are re-checked in current desktop Chrome, Edge, Firefox and Safari, results logged in PROCESS.md.
+- REQ-4: On the live site, milestone 1–3 requirements are re-checked in current desktop Chrome, results logged in PROCESS.md.
 
 ### README
 
 - REQ-5: The README opens with a silent, looping 5-second GIF of a hand playing, at most 800 px wide and 4 MB.
 - REQ-6: The GIF shows the overlay, a lane change, a squeeze and the live code updating.
-- REQ-7: The README's status, live demo link and "How to play" match the shipped behavior, with no "planned" labels left.
+- REQ-7: The README's status, live demo link and "How to play" match the shipped behavior, with no "planned" or "in progress" labels left.
+- REQ-14: The README names only browsers actually checked on the live site, "Tested on desktop Chrome." today, and promises no future checks.
 - REQ-8: Next to the pre-AI toolbox, a "New in gibber-hands" section lists techniques this project added, each linked to its file.
 
 ### Sharing
 
 - REQ-9: Shared links show the title, a one-line description and a 1200×630 still from the demo.
-- REQ-10: The repository's About box shows the live site URL and topics.
+- REQ-10: The repository's About box shows the live site URL and the topics mediapipe, gibber, web-audio, typescript, gesture-recognition, creative-coding and claude-code.
 
 ### Process log
 
-- REQ-11: PROCESS.md has a log entry for each milestone and the "three decisions I did not delegate", written by Carlo.
+- REQ-11: PROCESS.md has a finished, dated entry for each of the seven features, launch included, with no "…" or "(in progress)" left.
+- REQ-15: An entry written or finished after its feature ended says so, with the date and the spec, task notes and review it draws on.
+- REQ-16: The "three decisions I did not delegate" are written by Carlo and replace the "Filled in at the end of milestone 4" line.
+
+### Camera view
+
+- REQ-17: In any window from 320×480 px up, the step hint covers no part of a camera status card or the sliders.
 
 ## Data & Dependencies
 
@@ -81,22 +90,39 @@ This milestone ships gibber-hands. GitHub Actions deploys the site to GitHub Pag
 | Check required before the workflow runs on pull requests | Every pull request would wait forever, so GitHub requires the check only once the workflow change is on main | REQ-12 |
 | Carlo pushes to main directly | Allowed, flagged by GitHub as a bypassed rule; the push deploys as before | REQ-13 |
 | Force-push or deletion of main, by anyone | Refused; a history rewrite first needs Carlo to switch that rule off | REQ-13 |
-| A browser fails a check | Fixed before launch, or listed under "Known limitations" in the README with what fails | REQ-4 |
+| A Chrome check fails on the live site | Fixed before launch, or listed under "Known limitations" in the README with what fails | REQ-4 |
 | Machine without a camera | The slider path is checked instead | REQ-4 |
 | GIF over 4 MB | Re-encoded (fewer colours or frames) before commit | REQ-5 |
 | GIF path | Stored in the repo and linked relatively, so it renders on github.com | REQ-5 |
+| The README's "TODO … GIF goes here" comment | Replaced by the GIF; no TODO comment left in the README | REQ-5 |
 | Recording shows something private (notifications, other tabs) | Re-recorded | REQ-6 |
 | N/A — network: the GIF is a file in the repo | — | REQ-6 |
 | Behavior changed while tuning after launch | README updated in the same commit as the change | REQ-7 |
 | Live demo link | Opened and checked on the live site before announcing | REQ-7 |
+| Status written while the launch is still open | Rewritten in the change that closes the launch: it says the site is live, with no milestone in progress | REQ-7 |
+| Someone later tries Edge, Firefox or Safari | The README adds each browser that passed, in the same change as its PROCESS.md line | REQ-14 |
+| Milestone 2 and 3 entries list Edge, Firefox and Safari as "still to check" | Left as written; the launch entry says those checks were taken out of the launch | REQ-14 |
 | Technique already in the pre-AI toolbox (e.g. pinch) | Listed as new only for what changed (scaling by hand size), with a pointer to the original | REQ-8 |
 | Linked file renamed later | The link check before announcing catches it | REQ-8 |
 | Preview image given as a relative path | Absolute URL, since link-preview crawlers need one | REQ-9 |
 | A platform shows an old preview from its cache | Refreshed through that platform's preview inspector; outside the site's control | REQ-9 |
-| Topics with spaces or capitals | Lowercase and hyphenated, as GitHub requires | REQ-10 |
-| Site not live yet | The About URL is set after the first successful deploy | REQ-10 |
-| The three decisions not written yet | Milestone 4 isn't done | REQ-11 |
-| Agent asked to write the three decisions | It may suggest candidates from the log; the final words are Carlo's | REQ-11 |
+| Topics with spaces or capitals | Lowercase and hyphenated, as GitHub requires; the seven listed already are | REQ-10 |
+| Site not live yet | The About URL is set after the first successful deploy; true since 2026-11-05 | REQ-10 |
+| Agent asked to edit the About box | Only with Carlo's go-ahead in that session; the existing description stays | REQ-10 |
+| Launch entry | Written when the launch closes, at that moment: README, About box, overlap fix, browser decision | REQ-11 |
+| A feature with no entry at all (two-hand play) | Written from its spec, task notes and review alone | REQ-11 |
+| The milestone 3 entry calls the overlap phone-only | Left as written; the launch entry says it shows in any window too short for the card and sliders, seen at 1536 px wide | REQ-11 |
+| A partial entry written at the time (note range, drum loop) | Kept word for word; the late part follows it, marked as late | REQ-15 |
+| The spec changed mid-feature (e.g. drum loop 1.x to 2.0) | The entry tells what was built and reviewed, and says the spec changed and why | REQ-15 |
+| The three decisions not written yet | Milestone 4 isn't done | REQ-16 |
+| Agent asked to write the three decisions | It may suggest candidates from the log; the final words are Carlo's | REQ-16 |
+| Card and sliders taller than the room under the step hint (camera blocked, 1536 px wide) | They start below the step hint and scroll there; the step hint stays where it is | REQ-17 |
+| No step hint shown (steps done, or hints stopped after the first sound) | Card and sliders use the camera view's full height, centred as today | REQ-17 |
+| The second hand's label pushes the step hint lower | Card and sliders start below the step hint's new place | REQ-17 |
+| The step changes while a card is shown (e.g. "Start audio" to the squeeze step) | No overlap at any step | REQ-17 |
+| Hand model card shown with the camera card (e.g. no network) | Both cards and the sliders start below the step hint | REQ-17 |
+| A panel resized, or the window crossing into stacked panels, while a card is shown | No overlap after the change | REQ-17 |
+| Window under 320×480 px | Outside this guarantee; card and sliders still scroll | REQ-17 |
 
 ## Out of Scope
 
@@ -107,3 +133,6 @@ This milestone ships gibber-hands. GitHub Actions deploys the site to GitHub Pag
 - **Offline support (model files served from the site)** — CLAUDE.md reserves it for "if ever needed".
 - **Performance tuning for phones** — phones have no targets in this project.
 - **The repository's own social preview image** — it's set by hand in the repository settings, and the site's link preview covers the shared demo link.
+- **Checks in Edge, Firefox and Safari** — nobody has run them, and the README claims only what was checked. Carlo chose not to track them in the backlog.
+- **Other overlaps in the camera view (the privacy note over the sliders on phones, B-10)** — stays in the backlog; this launch fixes only the overlap seen on a laptop.
+- **Rewriting earlier log entries** — entries written at the moment stay as written; later entries correct them.

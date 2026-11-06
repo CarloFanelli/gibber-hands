@@ -46,9 +46,10 @@
 - **What**: When the panels are stacked (narrow window or phone), the "Hide code" button sits at the bottom of the instrument panel, below the six preset cards, so it is out of sight until that panel is scrolled.
 - **From**: instrument-ui (dev task 05, 2026-11-03)
 
-### B-12 · open
+### B-12 · picked-up
 - **What**: At phone width the camera panel is short, so the step hint at its top (for example "Start audio") sits over the camera's status card, such as "No camera found", and hides its Try again button. The button still works under it, but it can't be seen.
 - **From**: instrument-ui (dev task 06, 2026-11-03)
+- **Picked up by**: launch (2026-11-06)
 
 ### B-13 · picked-up
 - **What**: A way to play every note an octave lower, e.g. a second gesture of the shaping hand.
