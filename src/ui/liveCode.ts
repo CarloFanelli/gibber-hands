@@ -1,5 +1,5 @@
 /**
- * The live code: the Gibber snippet in colour, a Copy button and a link to the gibber.cc playground.
+ * The live code: the Gibber snippet in colour, a Copy button and "Open gibber", a credit link to Gibber's home page.
  * While a selection touches the snippet it holds still, so it can be copied by hand while the hand moves;
  * the latest snippet shows once the selection leaves it.
  */
@@ -16,7 +16,7 @@ export function createLiveCode(root: HTMLElement): LiveCode {
   root.innerHTML = `
     <div class="code-tools">
       <button type="button" class="code-copy">Copy</button>
-      <a class="code-open" href="https://gibber.cc/playground/" target="_blank" rel="noopener noreferrer">Open gibber.cc <span aria-hidden="true">↗</span></a>
+      <a class="code-open" href="https://gibber.cc/" target="_blank" rel="noopener noreferrer">Open gibber <span aria-hidden="true">↗</span></a>
       <span class="code-note" role="status"></span>
     </div>
     <pre class="code"></pre>
