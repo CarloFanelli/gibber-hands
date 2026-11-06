@@ -6,6 +6,6 @@
 04-sharing: IN_PROGRESS
 05-readme-gif: TODO
 06-live-chrome-check: DONE
-07-readme-status: TODO
+07-readme-status: IN_PROGRESS
 08-launch-log-entry: TODO
 09-gibber-credit-link: DONE
