@@ -342,4 +342,7 @@ All four were written in one session, through one interview per milestone.
   - **Not judged on the agent's machine:** speed. Its graphics are emulated in software, so tracking ran at 2 frames a second at most. With a hand in view it fell under one, and the label showed "— fps". The first tracked hand came at 17.7 s: every download had finished at 7.0 s, and the rest went to starting the model. The 10-second target needs a figure from my laptop.
 
 ## Three decisions I did not delegate
-Filled in at the end of milestone 4.
+
+1. **Drums by buttons, after playing the gesture version.** The agent proposed steering the drums with the second hand: a rock sign 🤟 for drum mode, the palm center to pick the pattern, its height to set the layers. It was built and tested through five tasks. When I played it, changing the beat by hand didn't work, so buttons beside "Start drums" replaced it ([drum loop](#drum-loop-2026-11-05)).
+2. **The camera on page load.** The agent proposed one Start button that would ask for the camera and start audio together. I chose to ask for the camera as soon as the page opens, and to keep only audio behind a click ([the four specs](#2026-11-02--the-four-specs)).
+3. **The lower octave kept as it sounds.** With the octave lowered and the brightness at its darkest, Blues Reed played 4.5 dB louder than the normal octave and Brass 3.2 dB, over the 3 dB limit. I kept the sound as built instead of reshaping it to pass, and relaxed the check to 5 dB, since neighbouring lanes in the normal octave already differ by up to 11 dB ([note range](#note-range-2026-11-05)).
