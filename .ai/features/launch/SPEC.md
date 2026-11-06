@@ -1,6 +1,6 @@
 ---
 feature: launch
-version: 1.2
+version: 1.3
 status: approved
 base: 8e6151cbefced46cc1899a80610dd5526752d4c7
 completed: false
@@ -22,6 +22,7 @@ This milestone ships gibber-hands. GitHub Actions deploys the site to GitHub Pag
 - Changes visible outside the repo (editing the About box) happen with Carlo's go-ahead at that moment.
 - Version 1.1 added the pull-request check and the rules on main: Carlo pushes to main directly, everyone else opens a pull request.
 - Version 1.2 narrows the browser check to Chrome (no other browser was ever tried), absorbs the step hint overlap (B-12), and logs all seven features.
+- Version 1.3 turns the playground link (instrument-ui REQ-19) into a credit to Gibber: "Open gibber", to gibber.cc's home page. Copy stays.
 
 ## Functional Requirements
 
@@ -56,6 +57,10 @@ This milestone ships gibber-hands. GitHub Actions deploys the site to GitHub Pag
 ### Camera view
 
 - REQ-17: In any window from 320×480 px up, the step hint covers no part of a camera status card or the sliders.
+
+### Credit to Gibber
+
+- REQ-18: The live code panel's "Open gibber" link opens https://gibber.cc/ in a new tab; help and README call it a credit to Gibber.
 
 ## Data & Dependencies
 
@@ -123,6 +128,11 @@ This milestone ships gibber-hands. GitHub Actions deploys the site to GitHub Pag
 | Hand model card shown with the camera card (e.g. no network) | Both cards and the sliders start below the step hint | REQ-17 |
 | A panel resized, or the window crossing into stacked panels, while a card is shown | No overlap after the change | REQ-17 |
 | Window under 320×480 px | Outside this guarantee; card and sliders still scroll | REQ-17 |
+| Link clicked while playing | A new tab opens; the instrument keeps playing | REQ-18 |
+| The new tab | Has no access back to the instrument's page | REQ-18 |
+| gibber.cc unreachable | Only the new tab fails; the instrument is unaffected | REQ-18 |
+| Visitor wants to run the code | Copy stays; the help no longer promises a paste-and-run link | REQ-18 |
+| Earlier log entries name "Open gibber.cc" | Left as written; the launch entry records the change | REQ-18 |
 
 ## Out of Scope
 
