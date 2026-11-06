@@ -45,3 +45,7 @@ None
 - Check required before the workflow runs on pull requests → GitHub requires the check only once the workflow change is on main (REQ-12)
 - Carlo pushes to main directly → allowed, flagged by GitHub as a bypassed rule; the push deploys as before (REQ-13)
 - Force-push or deletion of main, by anyone → refused; a history rewrite first needs Carlo to switch that rule off (REQ-13)
+
+## Notes from implementation
+
+- **Known limitation**: two criteria rest on the configuration, not on a run seen on GitHub. No pull request has run the check yet (REQ-12): the workflow runs on pull requests, skips the deploy for them, and the rule on main requires the `build` check. No push has failed its tests yet (REQ-3): the deploy job needs the build job. The only failed run (2026-11-02) failed at the deploy step, because Pages wasn't enabled yet, with "Ensure GitHub Pages has been enabled" in its log, as the spec's first edge case says. No test push or test pull request was made: Carlo hasn't asked for one. /dev, 2026-11-06.

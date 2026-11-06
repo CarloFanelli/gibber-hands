@@ -1,6 +1,6 @@
 # Task Progress - launch
 
-01-deploy-pipeline: TODO
+01-deploy-pipeline: DONE
 02-step-hint-clearance: TODO
 03-late-log-entries: TODO
 04-sharing: TODO
