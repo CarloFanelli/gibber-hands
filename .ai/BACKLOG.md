@@ -64,3 +64,7 @@
 - **What**: A rhythm milestone: a drum loop at a set tempo that you start, change and shape with your hands.
 - **From**: two-hand-play (interview, 2026-11-04)
 - **Picked up by**: drum-loop (2026-11-05)
+
+### B-16 · open
+- **What**: Add a favicon. Today the browser asks for one on every visit, gets "not found", and shows a red error in the console; visitors see nothing.
+- **From**: launch (dev task 06, 2026-11-06)

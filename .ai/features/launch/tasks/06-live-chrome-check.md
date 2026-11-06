@@ -35,3 +35,7 @@ Carlo chose Chrome only: Edge, Firefox and Safari were never tried, and they're 
 
 - A Chrome check fails on the live site → fixed before launch, or listed under "Known limitations" in the README with what fails (REQ-4)
 - Machine without a camera → the slider path is checked instead (REQ-4)
+
+## Notes from implementation
+
+- **Known limitation**: the 10-second first-visit target (AC 2) is not judged yet. In headless Chrome on this machine, with an empty cache on 20 Mbps, every download finished at 7.0 s but the first tracked hand came at 17.7 s (15.8 s without the speed limit). Graphics are emulated in software here, so model start-up and tracking are far slower than on a real laptop: tracking ran at 2 frames a second at most, under one with a hand in view, where the frame-rate label showed "— fps" as designed. Carlo's own Chrome gives the figure of record. If it is over 10 s, it goes under "Known limitations" in the README. /dev, 2026-11-06.

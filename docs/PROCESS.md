@@ -327,7 +327,19 @@ All four were written in one session, through one interview per milestone.
   - pasting the drum code at gibber.cc.
 
 ### M4 — Ship
-- …
+- **How it was checked:** on the live site, in desktop Chrome only. Edge, Firefox and Safari were not tried.
+  - **By me, by hand,** in my desktop Chrome after the step-hint fix went live (2026-11-06): ok. The requirements that need a real hand, a camera or ears rest on that pass, with the 297 unit tests behind them:
+    - hand tracking: one reading per frame, the 150 ms hold, palm center, pinch, the gesture debounce and the frame rate (REQ-6 to 9, 11 and 15);
+    - sound: lane borders, the glide, brightness, the volume curve, the fist, a lost hand, the sound chain, the gibber.cc paste, and the sliders sounding like the camera (REQ-6, 7, 9 to 14, 16 and 17);
+    - instrument UI: the preset crossfade and the six presets heard (REQ-7 and 8).
+  - **By the agent, in headless Chrome** driven by a script against the live site. A fake camera showed MediaPipe's own sample hand photos to the real model. For the slider path the camera was refused.
+    - Hand tracking, all passed (REQ-1 to 5, 10, 13, 14, 16 and 17): the mirrored full frame; the blocked-camera message, and Try again starting the camera without a reload; model progress from 0% to 99%; the card when the model can't load; gestures at pointing up 85%, thumb up 69%, victory 79% and closed fist 92%; "Raise your hand" with no hand in view; the overlay staying on the hand when the panel was widened; and the sliders by keyboard.
+    - Sound, all passed (REQ-1 to 3 and 15): no audio before the click; Start and Stop; the failure card with the sound worklet blocked; the live code rewritten 18 times in 2 seconds of slider moves, under the limit of 10 a second.
+    - Instrument UI, all passed (REQ-1 to 6, 9, 10 and 12 to 20): panels side by side and their sizes back after a reload; the code hidden by the button and the C key; panels stacked at 719 px and side by side at 720 px; six presets chosen by click, by drag and by key; Saw Lead on a first visit and the last choice after a reload; lane names following the preset; the status words; the four step hints in order, gone for good after a second of sound; the help sheet; the shortcuts; Copy and "Copied" for 2 seconds; the gibber.cc link in a new tab; the code colours.
+    - "Start audio" before audio starts (UI REQ-11) is the largest control and the only filled one: it stands out from the panel at 10.7:1, every other control at 1.7:1. Its dark text on that fill reaches 11.5:1, though, below the 15.1:1 of the light text on the other buttons. I read "highest contrast" as the button against the panel, so it passes.
+    - A first visit with an empty cache on 20 Mbps: the site's own files weigh 175 KB, against 2 MB allowed. Requests went only to the site, Google's model storage and jsDelivr, and no cookie was set. The one failed request was the browser asking for a favicon the site doesn't have. I put adding one in the backlog.
+  - **Replaced by later features,** and checked in their newer form: one tracked hand (tracking REQ-12) by two-hand play; the fixed 8 lanes and the single scale (sound REQ-4, 5 and 8) by note range and the presets; hiding the whole code panel (UI REQ-3) by note range.
+  - **Not judged on the agent's machine:** speed. Its graphics are emulated in software, so tracking ran at 2 frames a second at most. With a hand in view it fell under one, and the label showed "— fps". The first tracked hand came at 17.7 s: every download had finished at 7.0 s, and the rest went to starting the model. The 10-second target needs a figure from my laptop.
 
 ## Three decisions I did not delegate
 Filled in at the end of milestone 4.

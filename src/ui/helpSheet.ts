@@ -56,7 +56,7 @@ const CONTENT = `
     <dt>A preset card</dt><dd>Click or tap to pick it, or drag it onto “Now playing”</dd>
     <dt>Hide code / Show code</dt><dd>Hides or shows the code; the gesture guide below it stays</dd>
     <dt>Copy</dt><dd>Copies the code; if the browser blocks it, selects the code to copy by hand</dd>
-    <dt>Open gibber.cc</dt><dd>Opens the Gibber playground in a new tab, to paste the code and run it</dd>
+    <dt>Open gibber</dt><dd>Gibber's home page, in a new tab: the live-coding library that makes the sound</dd>
     <dt>Selecting the code</dt><dd>Keeps it still until you click elsewhere</dd>
     <dt>The bars between panels</dt><dd>Drag to resize the panels; the sizes are remembered</dd>
     <dt>The divider between code and guide</dt><dd>Drag to share the panel between the code and the gesture guide; the split is remembered</dd>
