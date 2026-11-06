@@ -1,1 +1,10 @@
 # Task Progress - launch
+
+01-deploy-pipeline: DONE
+02-step-hint-clearance: DONE
+03-late-log-entries: DONE
+04-sharing: TODO
+05-readme-gif: TODO
+06-live-chrome-check: TODO
+07-readme-status: TODO
+08-launch-log-entry: TODO
