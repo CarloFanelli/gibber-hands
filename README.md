@@ -8,7 +8,7 @@ Play a synth with your hands. Webcam → MediaPipe gesture recognition → [Gibb
 
 **Live demo: https://carlofanelli.github.io/gibber-hands/**. You need a desktop browser and a webcam. Without a webcam, sliders take over. The video never leaves your device: no analytics, no cookies.
 
-**Status:** live. Tested on desktop Chrome; other browsers not yet tried.
+**Status:** live. Tested on desktop Chrome.
 
 ## How to play
 

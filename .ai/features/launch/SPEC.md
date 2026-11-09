@@ -1,9 +1,9 @@
 ---
 feature: launch
-version: 1.5
+version: 1.6
 status: approved
 base: 8e6151cbefced46cc1899a80610dd5526752d4c7
-completed: false
+completed: true
 ---
 
 # Launch
@@ -25,6 +25,7 @@ This milestone ships gibber-hands. GitHub Actions deploys the site to GitHub Pag
 - Version 1.3 turns the playground link (instrument-ui REQ-19) into a credit to Gibber: "Open gibber", to gibber.cc's home page. Copy stays.
 - Version 1.4 adds a demo video with sound, linked under the GIF. Carlo records it; the GIF and the still are cut from that recording.
 - Version 1.5 serves the video from the site, because GitHub's file page refuses to show one this big.
+- Version 1.6 counts only the files the page loads toward its 2 MB limit, since the site now also serves the video.
 
 ## Functional Requirements
 
@@ -76,7 +77,7 @@ This milestone ships gibber-hands. GitHub Actions deploys the site to GitHub Pag
 ## Non-Functional Requirements
 
 - **Performance** — On the live site, a first visit reaches the first tracked hand in ≤ 10 s on 20 Mbps with an empty cache. This re-measures the hand-tracking target.
-- **Performance** — The page and its own files weigh ≤ 2 MB, not counting the hand model and the MediaPipe runtime files.
+- **Performance** — The page and the files it loads from the site weigh ≤ 2 MB, not counting the hand model and the MediaPipe runtime files.
 - **Security** — No analytics and no cookies. The live site contacts only its own address, Google's model storage and jsDelivr, checked in the browser's network panel.
 - **Security** — The site is served only over HTTPS.
 - **Validation** — Every README link (lineage permalinks, live demo, docs, spec folders) opens without a 404, checked before announcing.

@@ -1,6 +1,6 @@
 ---
 feature: launch
-spec-version: 1.5
+spec-version: 1.6
 status: approved
 ---
 
