@@ -3,9 +3,9 @@
 01-deploy-pipeline: DONE
 02-step-hint-clearance: DONE
 03-late-log-entries: DONE
-04-sharing: IN_PROGRESS
+04-sharing: DONE
 05-readme-gif: IN_PROGRESS
 06-live-chrome-check: DONE
-07-readme-status: IN_PROGRESS
-08-launch-log-entry: IN_PROGRESS
+07-readme-status: DONE
+08-launch-log-entry: DONE
 09-gibber-credit-link: DONE

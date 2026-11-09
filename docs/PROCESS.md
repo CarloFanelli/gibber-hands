@@ -326,8 +326,15 @@ All four were written in one session, through one interview per milestone.
   - listening to the drum mix and the three newer patterns;
   - pasting the drum code at gibber.cc.
 
-### M4 — Ship
-- **Demo (2026-11-09):** I recorded one 29-second take of the app, and the GIF, the link preview and the video all come from it. The first GIF came out at 5.7 MB, so it went down to 12 fps and 128 colours to fit the 4 MB limit. The spec had ruled out a video with sound, and I changed my mind: the README now links one under the GIF (launch 1.4, REQ-19). The GIF is still the only thing that plays in the README.
+### M4 — Ship (2026-11-05 to 2026-11-09)
+- **What shipped:**
+  - **Deploy:** every push to main runs typecheck, tests and build, and deploys only if all three pass. A pull request runs the same checks and never deploys. I push to main directly; everyone else goes through a pull request.
+  - **Browsers:** I took the Edge, Firefox and Safari checks out of the launch and chose not to track them. Nobody had run them, and the README claims only what was checked. The earlier entries that list them as "still to check" stay as written.
+  - **Step hint overlap:** the M3 entry calls it phone-only. It shows in any window too short for the card and the sliders, and I saw it at 1536 px wide. Card and sliders now start below the step hint.
+  - **Credit to Gibber:** "Open gibber.cc" became "Open gibber", a link to gibber.cc's home page. Copy stays.
+  - **Link preview and About box:** shared links get a title, a description and a 1200×630 still. The About box has the site's address and the seven topics.
+  - **Late entries:** two-hand play, note range and drum loop got their entries after those features ended, and each entry says so.
+- **Demo (2026-11-09):** I recorded one 29-second take of the app, and the GIF, the link preview and the video all come from it. The first GIF came out at 5.7 MB, so it went down to 12 fps and 128 colours to fit the 4 MB limit. The spec had ruled out a video with sound, and I changed my mind: the README now links one under the GIF (launch 1.4, REQ-19). The GIF is still the only thing that plays in the README. GitHub's file page refused to show a video that big, so the site serves it (launch 1.5).
 - **How it was checked:** on the live site, in desktop Chrome only. Edge, Firefox and Safari were not tried.
   - **By me, by hand,** in my desktop Chrome after the step-hint fix went live (2026-11-06): ok. The requirements that need a real hand, a camera or ears rest on that pass, with the 297 unit tests behind them:
     - hand tracking: one reading per frame, the 150 ms hold, palm center, pinch, the gesture debounce and the frame rate (REQ-6 to 9, 11 and 15);
@@ -340,7 +347,9 @@ All four were written in one session, through one interview per milestone.
     - "Start audio" before audio starts (UI REQ-11) is the largest control and the only filled one: it stands out from the panel at 10.7:1, every other control at 1.7:1. Its dark text on that fill reaches 11.5:1, though, below the 15.1:1 of the light text on the other buttons. I read "highest contrast" as the button against the panel, so it passes.
     - A first visit with an empty cache on 20 Mbps: the site's own files weigh 175 KB, against 2 MB allowed. Requests went only to the site, Google's model storage and jsDelivr, and no cookie was set. The one failed request was the browser asking for a favicon the site doesn't have. I put adding one in the backlog.
   - **Replaced by later features,** and checked in their newer form: one tracked hand (tracking REQ-12) by two-hand play; the fixed 8 lanes and the single scale (sound REQ-4, 5 and 8) by note range and the presets; hiding the whole code panel (UI REQ-3) by note range.
-  - **Not judged on the agent's machine:** speed. Its graphics are emulated in software, so tracking ran at 2 frames a second at most. With a hand in view it fell under one, and the label showed "— fps". The first tracked hand came at 17.7 s: every download had finished at 7.0 s, and the rest went to starting the model. The 10-second target needs a figure from my laptop.
+  - **Not judged on the agent's machine:** speed. Its graphics are emulated in software, so tracking ran at 2 frames a second at most. With a hand in view it fell under one, and the label showed "— fps". The first tracked hand came at 17.7 s: every download had finished at 7.0 s, and the rest went to starting the model.
+  - **First visit, on my laptop (2026-11-09):** about 7–8 s to the first tracked hand, timed by stopwatch in Chrome with the cache disabled and the network limited to 20 Mbps. About 1 s of that comes after the model has loaded. The target is 10 s, so nothing goes under "Known limitations".
+  - **README links:** all 41 opened without a 404, checked on the pushed main.
 
 ## Three decisions I did not delegate
 

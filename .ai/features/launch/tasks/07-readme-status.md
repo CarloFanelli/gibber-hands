@@ -44,3 +44,4 @@ The status still says the launch is in progress, and that Edge, Firefox and Safa
 ## Notes from implementation
 
 - **Impacts Task 07**: the README's "Known limitations" depends on Carlo's first-visit figure (Task 06) from his laptop. Every other check on the live site passed, so nothing else goes there. /dev, 2026-11-06.
+- Carlo's figure is about 7–8 s, under the 10-second target, so the README has no "Known limitations" section. All 41 README links opened on the pushed main. /dev, 2026-11-09.
