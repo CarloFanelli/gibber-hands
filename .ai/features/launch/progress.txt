@@ -4,7 +4,7 @@
 02-step-hint-clearance: DONE
 03-late-log-entries: DONE
 04-sharing: IN_PROGRESS
-05-readme-gif: TODO
+05-readme-gif: IN_PROGRESS
 06-live-chrome-check: DONE
 07-readme-status: IN_PROGRESS
 08-launch-log-entry: IN_PROGRESS

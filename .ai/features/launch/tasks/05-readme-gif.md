@@ -6,7 +6,7 @@ The README opens with a silent, looping 5-second GIF of a hand playing. It shows
 
 ## Context
 
-**Satisfies**: REQ-5, REQ-6
+**Satisfies**: REQ-5, REQ-6, REQ-19
 
 The GIF is the first thing a visitor to the repo sees. Without it, the project looks like a slider interface. Carlo records it, since it needs his hand and camera. This task turns the recording into a GIF within the size limits and puts it at the top of the README.
 
@@ -28,6 +28,7 @@ None
 - [ ] The GIF renders on github.com from a relative path in the repo (REQ-5)
 - [ ] The GIF shows the overlay, a note lane change, a squeeze and the live code updating (REQ-6)
 - [ ] No notification, other tab or private detail shows in any frame (REQ-6)
+- [ ] A link right under the GIF opens the demo video with sound on github.com, from a relative path in the repo (REQ-19)
 
 ## Edge Cases
 
@@ -36,3 +37,10 @@ None
 - The README's "TODO … GIF goes here" comment → replaced by the GIF; no TODO comment left in the README (REQ-5)
 - Recording shows something private (notifications, other tabs) → re-recorded (REQ-6)
 - N/A — network: the GIF is a file in the repo (REQ-6)
+- Original recording over GitHub's 100 MB file limit → the repo keeps a re-encoded MP4; the original stays out of git (REQ-19)
+- Video link path → relative, like the GIF, and checked on github.com after the push (REQ-19)
+- Recording shows something private → re-recorded, as for the GIF (REQ-19)
+
+## Notes from implementation
+
+- Measured from the file's bytes on 2026-11-09: 800×456, 60 frames, 5.01 s, loops forever, 3.46 MB. Frames read by the agent: overlay, lane changes, squeeze and live code all show, and nothing private. Pending push: rendering on github.com and the video link. /dev, 2026-11-09.

@@ -1,6 +1,6 @@
 ---
 feature: launch
-version: 1.3
+version: 1.4
 status: approved
 base: 8e6151cbefced46cc1899a80610dd5526752d4c7
 completed: false
@@ -23,6 +23,7 @@ This milestone ships gibber-hands. GitHub Actions deploys the site to GitHub Pag
 - Version 1.1 added the pull-request check and the rules on main: Carlo pushes to main directly, everyone else opens a pull request.
 - Version 1.2 narrows the browser check to Chrome (no other browser was ever tried), absorbs the step hint overlap (B-12), and logs all seven features.
 - Version 1.3 turns the playground link (instrument-ui REQ-19) into a credit to Gibber: "Open gibber", to gibber.cc's home page. Copy stays.
+- Version 1.4 adds a demo video with sound, linked under the GIF. Carlo records it; the GIF and the still are cut from that recording.
 
 ## Functional Requirements
 
@@ -39,6 +40,7 @@ This milestone ships gibber-hands. GitHub Actions deploys the site to GitHub Pag
 
 - REQ-5: The README opens with a silent, looping 5-second GIF of a hand playing, at most 800 px wide and 4 MB.
 - REQ-6: The GIF shows the overlay, a lane change, a squeeze and the live code updating.
+- REQ-19: Right under the GIF, the README links a demo video with sound, kept in the repo.
 - REQ-7: The README's status, live demo link and "How to play" match the shipped behavior, with no "planned" or "in progress" labels left.
 - REQ-14: The README names only browsers actually checked on the live site, "Tested on desktop Chrome." today, and promises no future checks.
 - REQ-8: Next to the pre-AI toolbox, a "New in gibber-hands" section lists techniques this project added, each linked to its file.
@@ -102,6 +104,9 @@ This milestone ships gibber-hands. GitHub Actions deploys the site to GitHub Pag
 | The README's "TODO … GIF goes here" comment | Replaced by the GIF; no TODO comment left in the README | REQ-5 |
 | Recording shows something private (notifications, other tabs) | Re-recorded | REQ-6 |
 | N/A — network: the GIF is a file in the repo | — | REQ-6 |
+| Original recording over GitHub's 100 MB file limit | The repo keeps a re-encoded MP4; the original stays out of git | REQ-19 |
+| Video link path | Relative, like the GIF, and checked on github.com after the push | REQ-19 |
+| Recording shows something private | Re-recorded, as for the GIF | REQ-19 |
 | Behavior changed while tuning after launch | README updated in the same commit as the change | REQ-7 |
 | Live demo link | Opened and checked on the live site before announcing | REQ-7 |
 | Status written while the launch is still open | Rewritten in the change that closes the launch: it says the site is live, with no milestone in progress | REQ-7 |
@@ -136,7 +141,7 @@ This milestone ships gibber-hands. GitHub Actions deploys the site to GitHub Pag
 
 ## Out of Scope
 
-- **Video with sound in the README** — GIF only, as planned. The live demo plays the sound.
+- **Video playing inside the README** — the GIF is what plays there; the video with sound is a link under it (REQ-19).
 - **Analytics or visit counting** — a page that asks for the camera sends nothing anywhere.
 - **Custom domain** — the github.io address is enough for a portfolio link.
 - **Versioned releases and a changelog** — the live site is the product, and the history lives in git and PROCESS.md.

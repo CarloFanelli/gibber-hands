@@ -1,6 +1,6 @@
 ---
 feature: launch
-spec-version: 1.3
+spec-version: 1.4
 status: approved
 ---
 
@@ -10,7 +10,7 @@ status: approved
 
 ### Overview
 
-The launch is mostly docs, repository settings and two assets from Carlo. Only Task 02 changes the app, and only in `src/ui/styles.css`. No npm dependency is added: browser checks run in the Playwright Chromium already on this machine (`~/.cache/ms-playwright/chromium-1243`), driven from scratchpad scripts as in milestones 1–3. The GIF and the still come from Carlo's own tools, because this machine has no ffmpeg that can write GIFs. Every check that needs the live site waits until the change is pushed, and nothing is pushed without Carlo's ok.
+The launch is mostly docs, repository settings and two assets from Carlo. Only Task 02 changes the app, and only in `src/ui/styles.css`. No npm dependency is added: browser checks run in the Playwright Chromium already on this machine (`~/.cache/ms-playwright/chromium-1243`), driven from scratchpad scripts as in milestones 1–3. The GIF, the still and the video all come from one screen recording by Carlo, re-encoded with an ffmpeg kept in the scratchpad, so it isn't a project dependency. Every check that needs the live site waits until the change is pushed, and nothing is pushed without Carlo's ok.
 
 ### Shared Concerns
 
@@ -98,7 +98,7 @@ The launch is mostly docs, repository settings and two assets from Carlo. Only T
 - `public/social-preview.png` — Carlo's 1200×630 still. Vite copies `public/` to the site root under the base path (`vite.config.ts`). The page never loads it, so it doesn't count toward the 2 MB page weight.
 
 **Key decisions:**
-- Carlo captures the still with Chrome DevTools' device mode set to 1200×630 at pixel ratio 1, so no image tool is needed. Playwright's ffmpeg can't read PNG.
+- The still is a frame of Carlo's recording (8.0 s), scaled to 1200 px wide and cropped at the bottom to 630 px.
 - The description is the repo's About description, as one line.
 - About box: `gh repo edit` with `--homepage` and `--add-topic` for the seven topics, after Carlo's go-ahead. No repo file changes.
 - Check after the push: `curl` the image URL (200, `image/png`), then a link-preview inspector.
@@ -111,14 +111,15 @@ The launch is mostly docs, repository settings and two assets from Carlo. Only T
 ### Task 05: readme-gif
 
 **Files to modify:**
-- `README.md:5` — the TODO comment becomes the image, with alt text that describes the playing.
+- `README.md:5` — the TODO comment becomes the image, with alt text that describes the playing, and the video link under it.
+- `.gitignore` — the original recording stays out of git (185 MB, over GitHub's 100 MB file limit).
 
 **Files to create:**
-- `docs/demo.gif` — Carlo's GIF. `docs/` is outside the Vite build, so it doesn't count toward the site's weight.
+- `docs/demo.gif` — cut from Carlo's recording. `docs/` is outside the Vite build, so it doesn't count toward the site's weight.
+- `docs/demo.mp4` — the whole recording with its sound, 1920 px wide, about 6 MB.
 
 **Key decisions:**
-- Carlo exports the GIF directly from his screen recorder (e.g. ScreenToGif on Windows, Gifski on macOS): at most 800 px wide, about 5 s, looping forever.
-- This machine's only ffmpeg (Playwright's) has no GIF encoder, so the agent measures and Carlo re-exports if needed.
+- The GIF is 5.5–10.5 s of the recording: a squeeze, then lanes A3, B♭3, C4 and back. 800 px wide, 12 fps, 128 colours, no dithering, which keeps the live code legible within 4 MB.
 - The agent reads the GIF bytes with a scratchpad Node script: width, the sum of the frame delays, the loop block and the file size. No dependency.
 
 **Watch out for:**
