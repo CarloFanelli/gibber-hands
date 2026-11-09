@@ -327,6 +327,7 @@ All four were written in one session, through one interview per milestone.
   - pasting the drum code at gibber.cc.
 
 ### M4 — Ship
+- **Demo (2026-11-09):** I recorded one 29-second take of the app, and the GIF, the link preview and the video all come from it. The first GIF came out at 5.7 MB, so it went down to 12 fps and 128 colours to fit the 4 MB limit. The spec had ruled out a video with sound, and I changed my mind: the README now links one under the GIF (launch 1.4, REQ-19). The GIF is still the only thing that plays in the README.
 - **How it was checked:** on the live site, in desktop Chrome only. Edge, Firefox and Safari were not tried.
   - **By me, by hand,** in my desktop Chrome after the step-hint fix went live (2026-11-06): ok. The requirements that need a real hand, a camera or ears rest on that pass, with the 297 unit tests behind them:
     - hand tracking: one reading per frame, the 150 ms hold, palm center, pinch, the gesture debounce and the frame rate (REQ-6 to 9, 11 and 15);

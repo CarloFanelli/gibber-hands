@@ -2,7 +2,9 @@
 
 Play a synth with your hands. Webcam → MediaPipe gesture recognition → [Gibber](https://github.com/charlieroberts/gibber.audio.lib) audio, in the browser, with the live-coding snippet that reproduces what you're playing shown next to the video.
 
-<!-- TODO (launch REQ-5): the 5-second GIF of a hand playing goes here, recorded by Carlo -->
+![A hand squeezes to play a note and moves across the note lanes, while the tracked landmarks follow it and the live Gibber code updates beside the camera view.](docs/demo.gif)
+
+▶ [Watch the 29-second demo with sound](docs/demo.mp4)
 
 **Live demo: https://carlofanelli.github.io/gibber-hands/**. You need a desktop browser and a webcam. Without a webcam, sliders take over. The video never leaves your device: no analytics, no cookies.
 
