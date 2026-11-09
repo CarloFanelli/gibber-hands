@@ -28,7 +28,7 @@ None
 - [ ] The GIF renders on github.com from a relative path in the repo (REQ-5)
 - [ ] The GIF shows the overlay, a note lane change, a squeeze and the live code updating (REQ-6)
 - [ ] No notification, other tab or private detail shows in any frame (REQ-6)
-- [ ] A link right under the GIF opens the demo video with sound on github.com, from a relative path in the repo (REQ-19)
+- [ ] A link right under the GIF plays the demo video with sound in the browser, from its address on the live site (REQ-19)
 
 ## Edge Cases
 
@@ -38,9 +38,10 @@ None
 - Recording shows something private (notifications, other tabs) → re-recorded (REQ-6)
 - N/A — network: the GIF is a file in the repo (REQ-6)
 - Original recording over GitHub's 100 MB file limit → the repo keeps a re-encoded MP4; the original stays out of git (REQ-19)
-- Video link path → relative, like the GIF, and checked on github.com after the push (REQ-19)
+- GitHub's file page refuses a video this big → the link is the video's absolute address on the live site, checked after the push (REQ-19)
 - Recording shows something private → re-recorded, as for the GIF (REQ-19)
 
 ## Notes from implementation
 
-- Measured from the file's bytes on 2026-11-09: 800×456, 60 frames, 5.01 s, loops forever, 3.46 MB. Frames read by the agent: overlay, lane changes, squeeze and live code all show, and nothing private. Pending push: rendering on github.com and the video link. /dev, 2026-11-09.
+- Measured from the file's bytes on 2026-11-09: 800×456, 60 frames, 5.01 s, loops forever, 3.46 MB. Frames read by the agent: overlay, lane changes, squeeze and live code all show, and nothing private. /dev, 2026-11-09.
+- Carlo saw the GIF playing on github.com. GitHub's file page answered "we can't show files that are this big" for the video, so it moved to `public/`. Pending push: the video playing from the live site. /dev, 2026-11-09.

@@ -1,6 +1,6 @@
 ---
 feature: launch
-spec-version: 1.4
+spec-version: 1.5
 status: approved
 ---
 
@@ -116,7 +116,7 @@ The launch is mostly docs, repository settings and two assets from Carlo. Only T
 
 **Files to create:**
 - `docs/demo.gif` — cut from Carlo's recording. `docs/` is outside the Vite build, so it doesn't count toward the site's weight.
-- `docs/demo.mp4` — the whole recording with its sound, 1920 px wide, about 6 MB.
+- `public/demo.mp4` — the whole recording with its sound, 1920 px wide, about 6 MB. Vite copies it to the site root. The page never loads it, so it doesn't count toward the 2 MB page weight.
 
 **Key decisions:**
 - The GIF is 5.5–10.5 s of the recording: a squeeze, then lanes A3, B♭3, C4 and back. 800 px wide, 12 fps, 128 colours, no dithering, which keeps the live code legible within 4 MB.

@@ -1,6 +1,6 @@
 ---
 feature: launch
-version: 1.4
+version: 1.5
 status: approved
 base: 8e6151cbefced46cc1899a80610dd5526752d4c7
 completed: false
@@ -24,6 +24,7 @@ This milestone ships gibber-hands. GitHub Actions deploys the site to GitHub Pag
 - Version 1.2 narrows the browser check to Chrome (no other browser was ever tried), absorbs the step hint overlap (B-12), and logs all seven features.
 - Version 1.3 turns the playground link (instrument-ui REQ-19) into a credit to Gibber: "Open gibber", to gibber.cc's home page. Copy stays.
 - Version 1.4 adds a demo video with sound, linked under the GIF. Carlo records it; the GIF and the still are cut from that recording.
+- Version 1.5 serves the video from the site, because GitHub's file page refuses to show one this big.
 
 ## Functional Requirements
 
@@ -40,7 +41,7 @@ This milestone ships gibber-hands. GitHub Actions deploys the site to GitHub Pag
 
 - REQ-5: The README opens with a silent, looping 5-second GIF of a hand playing, at most 800 px wide and 4 MB.
 - REQ-6: The GIF shows the overlay, a lane change, a squeeze and the live code updating.
-- REQ-19: Right under the GIF, the README links a demo video with sound, kept in the repo.
+- REQ-19: Right under the GIF, the README links a demo video with sound, kept in the repo and served by the site, so it plays in the browser.
 - REQ-7: The README's status, live demo link and "How to play" match the shipped behavior, with no "planned" or "in progress" labels left.
 - REQ-14: The README names only browsers actually checked on the live site, "Tested on desktop Chrome." today, and promises no future checks.
 - REQ-8: Next to the pre-AI toolbox, a "New in gibber-hands" section lists techniques this project added, each linked to its file.
@@ -105,7 +106,7 @@ This milestone ships gibber-hands. GitHub Actions deploys the site to GitHub Pag
 | Recording shows something private (notifications, other tabs) | Re-recorded | REQ-6 |
 | N/A — network: the GIF is a file in the repo | — | REQ-6 |
 | Original recording over GitHub's 100 MB file limit | The repo keeps a re-encoded MP4; the original stays out of git | REQ-19 |
-| Video link path | Relative, like the GIF, and checked on github.com after the push | REQ-19 |
+| GitHub's file page refuses a video this big | The link is the video's absolute address on the live site, checked after the push | REQ-19 |
 | Recording shows something private | Re-recorded, as for the GIF | REQ-19 |
 | Behavior changed while tuning after launch | README updated in the same commit as the change | REQ-7 |
 | Live demo link | Opened and checked on the live site before announcing | REQ-7 |
