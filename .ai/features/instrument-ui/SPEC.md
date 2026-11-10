@@ -1,6 +1,6 @@
 ---
 feature: instrument-ui
-version: 1.0
+version: 1.1
 status: approved
 base: b38d33763046b375d7bdf8ca3b23459229dbcb44
 completed: true
@@ -162,3 +162,11 @@ The sound details (timbre, delay time, resonance) are tuned by ear. The scales, 
 - **A mute key** — Space stops audio and the fist mutes, so a third mute would duplicate them.
 - **Remembering whether the code panel is hidden** — a per-visit toggle is enough.
 - **Interface languages other than English** — the audience reads the English README.
+
+## Superseded
+
+The ui-redesign spec replaces these requirements; the rest of this spec still holds.
+
+- REQ-1–4: the three side-by-side panels and their stacking below 720 px give way to a top bar, the camera stage, a side panel and a floating sounds panel (ui-redesign REQ-1, REQ-10–17, REQ-27–29).
+- REQ-11, REQ-12: Start audio and the status line move to the top bar (ui-redesign REQ-4, REQ-5).
+- REQ-16, REQ-17: the help sheet becomes the help dialog, and the shortcuts gain S and F (ui-redesign REQ-21, REQ-32).

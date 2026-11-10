@@ -27,12 +27,12 @@
  * camera view until a first sound has lasted a second, then teaches the second hand's Victory switch until
  * it first switches. Browser storage remembers both.
  *
- * ui/gestureGuide lists every gesture below the live code, naming the hands by their roles.
+ * ui/gestureGuide lists every gesture in the side panel's Gestures tab, naming the hands by their roles.
  *
  * ui/drumPanel starts and stops the drum loop and steps its drum pattern and drum layers, whose state for the
  * visit mapping/drumLoop keeps; the engine plays it once audio is on. No gesture changes the drums.
  *
- * ui/shortcuts maps keys to the same actions as the controls: presets, audio, the drums, the live code and
+ * ui/shortcuts maps keys to the same actions as the controls: presets, audio, the drums, the side panel and
  * ui/helpSheet.
  */
 import { createStartup, type StartupStatus } from './hands/startup';
@@ -64,7 +64,7 @@ import { readStored, writeStored } from './ui/storage';
 import { throttle } from './ui/throttle';
 import { watchZoneWidth } from './ui/zoneWidth';
 
-/** The live code panel updates at most this often, in ms. */
+/** The live code updates at most this often, in ms. */
 const LIVE_CODE_PERIOD_MS = 100;
 /** Browser storage key of the last preset picked. */
 const PRESET_KEY = 'gibber-hands-preset';
@@ -274,7 +274,7 @@ function boot() {
     if (action.kind === 'preset') selectPreset(action.index);
     else if (action.kind === 'audio') audio.startOrStop();
     else if (action.kind === 'drums') drumPanel.startOrStop();
-    else if (action.kind === 'code') ui.toggleCode();
+    else if (action.kind === 'side-panel') ui.toggleSidePanel();
     else help.toggle();
   });
 

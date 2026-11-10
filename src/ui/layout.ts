@@ -1,19 +1,22 @@
 /**
- * Three resizable panels side by side: camera | instrument (audio controls) | live code above the gesture
- * guide, with a divider between them (codeGuideSplit). Resizer adds the drag handles and remembers the sizes;
- * a button in the instrument panel, or the C key, hides or shows the live code and its divider, for this
- * visit only, while the guide stays and its panel keeps its width. Narrow windows stack the panels (styles.css).
+ * Three resizable panels side by side: camera | instrument (audio controls) | side panel, which holds the live
+ * code and the gesture guide as tabs (sidePanel). Resizer adds the drag handles and remembers the sizes; the
+ * side panel stays between 280 px and half the row (styles.css). Collapsed, it leaves the row and a narrow
+ * strip takes its place. Narrow windows stack the panels (styles.css).
  */
 import Resize from '../vendor/resizer/Resize';
-import { mountCodeGuideSplit } from './codeGuideSplit';
+import { createSidePanel } from './sidePanel';
+
+/** The class Resizer leaves out of the row. */
+const HIDDEN_PANEL = 'panel-hidden';
 
 export interface Layout {
   camera: { root: HTMLElement; video: HTMLVideoElement; canvas: HTMLCanvasElement; status: HTMLElement };
   instrument: HTMLElement;
   code: HTMLElement;
   guide: HTMLElement;
-  /** Hides the live code, or shows it, as its button does. */
-  toggleCode(): void;
+  /** Collapses the side panel, or expands it, as its buttons do. */
+  toggleSidePanel(): void;
 }
 
 export function createLayout(root: HTMLElement): Layout {
@@ -26,46 +29,31 @@ export function createLayout(root: HTMLElement): Layout {
     </section>
     <section class="panel panel-instrument" id="panel-instrument">
       <div class="instrument-controls"></div>
-      <button type="button" class="code-toggle" aria-controls="code-part"></button>
     </section>
-    <section class="panel panel-code" id="panel-code">
+    <section class="panel panel-side" id="panel-side" aria-label="Code and gestures">
       <div class="code-part" id="code-part"></div>
-      <div class="code-split"></div>
-      <div class="guide-part"></div>
+      <div class="guide-part" id="guide-part"></div>
     </section>
+    <div class="side-strip"></div>
   `;
   const panels = [...root.querySelectorAll<HTMLElement>('.panel')];
-  const codePanel = root.querySelector<HTMLElement>('#panel-code')!;
-  const codePart = root.querySelector<HTMLElement>('#code-part')!;
-  const codeSplit = root.querySelector<HTMLElement>('.code-split')!;
-  const codeToggle = root.querySelector<HTMLButtonElement>('.code-toggle')!;
-  const video = root.querySelector<HTMLVideoElement>('#cam')!;
-  const canvas = root.querySelector<HTMLCanvasElement>('#overlay')!;
+  const code = root.querySelector<HTMLElement>('#code-part')!;
+  const guide = root.querySelector<HTMLElement>('#guide-part')!;
+  const side = createSidePanel(root.querySelector('#panel-side')!, root.querySelector('.side-strip')!, code, guide, HIDDEN_PANEL);
 
-  // Resizer leaves panels with the class it checks out of the row; no panel takes it, so all three stay.
-  new Resize({ resizableElements: panels, resizerClassList: 'resize-handle', saveName: 'gibber-hands', classToCheck: 'panel-hidden' });
-
-  mountCodeGuideSplit(codePanel, codePart, codeSplit);
-
-  let codeShown = true;
-  function showCode(shown: boolean) {
-    // The C key can hide the code under a focused Copy button: focus would fall back to the page.
-    if (!shown && codePanel.contains(document.activeElement)) codeToggle.focus();
-    codeShown = shown;
-    codePart.hidden = !shown;
-    codeSplit.hidden = !shown;
-    codeToggle.textContent = shown ? 'Hide code' : 'Show code';
-    codeToggle.setAttribute('aria-expanded', String(shown));
-  }
-  const toggleCode = () => showCode(!codeShown);
-  showCode(true);
-  codeToggle.addEventListener('click', toggleCode);
+  // After the side panel has its saved state: Resizer sizes the panels still in the row.
+  new Resize({ resizableElements: panels, resizerClassList: 'resize-handle', saveName: 'gibber-hands', classToCheck: HIDDEN_PANEL });
 
   return {
-    camera: { root: root.querySelector('#panel-camera')!, video, canvas, status: root.querySelector('#camera-status')! },
+    camera: {
+      root: root.querySelector('#panel-camera')!,
+      video: root.querySelector('#cam')!,
+      canvas: root.querySelector('#overlay')!,
+      status: root.querySelector('#camera-status')!
+    },
     instrument: root.querySelector('.instrument-controls')!,
-    code: codePart,
-    guide: root.querySelector('.guide-part')!,
-    toggleCode
+    code,
+    guide,
+    toggleSidePanel: side.toggle
   };
 }

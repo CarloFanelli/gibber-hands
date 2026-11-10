@@ -1,5 +1,5 @@
 /**
- * The gesture guide: every gesture and what it does, always in view below the live code. It names the hands
+ * The gesture guide: every gesture and what it does, in the side panel's Gestures tab. It names the hands
  * by their current roles; while the sliders stand in for the hand, a first line says so. The help sheet
  * stays the full reference, keys included.
  */
@@ -14,7 +14,6 @@ export interface GestureGuide {
 }
 
 const CONTENT = `
-  <h2 class="guide-title">Gestures</h2>
   <p class="guide-sliders" hidden>Sliders: they stand in for your hand while the camera can’t track it.</p>
   <p><span data-hand="lead"></span> hand: the lead hand. <span data-hand="second"></span> hand: the second hand.</p>
   <dl>

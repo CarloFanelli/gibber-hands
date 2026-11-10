@@ -17,6 +17,8 @@
  *  8. The console.log of the options is removed.
  *  9. Keyboard: Tab reaches each handle (a focusable separator that says where it stands), and the left and
  *     right arrow keys move it one step, through the same start, limits and end as a drag, sizes saved.
+ * 10. A drag also stops where either neighbour reaches its CSS max-width, and a min-width or max-width in
+ *     percent is taken of the row, not read as pixels.
  */
 import Resizer from "./Resizer.js";
 
@@ -119,9 +121,11 @@ class Resize {
     let rightDiv: HTMLElement | null = null;
     let rightDivInitialWidth: number | null = null;
     let rightDivMinWidth = 0;
+    let rightDivMaxWidth = Infinity;
     let leftDiv: HTMLElement | null = null;
     let leftDivInitialWidth: number | null = null;
     let leftDivMinWidth = 0;
+    let leftDivMaxWidth = Infinity;
     let trueResizable: HTMLElement[] | null = null;
 
     resizer.onmousedown = dragMouseDown;
@@ -174,8 +178,10 @@ class Resize {
 
       rightDivInitialWidth = rightDiv.getBoundingClientRect().width;
       leftDivInitialWidth = leftDiv.getBoundingClientRect().width;
-      rightDivMinWidth = parseFloat(getComputedStyle(rightDiv).minWidth) || 0;
-      leftDivMinWidth = parseFloat(getComputedStyle(leftDiv).minWidth) || 0;
+      rightDivMinWidth = cssWidth(rightDiv, 'minWidth', 0);
+      leftDivMinWidth = cssWidth(leftDiv, 'minWidth', 0);
+      rightDivMaxWidth = cssWidth(rightDiv, 'maxWidth', Infinity);
+      leftDivMaxWidth = cssWidth(leftDiv, 'maxWidth', Infinity);
     }
 
     function elementDrag(e: MouseEvent) {
@@ -189,8 +195,13 @@ class Resize {
 
     function moveTo(x: number) {
       const mouseDelta = Math.min(
-        Math.max(x - (mouseXStart as number), leftDivMinWidth - (leftDivInitialWidth as number)),
-        (rightDivInitialWidth as number) - rightDivMinWidth
+        Math.max(
+          x - (mouseXStart as number),
+          leftDivMinWidth - (leftDivInitialWidth as number),
+          (rightDivInitialWidth as number) - rightDivMaxWidth
+        ),
+        (rightDivInitialWidth as number) - rightDivMinWidth,
+        leftDivMaxWidth - (leftDivInitialWidth as number)
       );
       resizer.style.left = ((mouseXStart as number) + mouseDelta) + "px";
 
@@ -245,6 +256,14 @@ class Resize {
       }
     }
   }
+}
+
+/** An element's CSS min-width or max-width in px, a percentage taken of its parent; `none` or unset gives `fallback` (fix 10). */
+function cssWidth(el: HTMLElement, property: 'minWidth' | 'maxWidth', fallback: number): number {
+  const value = getComputedStyle(el)[property];
+  const n = parseFloat(value);
+  if (!Number.isFinite(n)) return fallback;
+  return value.endsWith('%') ? (n * el.parentElement!.getBoundingClientRect().width) / 100 : n;
 }
 
 function readSizes(memoryName: string, count: number): SavedSize[] | null {

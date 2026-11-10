@@ -1,6 +1,6 @@
 ---
 feature: drum-loop
-version: 2.0
+version: 2.1
 status: approved
 base: 552abfe58e22dffc0022d42a48be36e324c09ead
 completed: true
@@ -123,3 +123,9 @@ Drum loop adds a beat to play over. Buttons in the instrument panel start and st
 - **Remembering the loop between visits** — a visit starts quiet, as a newcomer expects; audio never autoplays.
 - **Sample-based drum kits** — they need downloads; synthesized drums keep everything on the device.
 - **Syncing the synth's notes to the beat** — notes stay free, played by the hands.
+
+## Superseded
+
+The ui-redesign spec replaces these requirements; the rest of this spec still holds.
+
+- REQ-1, REQ-11: the drum controls and their status line move from the instrument panel to the sounds panel; their behaviour is unchanged (ui-redesign REQ-13).

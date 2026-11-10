@@ -26,15 +26,15 @@ describe('shortcut', () => {
 
   it('keeps the other shortcuts while a button has focus', () => {
     expect(shortcut(press('2'), 'control')).toEqual({ kind: 'preset', index: 1 });
-    expect(shortcut(press('c'), 'control')).toEqual({ kind: 'code' });
+    expect(shortcut(press('c'), 'control')).toEqual({ kind: 'side-panel' });
   });
 
-  it('hides or shows the live code with C, in either case', () => {
-    expect(shortcut(press('c'), 'other')).toEqual({ kind: 'code' });
-    expect(shortcut(press('C', { shiftKey: true }), 'other')).toEqual({ kind: 'code' });
+  it('collapses or expands the side panel with C, in either case', () => {
+    expect(shortcut(press('c'), 'other')).toEqual({ kind: 'side-panel' });
+    expect(shortcut(press('C', { shiftKey: true }), 'other')).toEqual({ kind: 'side-panel' });
   });
 
-  it('leaves the live code shown when C is typed in the gesture menu or a slider', () => {
+  it('leaves the side panel as it is when C is typed in the gesture menu or a slider', () => {
     expect(shortcut(press('c'), 'field')).toBeNull();
     expect(shortcut(press('1'), 'field')).toBeNull();
     expect(shortcut(press(' '), 'field')).toBeNull();

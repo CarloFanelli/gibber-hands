@@ -1,11 +1,11 @@
 /**
- * Keyboard shortcuts: 1–6 pick a preset, Space starts or stops audio, D starts or stops the drums, C hides
- * or shows the live code and "?" opens or closes help. Escape is left to the help sheet, which closes on it
+ * Keyboard shortcuts: 1–6 pick a preset, Space starts or stops audio, D starts or stops the drums, C collapses
+ * or expands the side panel and "?" opens or closes help. Escape is left to the help sheet, which closes on it
  * by itself.
  */
 import { PRESETS } from '../synth/presets';
 
-export type Action = { kind: 'preset'; index: number } | { kind: 'audio' } | { kind: 'drums' } | { kind: 'code' } | { kind: 'help' };
+export type Action = { kind: 'preset'; index: number } | { kind: 'audio' } | { kind: 'drums' } | { kind: 'side-panel' } | { kind: 'help' };
 
 /** The parts of a key press the shortcuts read: a KeyboardEvent has them all. */
 export type KeyPress = Pick<KeyboardEvent, 'key' | 'repeat' | 'shiftKey' | 'ctrlKey' | 'metaKey' | 'altKey'>;
@@ -26,7 +26,7 @@ export function shortcut(k: KeyPress, focus: Focus): Action | null {
   if (k.key === ' ') return focus === 'control' ? null : { kind: 'audio' };
   if (k.key === '?') return { kind: 'help' };
   if (k.key === 'd' || k.key === 'D') return { kind: 'drums' };
-  if (k.key === 'c' || k.key === 'C') return { kind: 'code' };
+  if (k.key === 'c' || k.key === 'C') return { kind: 'side-panel' };
   if (/^[1-9]$/.test(k.key) && Number(k.key) <= PRESETS.length) return { kind: 'preset', index: Number(k.key) - 1 };
   return null;
 }

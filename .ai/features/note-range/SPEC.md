@@ -1,6 +1,6 @@
 ---
 feature: note-range
-version: 1.1
+version: 1.2
 status: approved
 base: 552abfe58e22dffc0022d42a48be36e324c09ead
 completed: true
@@ -165,3 +165,10 @@ With fewer than 16 lanes, the extra lanes are the first ones of the row: 11 lane
 - **A guide that lights the gesture being shown** — the camera view's labels already show each hand's gesture.
 - **Hiding the whole code panel** — the guide is worth keeping in view for players who don't read code.
 - **Drums and rhythm** — the next spec, with its own interview.
+
+## Superseded
+
+The ui-redesign spec replaces these requirements; the rest of this spec still holds.
+
+- REQ-11: the gesture guide moves to the side panel's Gestures tab (ui-redesign REQ-9).
+- REQ-13–15: the divider between code and guide is gone; the C key collapses the whole side panel (ui-redesign REQ-7, REQ-10).

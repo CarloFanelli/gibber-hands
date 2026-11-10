@@ -1,6 +1,6 @@
 ---
 feature: two-hand-play
-version: 1.3
+version: 1.4
 status: approved
 base: 552abfe58e22dffc0022d42a48be36e324c09ead
 completed: true
@@ -156,3 +156,10 @@ Two-hand play lets the player use both hands. The right hand, the **lead hand**,
 - **Remembering the second hand's mode between visits** — a new visit always starts with both hands playing, as a newcomer expects.
 - **A second playing voice on the sliders** — they stand in for one hand; the octave switch and effect slider cover shape mode.
 - **Drums and rhythm** — the next feature, with its own interview.
+
+## Superseded
+
+The ui-redesign spec replaces these requirements; the rest of this spec still holds.
+
+- REQ-3: the left-handed switch moves to the top bar (ui-redesign REQ-4).
+- REQ-15: the camera view labels each hand with one hand tag that follows it (ui-redesign REQ-24).

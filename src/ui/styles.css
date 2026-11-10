@@ -16,7 +16,11 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 .panel { position: relative; flex: 1 1 auto; min-width: 160px; background: var(--panel); overflow: hidden; }
 .panel-camera { width: 45%; container: camera / inline-size; }
 .panel-instrument { width: 25%; }
-.panel-code { width: 30%; }
+/* The side panel: 360 px on a first visit, then the width Resizer saved, between 280 px and half the row. */
+.panel-side { flex: 0 1 auto; width: 360px; min-width: 280px; max-width: 50%; }
+.panel-hidden { display: none; }
+/* The handle beside a collapsed side panel has nothing to resize. */
+.resize-handle:has(+ .panel-hidden) { display: none; }
 /* Negative margins: the handle takes no room in the row, so the widths add up to 100% and grabbing it moves nothing. */
 .resize-handle { position: relative; z-index: 1; flex: none; width: 6px; margin: 0 -3px; background: #1f2937; cursor: col-resize; }
 .resize-handle:hover { background: var(--accent); }
@@ -64,7 +68,7 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 .preset-character, .preset-scale { grid-column: 2; font-size: 13px; color: var(--muted); }
 /* A narrow instrument panel keeps each preset's name and scale; names wrap. */
 @container (max-width: 219px) { .preset-character { display: none; } }
-.code-toggle, .help-close, .code-copy, .code-open, .lead-hand, .drum-toggle { align-self: flex-start; min-height: 44px; padding: 10px 14px; border-radius: 8px; border: 1px solid #334155; background: transparent; color: var(--fg); font: inherit; cursor: pointer; }
+.help-close, .code-copy, .code-open, .lead-hand, .drum-toggle { align-self: flex-start; min-height: 44px; padding: 10px 14px; border-radius: 8px; border: 1px solid #334155; background: transparent; color: var(--fg); font: inherit; cursor: pointer; }
 .audio-toggle, .retry { min-height: 44px; padding: 10px 14px; border-radius: 8px; border: 0; background: var(--accent); color: #0b0f14; font-weight: 600; cursor: pointer; }
 .audio-toggle:disabled, .retry:disabled { opacity: 0.5; cursor: default; }
 /* Until audio first starts, the button that starts it is the largest control in the panel, preset cards included. */
@@ -77,26 +81,22 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 .drum-layers { display: inline-flex; gap: 8px; margin-left: 8px; }
 .drum-toggle:disabled, .drum-step:disabled { opacity: 0.5; cursor: default; }
 .drum-line { flex-basis: 100%; margin: 0; font-size: 13px; color: var(--muted); }
-/* The code panel: the live code above the gesture guide, each scrolling on its own, split by the code's share
-   of the height (codeGuideSplit.ts); the guide fills the panel while the code is hidden. The code's tools
-   sit on top, the snippet scrolls under them, wrapped so it never scrolls sideways. */
-.panel-code { display: flex; flex-direction: column; container: code / size; --code-share: 0.5; }
-/* Percent bases that add up to 100%, not 0: the guide's padding then comes out of its share instead of being
-   added to it. */
-.code-part, .guide-part { min-height: 120px; }
-.code-part { flex: 1 1 calc(var(--code-share) * 100%); }
-.guide-part { flex: 1 1 calc((1 - var(--code-share)) * 100%); }
-/* As the bars between panels, turned on its side: no room taken, so the shares add up to 100%. */
-.code-split { position: relative; z-index: 1; flex: none; height: 6px; margin: -3px 0; background: #1f2937; cursor: row-resize; touch-action: none; }
-.code-split:hover { background: var(--accent); }
-/* Too short for 120 px each: no divider, half and half. */
-@container code (max-height: 239.98px) {
-  .code-split { display: none; }
-  .code-part, .guide-part { flex-basis: 50%; min-height: 0; }
-}
+/* The side panel: its tab bar on top, then the selected tab at the full height left. The code's tools sit on
+   top of it, the snippet scrolls under them, wrapped so it never scrolls sideways. */
+.panel-side { display: flex; flex-direction: column; }
+.side-tabs { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 8px 0 16px; border-bottom: 1px solid #1f2937; }
+.side-tabs [role="tablist"] { display: flex; gap: 4px; }
+.side-tab { min-height: 44px; padding: 0 14px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--muted); font: inherit; font-weight: 600; cursor: pointer; }
+.side-tab[aria-selected="true"] { border-bottom-color: var(--accent); color: var(--fg); }
+.side-collapse { min-width: 44px; min-height: 44px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); font: inherit; cursor: pointer; }
+.side-collapse:hover, .side-tab:hover { color: var(--fg); }
+.code-part, .guide-part { flex: 1 1 auto; min-height: 0; }
+/* Collapsed, the side panel leaves a narrow strip whose button expands it again. */
+.side-strip { display: flex; flex: none; width: 44px; background: var(--panel); border-left: 1px solid #1f2937; }
+.side-expand { flex: 1; padding: 16px 0; border: 0; background: transparent; color: var(--fg); font: inherit; font-weight: 600; writing-mode: vertical-rl; cursor: pointer; }
+.side-expand:hover { color: var(--accent); }
 .code-part { display: flex; flex-direction: column; }
-.guide-part { overflow-y: auto; padding: 16px; border-top: 1px solid #1f2937; font-size: 14px; }
-.guide-part h2 { margin: 0 0 8px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.guide-part { overflow-y: auto; padding: 16px; font-size: 14px; }
 .guide-part p { margin: 0 0 8px; }
 .guide-part dl { margin: 0; }
 .guide-part dt { font-weight: 600; }
@@ -166,6 +166,8 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 /* Stacked: equal heights at full width. Saved widths stay stored for the next wide window. */
 @media (max-width: 719.98px) {
   #app { flex-direction: column; }
-  .panel { flex: 1 1 0; width: auto !important; border-bottom: 1px solid #1f2937; }
+  .panel { flex: 1 1 0; width: auto !important; max-width: none; border-bottom: 1px solid #1f2937; }
   .resize-handle { display: none; }
+  .side-strip { width: auto; border-left: 0; }
+  .side-expand { writing-mode: horizontal-tb; }
 }
