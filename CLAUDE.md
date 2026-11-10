@@ -1,3 +1,5 @@
+@AGENTS.md
+
 # gibber-hands — guide for Claude Code
 
 Play a Gibber synth with your hands, in the browser. Webcam → MediaPipe gesture recognition →

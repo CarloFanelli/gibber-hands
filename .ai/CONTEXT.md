@@ -9,8 +9,8 @@ One of the four fixed drum loops (Rock, House, Hip-hop, Breakbeat), each with it
 _Avoid_: preset (the synth sound), beat (one count of the bar), groove
 
 ### Gesture guide
-The list of every gesture and what it does, always in view below the live code, in the same panel. The help sheet opened with "?" stays the full reference, keys included.
-_Avoid_: cheat sheet, legend, help (the help sheet)
+The list of every gesture and what it does, shown in the Gestures tab of the **Side panel**. The **Help dialog** lists buttons and keys only and links here.
+_Avoid_: cheat sheet, legend, help (the help dialog)
 
 ### Hand size
 The distance from the wrist to the middle-finger knuckle. Pinch values are divided by it, so they don't depend on how far the hand is from the camera.
