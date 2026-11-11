@@ -51,7 +51,7 @@ webcam ─► src/hands/tracker.ts ─► HandPair  ─► src/mapping/handToSyn
 4. **Ship** ([spec](.ai/features/launch/SPEC.md)) — GitHub Pages deploy (workflow is already in `.github/workflows/deploy.yml`; enable Pages → Source: GitHub Actions), a 5-second GIF at the top of README, `docs/PROCESS.md` filled in.
 
 ## What not to do
-- Don't add a build-time dependency on Python or native modules.
+- Don't add a build-time dependency on Python, or on native modules that compile at install time. Prebuilt binaries, as in Rolldown or Tailwind, are fine.
 - Don't put the MediaPipe model file in the repo; load it from the hosted URL (or `public/` if offline support is ever needed).
 - Don't optimise before milestone 2 is audible.
 - Don't hide failures: if the webcam or audio can't start, say it in the UI.
