@@ -351,6 +351,46 @@ All four were written in one session, through one interview per milestone.
   - **First visit, on my laptop (2026-11-09):** about 7–8 s to the first tracked hand, timed by stopwatch in Chrome with the cache disabled and the network limited to 20 Mbps. About 1 s of that comes after the model has loaded. The target is 10 s, so nothing goes under "Known limitations".
   - **README links:** all 41 opened without a 404, checked on the pushed main.
 
+### UI redesign (2026-11-10 to 2026-11-11)
+- **Why:** the page worked but didn't look or feel like an instrument. The code sat beside the camera, the controls were stacked in a column, and a first-time visitor had to read before playing.
+- **What shipped** ([spec](../.ai/features/ui-redesign/SPEC.md)):
+  - **Top bar:** Start, the camera and audio status, the privacy note, Left-handed and Help in one slim row. It drops words before it drops controls, down to 360 px.
+  - **Camera in the centre:** the code and the gesture guide moved to a side panel with two tabs, collapsible with C.
+  - **Sounds panel:** presets and drums float over the camera. The panel is dragged by its title bar, and S shrinks it to an icon. Its place is remembered.
+  - **Hand tags:** each hand has a tag that follows it, with its role, gesture, mode and octave. The fps counter is off by default and toggled with F.
+  - **Welcome and help dialogs:** a welcome dialog whose button starts the audio, shown until the first sound. The help dialog lists controls and keys, and links to the gesture guide.
+  - **Phones:** below 720 px the two panels become bottom sheets, opened from a bar at the bottom of the screen.
+  - **Studio look:** solid dark surfaces, one accent colour, monospace for names, numbers and code. Lane names on the video now sit on a solid plate, like the hand tags.
+- **Proposed and changed on the way:**
+  - The agent's first top bar overflowed at phone width: its status icons drew over Start. It was fixed with smaller gaps and a smaller Start under 480 px.
+  - The labels over the video had 85–90% opaque backgrounds. They became solid, so contrast no longer depends on the video behind them.
+  - Dragging panels and cards on a touch screen, and a control to reset the layout, went to the backlog (B-17, B-18).
+- **How it was checked, by the agent in headless Chrome** (camera refused, so the slider path):
+  - **Contrast:** a script blended each text's colour with every background behind it and measured all visible text in 8 states: welcome dialog, Code tab, Gestures tab, hand tags and fps forced visible, help dialog, phone width, and both phone sheets. Nothing fell below 4.5:1. Lane names on the video are drawn on a solid `--bg` plate: the light text on it measures about 16:1.
+  - **Transitions:** none. Panels, sheets and dialogs open and close at once, within the 200 ms limit.
+  - **Keyboard:** each dialog names its title for screen readers; C, S, F, ? and the preset keys work; the welcome dialog blocks every key but ?.
+  - **Layouts:** 1280, 1000, 390 and 360 px. The sheets swap at 719/720 px, and widening the window closes an open sheet.
+  - **Known gap:** moving the sounds panel needs a mouse, which the spec leaves out of scope. From the keyboard, S shrinks it to an icon. The bar beside the side panel takes focus and moves with ← →.
+- **Still to check by hand** (the agent's machine emulates graphics, so its frame rate means nothing):
+  - ≥ 25 fps with the side panel and the sounds panel both open, on both reference laptops: _result to fill in_.
+  - 3 first-time visitors, no help given: a sound within 20 s, and a preset switch within 60 s. _Result to fill in: x/3, times._
+
+### Tailwind styles (2026-11-11)
+- **Why:** I wanted the styling in Tailwind, the way I'd write it in a team today. First I checked GitHub Pages: Tailwind runs at build time, so the deployed site is still plain CSS.
+- **What shipped** ([spec](../.ai/features/tailwind-styles/SPEC.md)):
+  - The same look, rewritten as Tailwind v4 utilities on each element. Shared button looks are in one small file. About 70 lines of CSS are left, for keyframes, drag-kit's copy and the base rules.
+  - **Three improvements I picked from the agent's list:** every button reacts to hover, every enabled button darkens while pressed, and text uses only five sizes (12/14/16/18/20 px), where there were eight. Disabled buttons don't react.
+- **Proposed and changed on the way:**
+  - The agent proposed a look-check script before touching any style. It records every element's box, colour and font at four widths, and compares against that recording after each step. It caught Tailwind's reset quietly changing button fonts, centring dialogs and making headings lighter, all fixed before they shipped.
+  - One rule I hadn't anticipated: two utilities for the same property on one element are decided by Tailwind's output order, not the class order. That cost a font size twice, and went into the project memory.
+  - The sounds panel can cover the sliders on a laptop screen without a camera. That was out of scope, so it went to the backlog (B-19).
+  - The CLAUDE.md rule against native modules now allows prebuilt binaries, as Tailwind's engine ships them.
+- **How it was checked, by the agent in headless Chrome:**
+  - **Look:** after tasks 1–5, "no difference" against the recording at 1280, 1000, 390 and 360 px. After task 6, the only differences are the text sizes moving to the five, and the layout around them.
+  - **Contrast:** nothing below 4.5:1 on any recorded screen.
+  - **States:** hover and press change Help and Start audio; a disabled drum button stays the same.
+  - **Size:** the stylesheet is 6.9 KB compressed, under the 10 KB limit.
+
 ## Three decisions I did not delegate
 
 1. **Drums by buttons, after playing the gesture version.** The agent proposed steering the drums with the second hand: a rock sign 🤟 for drum mode, the palm center to pick the pattern, its height to set the layers. It was built and tested through five tasks. When I played it, changing the beat by hand didn't work, so buttons beside "Start drums" replaced it ([drum loop](#drum-loop-2026-11-05)).

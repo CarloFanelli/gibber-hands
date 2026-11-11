@@ -39,7 +39,7 @@ The second hand plays notes the same way, so two notes can sound at once. A Vict
 - **Drums:** **Start drums** (or <kbd>D</kbd>) plays a drum loop to play over. ◀ and ▶ step through the drum patterns, Rock, House, Hip-hop and Breakbeat, each at its own tempo. − and + set the drum layers, from the kick alone to the full pattern.
 - **Live code:** the Gibber code for what you're playing, updated as you play. **Copy** copies it. **Open gibber** links to [Gibber](https://gibber.cc/), the live-coding library that makes the sound.
 - **Panels:** drag the bar between the camera and the side panel to resize it; the size is remembered. The sounds panel, with the presets and the drums, floats over the camera: drag it by its title bar, and <kbd>S</kbd> shrinks it to an icon. The side panel shows the live code or the gesture guide, one tab at a time, and <kbd>C</kbd> collapses or expands it.
-- **Keys:** <kbd>1</kbd>–<kbd>6</kbd> preset, <kbd>Space</kbd> audio, <kbd>D</kbd> drums, <kbd>C</kbd> code, <kbd>?</kbd> help.
+- **Keys:** <kbd>1</kbd>–<kbd>6</kbd> preset, <kbd>Space</kbd> audio, <kbd>D</kbd> drums, <kbd>C</kbd> side panel, <kbd>S</kbd> sounds panel, <kbd>F</kbd> frame rate, <kbd>?</kbd> help.
 
 ## How it works
 
