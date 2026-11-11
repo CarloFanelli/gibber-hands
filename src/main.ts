@@ -287,7 +287,7 @@ function boot() {
     else if (action.kind === 'audio') audio.startOrStop();
     else if (action.kind === 'drums') drumPanel.startOrStop();
     else if (action.kind === 'side-panel') ui.toggleSidePanel();
-    else if (action.kind === 'sounds') ui.sounds.toggle();
+    else if (action.kind === 'sounds') ui.toggleSounds();
     else if (action.kind === 'fps') overlay.toggleFps();
     else toggleHelp();
   });

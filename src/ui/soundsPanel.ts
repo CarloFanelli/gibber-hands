@@ -2,8 +2,10 @@
  * The sounds panel: the presets and the drums, floating over the camera stage. Its title bar drags it with
  * the mouse anywhere in the stage, never out of it; its "—" button, or the S key (ui/shortcuts), shrinks it to
  * an icon in the same corner, and the icon restores it. Where it sits and whether it is open are remembered
- * (panelPlacement). The preset cards inside keep their own drag onto "Now playing" (ui/presetList).
+ * (panelPlacement). The preset cards inside keep their own drag onto "Now playing" (ui/presetList). In a
+ * narrow window it is a bottom sheet instead (ui/bottomSheets, styles.css): always open there, and not dragged.
  */
+import { NARROW_QUERY } from './bottomSheets';
 import { fractionAt, placeAt, savedPlacement, storedPlacement, type Placement } from './panelPlacement';
 import { readStored, writeStored } from './storage';
 
@@ -52,9 +54,8 @@ export function createSoundsPanel(stage: HTMLElement): SoundsPanel {
     // Shrinking from a control inside the panel would drop focus to the page: it goes to the icon.
     const refocus = !open && panel.contains(document.activeElement);
     placement = { ...placement, open };
+    // The class hides the title and the body or the icon (styles.css): a bottom sheet shows them all the same.
     panel.classList.toggle('sounds-shrunk', !open);
-    title.hidden = body.hidden = !open;
-    icon.hidden = open;
     place();
     save();
     if (refocus) icon.focus();
@@ -64,7 +65,7 @@ export function createSoundsPanel(stage: HTMLElement): SoundsPanel {
   // Mouse only, like the other drags on the page: on a touch screen the panel stays where it is.
   let drag: { x: number; y: number; left: number; top: number } | null = null;
   title.addEventListener('pointerdown', (e) => {
-    if (e.pointerType !== 'mouse' || e.button !== 0 || e.target === shrink) return;
+    if (e.pointerType !== 'mouse' || e.button !== 0 || e.target === shrink || matchMedia(NARROW_QUERY).matches) return;
     // No text selected while dragging; the capture keeps the moves coming outside the title bar.
     e.preventDefault();
     title.setPointerCapture(e.pointerId);

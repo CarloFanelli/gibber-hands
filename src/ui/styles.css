@@ -61,7 +61,8 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 .sounds-shrink { min-width: 44px; min-height: 44px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); font: inherit; cursor: pointer; }
 .sounds-shrink:hover { color: var(--fg); }
 .sounds-body { display: flex; flex-direction: column; gap: 10px; min-height: 0; padding: 12px; overflow-y: auto; }
-.sounds-panel.sounds-shrunk { width: auto; border: 0; border-radius: 50%; background: none; box-shadow: none; }
+@media (min-width: 720px) { .sounds-panel.sounds-shrunk { width: auto; border: 0; border-radius: 50%; background: none; box-shadow: none; } }
+.sounds-shrunk .sounds-title, .sounds-shrunk .sounds-body, .sounds-panel:not(.sounds-shrunk) .sounds-icon { display: none; }
 .sounds-icon { width: 52px; height: 52px; border: 1px solid var(--line-strong); border-radius: 50%; background: var(--surface); color: var(--accent); font-size: 22px; box-shadow: 0 8px 24px rgb(0 0 0 / 0.5); cursor: pointer; }
 .sounds-icon:hover { border-color: var(--accent); }
 .now-playing { display: grid; padding: 8px 10px; border: 1px dashed var(--line-strong); border-radius: 8px; }
@@ -117,6 +118,14 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 }
 @container top-bar (max-width: 719.98px) {
   .top-name { display: none; }
+}
+/* Phone width: smaller gaps and a smaller Start button, so the whole row still fits in 360 px. */
+@media (max-width: 479.98px) { .top-bar { gap: 6px; padding: 0 12px; } }
+@container top-bar (max-width: 479.98px) {
+  .top-audio { flex: none; }
+  .audio-toggle.prominent, .retry.prominent { min-height: 52px; padding: 0 14px; font-size: 17px; }
+  .lead-hand { padding: 10px 8px; }
+  .top-help { padding: 0 10px; }
 }
 /* ◀ Start drums ▶, then − and + for the drum layers; in a narrow panel the layers wrap to the next row. */
 .drum-panel { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
@@ -209,11 +218,22 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
   .help-dialog dl { grid-template-columns: 1fr; gap: 2px; }
   .help-dialog dd + dt { margin-top: 8px; }
 }
-/* Stacked: equal heights at full width. Saved widths stay stored for the next wide window. */
+/* The bottom bar and the sheets' × buttons exist for narrow windows only. */
+.bottom-bar, .sheet-close { display: none; }
+/* Narrow: the camera fills the room between the top bar and the bottom bar; the sounds panel and the side panel
+   are bottom sheets over it, one at a time (bottomSheets.ts). Saved widths and places stay for wide windows. */
 @media (max-width: 719.98px) {
-  .panels { flex-direction: column; }
-  .panel { flex: 1 1 0; width: auto !important; max-width: none; border-bottom: 1px solid var(--line); }
-  .resize-handle { display: none; }
-  .side-strip { width: auto; border-left: 0; }
-  .side-expand { writing-mode: horizontal-tb; }
+  .panel-camera { width: auto !important; }
+  .resize-handle, .side-strip, .side-collapse, .sounds-shrink, .sounds-icon { display: none !important; }
+  .panel-side, .sounds-panel { position: fixed; left: 0; right: 0; bottom: 56px; z-index: 3; display: none; width: auto !important; max-width: none; max-height: 70vh; border: 1px solid var(--line-strong); border-bottom: 0; border-radius: 12px 12px 0 0; background: var(--surface); box-shadow: 0 -12px 32px rgb(0 0 0 / 0.5); transform: none !important; }
+  .sounds-panel { top: auto; }
+  #app[data-sheet="side"] .panel-side, #app[data-sheet="sounds"] .sounds-panel { display: flex !important; }
+  .sounds-shrunk .sounds-title, .sounds-shrunk .sounds-body { display: flex; }
+  .sounds-title { cursor: default; }
+  .sheet-close { display: block; position: absolute; top: 4px; right: 4px; z-index: 1; min-width: 44px; min-height: 44px; border: 0; border-radius: 8px; background: transparent; color: var(--fg); font-size: 22px; cursor: pointer; }
+  .side-tabs { padding-right: 52px; }
+  .bottom-bar { display: flex; flex: none; height: 56px; border-top: 1px solid var(--line); background: var(--surface); }
+  .bottom-button { flex: 1; border: 0; background: transparent; color: var(--muted); font: inherit; font-weight: 600; cursor: pointer; }
+  .bottom-button[aria-expanded="true"] { color: var(--fg); box-shadow: inset 0 2px 0 var(--accent); }
+  .panel { border-bottom: 0; }
 }

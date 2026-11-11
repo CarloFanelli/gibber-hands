@@ -2,10 +2,11 @@
  * The top bar (topBar), then two resizable panels side by side: the camera stage, with the sounds panel
  * floating over it (soundsPanel), and the side panel, which holds the live code and the gesture guide as tabs
  * (sidePanel). Resizer adds the drag handle and remembers the sizes; the side panel stays between 280 px and
- * half the row (styles.css). Collapsed, it leaves the row and a narrow strip takes its place. Narrow windows
- * stack the panels (styles.css).
+ * half the row (styles.css). Collapsed, it leaves the row and a narrow strip takes its place. In a narrow
+ * window both panels are bottom sheets instead (bottomSheets).
  */
 import Resize from '../vendor/resizer/Resize';
+import { createBottomSheets } from './bottomSheets';
 import { createSidePanel } from './sidePanel';
 import { createSoundsPanel, type SoundsPanel } from './soundsPanel';
 import { createTopBar, type TopBar } from './topBar';
@@ -19,9 +20,11 @@ export interface Layout {
   sounds: SoundsPanel;
   code: HTMLElement;
   guide: HTMLElement;
-  /** Collapses the side panel, or expands it, as its buttons do. */
+  /** Collapses the side panel, or expands it, as its buttons do; in a narrow window, opens or closes its sheet. */
   toggleSidePanel(): void;
-  /** Expands the side panel on its Gestures tab. */
+  /** Shrinks the sounds panel, or restores it; in a narrow window, opens or closes its sheet. */
+  toggleSounds(): void;
+  /** Expands the side panel on its Gestures tab, as a sheet in a narrow window. */
   showGestures(): void;
 }
 
@@ -48,6 +51,8 @@ export function createLayout(root: HTMLElement): Layout {
   const sounds = createSoundsPanel(camera);
   const side = createSidePanel(root.querySelector('#panel-side')!, root.querySelector('.side-strip')!, code, guide, HIDDEN_PANEL);
 
+  const sheets = createBottomSheets(root, camera, { sounds: root.querySelector('.sounds-panel')!, side: root.querySelector('#panel-side')! });
+
   // After the side panel has its saved state: Resizer sizes the panels still in the row.
   new Resize({ resizableElements: panels, resizerClassList: 'resize-handle', saveName: 'gibber-hands', classToCheck: HIDDEN_PANEL });
 
@@ -62,7 +67,11 @@ export function createLayout(root: HTMLElement): Layout {
     sounds,
     code,
     guide,
-    toggleSidePanel: side.toggle,
-    showGestures: () => side.showTab('gestures')
+    toggleSidePanel: () => sheets.toggle('side') || side.toggle(),
+    toggleSounds: () => sheets.toggle('sounds') || sounds.toggle(),
+    showGestures() {
+      sheets.open('side');
+      side.showTab('gestures');
+    }
   };
 }
