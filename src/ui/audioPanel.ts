@@ -1,5 +1,5 @@
 /**
- * Instrument panel audio controls: the Start / Stop audio button, and why the audio engine couldn't start,
+ * The top bar's audio controls: the Start / Stop audio button, and why the audio engine couldn't start,
  * with Try again when retrying can help. Until audio first starts, the button that starts it stands out.
  */
 import type { EngineStatus, SynthEngine } from '../synth/engine';

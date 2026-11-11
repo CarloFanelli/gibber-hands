@@ -1,16 +1,18 @@
 /**
- * Three resizable panels side by side: camera | instrument (audio controls) | side panel, which holds the live
- * code and the gesture guide as tabs (sidePanel). Resizer adds the drag handles and remembers the sizes; the
- * side panel stays between 280 px and half the row (styles.css). Collapsed, it leaves the row and a narrow
- * strip takes its place. Narrow windows stack the panels (styles.css).
+ * The top bar (topBar), then three resizable panels side by side: the camera stage | instrument (presets and
+ * drums) | side panel, which holds the live code and the gesture guide as tabs (sidePanel). Resizer adds the
+ * drag handles and remembers the sizes; the side panel stays between 280 px and half the row (styles.css).
+ * Collapsed, it leaves the row and a narrow strip takes its place. Narrow windows stack the panels (styles.css).
  */
 import Resize from '../vendor/resizer/Resize';
 import { createSidePanel } from './sidePanel';
+import { createTopBar, type TopBar } from './topBar';
 
 /** The class Resizer leaves out of the row. */
 const HIDDEN_PANEL = 'panel-hidden';
 
 export interface Layout {
+  top: TopBar;
   camera: { root: HTMLElement; video: HTMLVideoElement; canvas: HTMLCanvasElement; status: HTMLElement };
   instrument: HTMLElement;
   code: HTMLElement;
@@ -21,21 +23,23 @@ export interface Layout {
 
 export function createLayout(root: HTMLElement): Layout {
   root.innerHTML = `
-    <section class="panel panel-camera" id="panel-camera">
-      <video id="cam" playsinline muted></video>
-      <canvas id="overlay"></canvas>
-      <div class="camera-status" id="camera-status"></div>
-      <p class="camera-privacy">Video stays on your device</p>
-    </section>
-    <section class="panel panel-instrument" id="panel-instrument">
-      <div class="instrument-controls"></div>
-    </section>
-    <section class="panel panel-side" id="panel-side" aria-label="Code and gestures">
-      <div class="code-part" id="code-part"></div>
-      <div class="guide-part" id="guide-part"></div>
-    </section>
-    <div class="side-strip"></div>
+    <div class="panels">
+      <section class="panel panel-camera" id="panel-camera">
+        <video id="cam" playsinline muted></video>
+        <canvas id="overlay"></canvas>
+        <div class="camera-status" id="camera-status"></div>
+      </section>
+      <section class="panel panel-instrument" id="panel-instrument">
+        <div class="instrument-controls"></div>
+      </section>
+      <section class="panel panel-side" id="panel-side" aria-label="Code and gestures">
+        <div class="code-part" id="code-part"></div>
+        <div class="guide-part" id="guide-part"></div>
+      </section>
+      <div class="side-strip"></div>
+    </div>
   `;
+  const top = createTopBar(root);
   const panels = [...root.querySelectorAll<HTMLElement>('.panel')];
   const code = root.querySelector<HTMLElement>('#code-part')!;
   const guide = root.querySelector<HTMLElement>('#guide-part')!;
@@ -45,6 +49,7 @@ export function createLayout(root: HTMLElement): Layout {
   new Resize({ resizableElements: panels, resizerClassList: 'resize-handle', saveName: 'gibber-hands', classToCheck: HIDDEN_PANEL });
 
   return {
+    top,
     camera: {
       root: root.querySelector('#panel-camera')!,
       video: root.querySelector('#cam')!,

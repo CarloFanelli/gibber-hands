@@ -1,5 +1,5 @@
 /**
- * The instrument panel's swap control for left-handed players: pressed, the left hand is the lead hand
+ * The top bar's swap control for left-handed players: pressed, the left hand is the lead hand
  * and the right hand the second hand.
  */
 import type { Side } from '../hands/types';

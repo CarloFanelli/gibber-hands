@@ -91,9 +91,9 @@ function boot() {
   const overlay = createOverlay(ui.camera.root, ui.camera.video, ui.camera.canvas);
   const hints = createStepHints(ui.camera.root);
 
-  const statusLine = createStatusLine(ui.instrument);
+  const statusLine = createStatusLine(ui.top.status);
   const synth = createSynth();
-  const audio = createAudioPanel(ui.instrument, synth);
+  const audio = createAudioPanel(ui.top.audio, synth);
   let drums = DRUMS_START;
   /** The drum pattern and drum layers the engine last reported playing; null while it plays none. */
   let heard: Drums | null = null;
@@ -258,7 +258,8 @@ function boot() {
   });
 
   const help = createHelpSheet(document.body, lead);
-  createLeadHandSwitch(ui.instrument, lead, (side) => {
+  ui.top.help.addEventListener('click', () => help.toggle());
+  createLeadHandSwitch(ui.top.lead, lead, (side) => {
     lead = side;
     writeStored(LEAD_HAND_KEY, side);
     second = secondHandAfterSwap(pair[otherSide(side)].state);
