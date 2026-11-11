@@ -1,5 +1,5 @@
 /**
- * Instrument panel drum controls: ◀ Start drums / Stop drums ▶ to start and stop the loop and step through
+ * The sounds panel's drum controls: ◀ Start drums / Stop drums ▶ to start and stop the loop and step through
  * the drum patterns, − and + for the drum layers, and the loop's state in words, for example
  * "Drums: Rock · 110 BPM · layers 4/4". None can be pressed once the audio engine has failed.
  */

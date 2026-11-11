@@ -40,6 +40,12 @@ describe('shortcut', () => {
     expect(shortcut(press(' '), 'field')).toBeNull();
   });
 
+  it('shrinks or restores the sounds panel with S, in either case, also while a button has focus', () => {
+    expect(shortcut(press('s'), 'other')).toEqual({ kind: 'sounds' });
+    expect(shortcut(press('S', { shiftKey: true }), 'control')).toEqual({ kind: 'sounds' });
+    expect(shortcut(press('s'), 'field')).toBeNull();
+  });
+
   it('starts or stops the drums with D, in either case, also while a button has focus', () => {
     expect(shortcut(press('d'), 'other')).toEqual({ kind: 'drums' });
     expect(shortcut(press('D', { shiftKey: true }), 'other')).toEqual({ kind: 'drums' });

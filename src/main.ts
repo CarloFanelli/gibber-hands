@@ -97,13 +97,14 @@ function boot() {
   let drums = DRUMS_START;
   /** The drum pattern and drum layers the engine last reported playing; null while it plays none. */
   let heard: Drums | null = null;
-  const drumPanel = createDrumPanel(ui.instrument, {
+  const drumPanel = createDrumPanel(ui.sounds.body, {
     toggle: () => useDrums(toggleDrums(drums)),
     pattern: (step) => useDrums(stepPattern(drums, step)),
     layers: (step) => useDrums(stepLayers(drums, step))
   });
   let preset = presetIndex(readStored(PRESET_KEY));
-  const presets = createPresetList(ui.instrument, selectPreset);
+  const presets = createPresetList(ui.sounds.body, selectPreset);
+  ui.sounds.onShrink(() => presets.cancelDrag());
   const liveCode = createLiveCode(ui.code);
   const gestures = createGestureGuide(ui.guide, lead);
   const showCode = throttle(({ sounds, effect }: Played) => {
@@ -246,6 +247,7 @@ function boot() {
   }
   function usePreset() {
     presets.show(preset);
+    ui.sounds.setNowPlaying(PRESETS[preset]!.name);
     showLanes();
     synth.setPreset(preset);
     // The sliders send a hand pair only when moved: play the last one again, with this preset's notes.
@@ -276,6 +278,7 @@ function boot() {
     else if (action.kind === 'audio') audio.startOrStop();
     else if (action.kind === 'drums') drumPanel.startOrStop();
     else if (action.kind === 'side-panel') ui.toggleSidePanel();
+    else if (action.kind === 'sounds') ui.sounds.toggle();
     else help.toggle();
   });
 

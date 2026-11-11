@@ -38,7 +38,7 @@ The second hand plays notes the same way, so two notes can sound at once. A Vict
 - **Presets:** six sounds, each with its own scale. Click one, drag it onto "Now playing", or press <kbd>1</kbd>–<kbd>6</kbd>.
 - **Drums:** **Start drums** (or <kbd>D</kbd>) plays a drum loop to play over. ◀ and ▶ step through the drum patterns, Rock, House, Hip-hop and Breakbeat, each at its own tempo. − and + set the drum layers, from the kick alone to the full pattern.
 - **Live code:** the Gibber code for what you're playing, updated as you play. **Copy** copies it. **Open gibber** links to [Gibber](https://gibber.cc/), the live-coding library that makes the sound.
-- **Panels:** drag the bars between the camera, the instrument and the side panel to resize them; the sizes are remembered. The side panel shows the live code or the gesture guide, one tab at a time, and <kbd>C</kbd> collapses or expands it.
+- **Panels:** drag the bar between the camera and the side panel to resize it; the size is remembered. The sounds panel, with the presets and the drums, floats over the camera: drag it by its title bar, and <kbd>S</kbd> shrinks it to an icon. The side panel shows the live code or the gesture guide, one tab at a time, and <kbd>C</kbd> collapses or expands it.
 - **Keys:** <kbd>1</kbd>–<kbd>6</kbd> preset, <kbd>Space</kbd> audio, <kbd>D</kbd> drums, <kbd>C</kbd> code, <kbd>?</kbd> help.
 
 ## How it works
@@ -58,8 +58,8 @@ gibber-hands brings together three projects I wrote by hand, before I used AI co
 | Project | When | What it was | What gibber-hands takes from it |
 |---|---|---|---|
 | [handMouse](https://github.com/CarloFanelli/handMouse/tree/d667b5863ca18107eab35afa51db1b4b3fa73ad4) | Mar–Oct 2025 | Python + OpenCV + MediaPipe prototype: move the mouse pointer with your index finger, click with a pinch | hand landmarks, pinch geometry, gesture gating, mirrored feedback |
-| [drag-kit](https://github.com/CarloFanelli/drag-kit/tree/b1dec91c12dce37b53404d96cb7eb411d7518b9b) | May 2024 | Vanilla JS drag and drop without the HTML5 Drag and Drop API | dragging presets onto the instrument; hit-testing by geometry |
-| [Resizer](https://github.com/CarloFanelli/Resizer/tree/41bb3caeb96e44f805aacd81c5baa9c37921ad70) | Jun 2024 | TypeScript side-by-side panels that you resize by dragging and that remember their sizes | the three panels: camera, instrument, live code |
+| [drag-kit](https://github.com/CarloFanelli/drag-kit/tree/b1dec91c12dce37b53404d96cb7eb411d7518b9b) | May 2024 | Vanilla JS drag and drop without the HTML5 Drag and Drop API | dragging presets onto "Now playing"; hit-testing by geometry |
+| [Resizer](https://github.com/CarloFanelli/Resizer/tree/41bb3caeb96e44f805aacd81c5baa9c37921ad70) | Jun 2024 | TypeScript side-by-side panels that you resize by dragging and that remember their sizes | the camera and the side panel with the live code |
 
 ## Creative front-end toolbox
 

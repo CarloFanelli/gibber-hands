@@ -2,7 +2,7 @@
 
 01-side-panel-tabs: DONE
 02-top-bar-stage: DONE
-03-sounds-panel: TODO
+03-sounds-panel: DONE
 04-hand-tags: TODO
 05-welcome-help-dialogs: TODO
 06-narrow-sheets: TODO

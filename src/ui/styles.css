@@ -23,8 +23,7 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 .panels { display: flex; flex: 1 1 auto; min-height: 0; }
 /* Widths are the flex basis, so the widths Resizer sets apply. */
 .panel { position: relative; flex: 1 1 auto; min-width: 160px; background: var(--surface); overflow: hidden; }
-.panel-camera { width: 45%; container: camera / inline-size; }
-.panel-instrument { width: 25%; }
+.panel-camera { width: 70%; container: camera / inline-size; }
 /* The side panel: 360 px on a first visit, then the width Resizer saved, between 280 px and half the row. */
 .panel-side { flex: 0 1 auto; width: 360px; min-width: 280px; max-width: 50%; }
 .panel-hidden { display: none; }
@@ -53,8 +52,18 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 .status-card { display: flex; flex-direction: column; align-items: center; gap: 10px; max-width: 36ch; padding: 14px 18px; border-radius: 8px; background: rgb(11 15 20 / 0.9); text-align: center; pointer-events: auto; }
 .status-card p { margin: 0; }
 .status-hint { color: var(--muted); font-size: 14px; }
-.panel-instrument { display: flex; flex-direction: column; justify-content: space-between; gap: 12px; padding: 16px; overflow-y: auto; container-type: inline-size; }
-.instrument-controls { display: flex; flex-direction: column; gap: 12px; }
+/* The sounds panel floats over the stage at the place soundsPanel.ts gives it; it scrolls inside when the stage
+   is short. Its body is not positioned, so a dragged preset card is placed from the panel and never clipped. */
+.sounds-panel { position: absolute; top: 0; left: 0; z-index: 2; display: flex; flex-direction: column; width: 300px; max-height: calc(100% - 24px); border: 1px solid var(--line-strong); border-radius: 12px; background: var(--surface); box-shadow: 0 12px 32px rgb(0 0 0 / 0.5); }
+.sounds-title { display: flex; flex: none; align-items: center; justify-content: space-between; padding: 0 4px 0 14px; border-bottom: 1px solid var(--line); cursor: grab; user-select: none; }
+.sounds-title:active { cursor: grabbing; }
+.sounds-name { margin: 0; font: 600 12px var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.sounds-shrink { min-width: 44px; min-height: 44px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); font: inherit; cursor: pointer; }
+.sounds-shrink:hover { color: var(--fg); }
+.sounds-body { display: flex; flex-direction: column; gap: 10px; min-height: 0; padding: 12px; overflow-y: auto; }
+.sounds-panel.sounds-shrunk { width: auto; border: 0; border-radius: 50%; background: none; box-shadow: none; }
+.sounds-icon { width: 52px; height: 52px; border: 1px solid var(--line-strong); border-radius: 50%; background: var(--surface); color: var(--accent); font-size: 22px; box-shadow: 0 8px 24px rgb(0 0 0 / 0.5); cursor: pointer; }
+.sounds-icon:hover { border-color: var(--accent); }
 .now-playing { display: grid; padding: 8px 10px; border: 1px dashed var(--line-strong); border-radius: 8px; }
 .now-playing-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
 .now-playing-name { font-weight: 600; }
@@ -63,7 +72,7 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 .now-playing.drop-over { border-style: solid; border-color: var(--accent); background: rgb(125 211 252 / 0.12); }
 /* The cards are in block flow, not a grid: a grid would start a dragged card from its corner, not its place. */
 .preset-cell + .preset-cell { padding-top: 6px; }
-.preset { display: grid; grid-template-columns: auto 1fr; column-gap: 10px; align-items: baseline; width: 100%; padding: 6px 10px; border: 1px solid var(--line-strong); border-radius: 8px; background: transparent; color: var(--fg); font: inherit; text-align: left; cursor: pointer; user-select: none; }
+.preset { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; column-gap: 10px; align-items: baseline; width: 100%; padding: 6px 10px; border: 1px solid var(--line-strong); border-radius: 8px; background: transparent; color: var(--fg); font: inherit; text-align: left; cursor: pointer; user-select: none; }
 .preset:hover { border-color: var(--line-hover); }
 .preset[aria-pressed="true"], .lead-hand[aria-pressed="true"] { border-color: var(--accent); background: rgb(125 211 252 / 0.12); }
 .preset.preset-dragging { z-index: 1; background: var(--surface); box-shadow: 0 6px 20px rgb(0 0 0 / 0.5); }
@@ -71,10 +80,10 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 .preset + .preset { pointer-events: none; }
 .preset-key { grid-row: span 2; color: var(--muted); font-variant-numeric: tabular-nums; }
 .preset[aria-pressed="true"] .preset-key { color: var(--accent); }
-.preset-name { font-weight: 600; }
-.preset-character, .preset-scale { grid-column: 2; font-size: 13px; color: var(--muted); }
-/* A narrow instrument panel keeps each preset's name and scale; names wrap. */
-@container (max-width: 219px) { .preset-character { display: none; } }
+.preset-name { grid-column: 2 / 4; font-weight: 600; }
+/* Character and scale share the card's second line, the scale on the right; a long character gives way to it. */
+.preset-character, .preset-scale { font-size: 13px; color: var(--muted); white-space: nowrap; }
+.preset-character { overflow: hidden; text-overflow: ellipsis; }
 .help-close, .code-copy, .code-open, .lead-hand, .drum-toggle { align-self: flex-start; min-height: 44px; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--line-strong); background: transparent; color: var(--fg); font: inherit; cursor: pointer; }
 .audio-toggle, .retry { min-height: 44px; padding: 10px 14px; border-radius: 8px; border: 0; background: var(--accent); color: var(--accent-ink); font-weight: 600; cursor: pointer; }
 .audio-toggle:disabled, .retry:disabled { opacity: 0.5; cursor: default; }

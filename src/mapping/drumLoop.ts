@@ -1,6 +1,6 @@
 /**
  * The drum loop's state for the visit: whether it plays, and which drum pattern with how many drum layers,
- * as the instrument panel's drum buttons set them. A reload starts with the drums stopped.
+ * as the sounds panel's drum buttons set them. A reload starts with the drums stopped.
  */
 import type { EngineStatus } from '../synth/engine';
 import { DRUM_PATTERNS, type DrumLayers, type Drums } from '../synth/drumPatterns';

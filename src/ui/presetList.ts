@@ -1,5 +1,5 @@
 /**
- * The six presets in the instrument panel, as cards showing each one's number key, name, character and
+ * The six presets in the sounds panel, as cards showing each one's number key, name, character and
  * scale, under a "Now playing" slot showing the selected one. Clicking a card, or dragging it onto the
  * slot with the mouse (drag-kit), picks it; picking only reports it, and the selection is shown once
  * show() is called. Touch screens don't drag: a tap picks.
@@ -10,6 +10,8 @@ import { PRESETS } from '../synth/presets';
 export interface PresetList {
   /** Marks preset `index` (a PRESETS index) as the selected one. */
   show(index: number): void;
+  /** Lets go of a card being dragged, with no preset picked: the slot it would drop on is hidden by now. */
+  cancelDrag(): void;
 }
 
 /** A press that moves farther than this, in px, is a drag: releasing the card then doesn't click it. */
@@ -91,6 +93,12 @@ export function createPresetList(root: HTMLElement, onPick: (index: number) => v
       buttons.forEach((button, i) => button.setAttribute('aria-pressed', String(i === index)));
       playingName.textContent = PRESETS[index]!.name;
       playingScale.textContent = PRESETS[index]!.scale;
+    },
+    cancelDrag() {
+      // drag-kit ends a drag on a move with no button held, dropping where the pointer is: on no slot.
+      if (document.onmousemove && buttons.some((b) => b.classList.contains(DRAGGING))) {
+        document.onmousemove(new MouseEvent('mousemove', { buttons: 0 }));
+      }
     }
   };
 }

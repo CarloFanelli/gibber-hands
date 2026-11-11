@@ -1,5 +1,5 @@
 /**
- * The six presets: what the instrument panel lists, the notes each plays across the note lanes, and the
+ * The six presets: what the sounds panel lists, the notes each plays across the note lanes, and the
  * sound the engine builds and the live code snippet rebuilds. No Gibber import here, so the snippet and
  * its tests run without the browser bundle.
  *
