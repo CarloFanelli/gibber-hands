@@ -1,7 +1,8 @@
 /**
  * Keyboard shortcuts: 1–6 pick a preset, Space starts or stops audio, D starts or stops the drums, C collapses
  * or expands the side panel, S shrinks or restores the sounds panel, F shows or hides the frame rate and "?"
- * opens or closes help. Escape is left to the help sheet, which closes on it by itself.
+ * opens or closes help. While a dialog is open, only "?" acts: Escape is left to the dialog, which closes on it
+ * by itself.
  */
 import { PRESETS } from '../synth/presets';
 
@@ -12,9 +13,10 @@ export type KeyPress = Pick<KeyboardEvent, 'key' | 'repeat' | 'shiftKey' | 'ctrl
 
 /**
  * What has focus: a field takes typed keys (the gesture menu picks an option by its first letter), a control
- * is pressed by Space (a preset card, a button, a link), anything else leaves every key to the shortcuts.
+ * is pressed by Space (a preset card, a button, a link), an open dialog keeps every key but "?" (focus stays
+ * in it while it is open), anything else leaves every key to the shortcuts.
  */
-export type Focus = 'field' | 'control' | 'other';
+export type Focus = 'field' | 'control' | 'dialog' | 'other';
 
 /**
  * The action of a key press, or null. `key` is the character typed, so "?" works whether the layout needs
@@ -23,8 +25,9 @@ export type Focus = 'field' | 'control' | 'other';
  */
 export function shortcut(k: KeyPress, focus: Focus): Action | null {
   if (k.repeat || k.ctrlKey || k.metaKey || k.altKey || focus === 'field') return null;
-  if (k.key === ' ') return focus === 'control' ? null : { kind: 'audio' };
   if (k.key === '?') return { kind: 'help' };
+  if (focus === 'dialog') return null;
+  if (k.key === ' ') return focus === 'control' ? null : { kind: 'audio' };
   if (k.key === 'd' || k.key === 'D') return { kind: 'drums' };
   if (k.key === 'c' || k.key === 'C') return { kind: 'side-panel' };
   if (k.key === 's' || k.key === 'S') return { kind: 'sounds' };
@@ -34,6 +37,7 @@ export function shortcut(k: KeyPress, focus: Focus): Action | null {
 }
 
 function focusOf(target: EventTarget | null): Focus {
+  if (document.querySelector('dialog[open]')) return 'dialog';
   if (target instanceof HTMLInputElement || target instanceof HTMLSelectElement) return 'field';
   if (target instanceof HTMLButtonElement || target instanceof HTMLAnchorElement) return 'control';
   return 'other';

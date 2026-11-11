@@ -1,7 +1,7 @@
 /**
  * The gesture guide: every gesture and what it does, in the side panel's Gestures tab. It names the hands
- * by their current roles; while the sliders stand in for the hand, a first line says so. The help sheet
- * stays the full reference, keys included.
+ * by their current roles; while the sliders stand in for the hand, a first line says so. It is the only place
+ * that explains the gestures: the help dialog lists the buttons and keys, and links here.
  */
 import type { Side } from '../hands/types';
 import { nameHands } from './handWords';

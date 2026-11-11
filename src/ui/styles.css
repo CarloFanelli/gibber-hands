@@ -84,7 +84,7 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 /* Character and scale share the card's second line, the scale on the right; a long character gives way to it. */
 .preset-character, .preset-scale { font-size: 13px; color: var(--muted); white-space: nowrap; }
 .preset-character { overflow: hidden; text-overflow: ellipsis; }
-.help-close, .code-copy, .code-open, .lead-hand, .drum-toggle { align-self: flex-start; min-height: 44px; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--line-strong); background: transparent; color: var(--fg); font: inherit; cursor: pointer; }
+.dialog-close, .code-copy, .code-open, .lead-hand, .drum-toggle { align-self: flex-start; min-height: 44px; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--line-strong); background: transparent; color: var(--fg); font: inherit; cursor: pointer; }
 .audio-toggle, .retry { min-height: 44px; padding: 10px 14px; border-radius: 8px; border: 0; background: var(--accent); color: var(--accent-ink); font-weight: 600; cursor: pointer; }
 .audio-toggle:disabled, .retry:disabled { opacity: 0.5; cursor: default; }
 /* The top bar: one row that never wraps; narrower bars keep the icons and drop words (container queries below). */
@@ -186,20 +186,28 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
   .step-hint { padding: 8px; }
   .step-hint-words { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 }
-/* The help sheet: a modal dialog over the page, scrolling inside when the window is short. */
-.help-sheet { width: min(560px, 100% - 32px); padding: 20px 24px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--surface); color: var(--fg); }
-.help-sheet::backdrop { background: rgb(0 0 0 / 0.6); }
-.help-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-.help-sheet h2 { margin: 0; font-size: 20px; }
-.help-sheet h3 { margin: 16px 0 6px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
-.help-sheet dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0; }
-.help-sheet dt { font-weight: 600; }
-.help-sheet dd { margin: 0; }
-.help-sheet kbd { display: inline-block; min-width: 1.6em; padding: 0 6px; border: 1px solid var(--line-strong); border-radius: 4px; font: 13px/1.5 var(--mono); text-align: center; }
+/* Dialogs: modal over the page, scrolling inside when the window is short. */
+.dialog { width: min(560px, 100% - 32px); padding: 20px 24px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--surface); color: var(--fg); }
+.dialog::backdrop { background: rgb(0 0 0 / 0.6); }
+.dialog-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.dialog h2 { margin: 0; font-size: 20px; }
+.help-dialog h3 { margin: 16px 0 6px; font: 600 12px var(--mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.help-dialog dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0; }
+.help-dialog dt { font-weight: 600; }
+.help-dialog dd { margin: 0; }
+.help-dialog kbd { display: inline-block; min-width: 1.6em; padding: 0 6px; border: 1px solid var(--line-strong); border-radius: 4px; font: 13px/1.5 var(--mono); text-align: center; }
+.help-gestures { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 12px 0 0; color: var(--muted); }
+.help-show-gestures { min-height: 44px; padding: 0 14px; border: 1px solid var(--accent); border-radius: 8px; background: transparent; color: var(--accent); font: inherit; font-weight: 600; cursor: pointer; }
+/* The welcome dialog's content fills it, so a click on the dialog element itself is on the backdrop. */
+.welcome-dialog { width: min(480px, 100% - 32px); padding: 0; }
+.welcome { display: grid; gap: 16px; padding: 24px; }
+.welcome p { margin: 0; color: var(--muted); line-height: 1.5; }
+.welcome-start { min-height: 60px; border: 0; border-radius: 8px; background: var(--accent); color: var(--accent-ink); font: inherit; font-size: 20px; font-weight: 600; cursor: pointer; box-shadow: 0 0 0 3px rgb(125 211 252 / 0.35); }
+.welcome .dialog-close { align-self: auto; min-width: 44px; padding: 0; font-size: 20px; }
 @media (max-width: 479.98px) {
-  .help-sheet { padding: 16px; }
-  .help-sheet dl { grid-template-columns: 1fr; gap: 2px; }
-  .help-sheet dd + dt { margin-top: 8px; }
+  .help-dialog { padding: 16px; }
+  .help-dialog dl { grid-template-columns: 1fr; gap: 2px; }
+  .help-dialog dd + dt { margin-top: 8px; }
 }
 /* Stacked: equal heights at full width. Saved widths stay stored for the next wide window. */
 @media (max-width: 719.98px) {

@@ -33,7 +33,7 @@
  * visit mapping/drumLoop keeps; the engine plays it once audio is on. No gesture changes the drums.
  *
  * ui/shortcuts maps keys to the same actions as the controls: presets, audio, the drums, the side panel and
- * ui/helpSheet.
+ * ui/helpDialog. A first visit opens ui/welcomeDialog, whose button starts audio, until the step hints end.
  */
 import { createStartup, type StartupStatus } from './hands/startup';
 import { SIDES, emptyPair, type HandPair, type Side } from './hands/types';
@@ -51,7 +51,7 @@ import { createDrumPanel } from './ui/drumPanel';
 import { createLayout } from './ui/layout';
 import { createCameraPanel } from './ui/cameraPanel';
 import { createGestureGuide } from './ui/gestureGuide';
-import { createHelpSheet } from './ui/helpSheet';
+import { createHelpDialog } from './ui/helpDialog';
 import { createLeadHandSwitch } from './ui/leadHandSwitch';
 import { createLiveCode } from './ui/liveCode';
 import { createOverlay } from './ui/overlay';
@@ -60,6 +60,7 @@ import { SLIDERS_SECOND_HAND, createSliderFallback, type SliderFallback } from '
 import { cameraMode, createStatusLine } from './ui/statusLine';
 import { FIRST_SOUND_MS, SHAPE_HINT_MS, createStepHints, holdTimer, stepToShow } from './ui/stepHints';
 import { listenForShortcuts } from './ui/shortcuts';
+import { openWelcomeDialog, type WelcomeDialog } from './ui/welcomeDialog';
 import { readStored, writeStored } from './ui/storage';
 import { throttle } from './ui/throttle';
 import { watchZoneWidth } from './ui/zoneWidth';
@@ -170,9 +171,12 @@ function boot() {
   let startupStatus!: StartupStatus;
   let engineStatus: EngineStatus = { kind: 'off' };
   let hintsDone = readStored(HINTS_DONE_KEY) !== null;
+  // Opened at the end of boot, once the audio button it falls back to exists.
+  let welcome: WelcomeDialog | null = null;
   const firstSound = holdTimer(FIRST_SOUND_MS, () => {
     hintsDone = true;
     writeStored(HINTS_DONE_KEY, '1');
+    welcome?.close();
     guide();
   });
   let shapeSwitched = readStored(SHAPE_HINT_DONE_KEY) !== null;
@@ -258,15 +262,21 @@ function boot() {
     countLanes();
   });
 
-  const help = createHelpSheet(document.body, lead);
-  ui.top.help.addEventListener('click', () => help.toggle());
+  /** Where focus goes when a dialog closes and the control that opened it is gone: the audio button. */
+  const audioButton = () => ui.top.audio.querySelector<HTMLElement>('button:not([hidden])');
+  const help = createHelpDialog(document.body, audioButton, ui.showGestures);
+  /** One dialog at a time: help replaces the welcome dialog. */
+  const toggleHelp = () => {
+    welcome?.close();
+    help.toggle();
+  };
+  ui.top.help.addEventListener('click', toggleHelp);
   createLeadHandSwitch(ui.top.lead, lead, (side) => {
     lead = side;
     writeStored(LEAD_HAND_KEY, side);
     second = secondHandAfterSwap(pair[otherSide(side)].state);
     octave = 0;
     sliders?.setLeadSide(side);
-    help.setLeadSide(side);
     gestures.setLeadSide(side);
     // The shape step's hint names the second hand.
     guide();
@@ -279,7 +289,7 @@ function boot() {
     else if (action.kind === 'side-panel') ui.toggleSidePanel();
     else if (action.kind === 'sounds') ui.sounds.toggle();
     else if (action.kind === 'fps') overlay.toggleFps();
-    else help.toggle();
+    else toggleHelp();
   });
 
   // The only hand listener: a second onHand() call would replace this one.
@@ -290,6 +300,16 @@ function boot() {
     const effect = { kind: PRESETS[preset]!.effect.kind, amount: played.effect };
     overlay.draw(pair, lanes, { side: otherSide(lead), mode: second.mode, octave, effect });
   });
+
+  if (!hintsDone) {
+    welcome = openWelcomeDialog(
+      document.body,
+      () => {
+        if (engineStatus.kind !== 'on') audio.startOrStop();
+      },
+      audioButton
+    );
+  }
 }
 
 try {

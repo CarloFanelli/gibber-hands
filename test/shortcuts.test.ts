@@ -52,6 +52,11 @@ describe('shortcut', () => {
     expect(shortcut(press('f'), 'field')).toBeNull();
   });
 
+  it('leaves every key but "?" to an open dialog', () => {
+    expect(shortcut(press('?', { shiftKey: true }), 'dialog')).toEqual({ kind: 'help' });
+    for (const key of ['1', ' ', 'd', 'c', 's', 'f', 'Escape']) expect(shortcut(press(key), 'dialog')).toBeNull();
+  });
+
   it('starts or stops the drums with D, in either case, also while a button has focus', () => {
     expect(shortcut(press('d'), 'other')).toEqual({ kind: 'drums' });
     expect(shortcut(press('D', { shiftKey: true }), 'other')).toEqual({ kind: 'drums' });

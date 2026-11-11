@@ -21,6 +21,8 @@ export interface Layout {
   guide: HTMLElement;
   /** Collapses the side panel, or expands it, as its buttons do. */
   toggleSidePanel(): void;
+  /** Expands the side panel on its Gestures tab. */
+  showGestures(): void;
 }
 
 export function createLayout(root: HTMLElement): Layout {
@@ -60,6 +62,7 @@ export function createLayout(root: HTMLElement): Layout {
     sounds,
     code,
     guide,
-    toggleSidePanel: side.toggle
+    toggleSidePanel: side.toggle,
+    showGestures: () => side.showTab('gestures')
   };
 }

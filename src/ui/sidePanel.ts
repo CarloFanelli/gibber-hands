@@ -39,6 +39,8 @@ export function storedSidePanel(state: SidePanelState): string {
 export interface SidePanel {
   /** Collapses the panel, or expands it if it is collapsed. */
   toggle(): void;
+  /** Expands the panel on `tab`, and gives that tab focus. */
+  showTab(tab: SideTab): void;
 }
 
 /**
@@ -113,5 +115,11 @@ export function createSidePanel(panel: HTMLElement, strip: HTMLElement, code: HT
   });
   show(state);
 
-  return { toggle: () => show({ ...state, open: !state.open }) };
+  return {
+    toggle: () => show({ ...state, open: !state.open }),
+    showTab(tab) {
+      show({ open: true, tab });
+      tabs[tab].focus();
+    }
+  };
 }
