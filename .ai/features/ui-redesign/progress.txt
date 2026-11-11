@@ -6,4 +6,4 @@
 04-hand-tags: DONE
 05-welcome-help-dialogs: DONE
 06-narrow-sheets: DONE
-07-studio-look-check: TODO
+07-studio-look-check: DONE

@@ -33,3 +33,8 @@ Task 02 set the look's colours and fonts, and each task styled its own part. Thi
 ## Edge Cases
 
 - Contrast over the camera (hand tags, lane labels) → they have a solid dark background, so contrast holds over any video (REQ-30)
+
+## Notes from implementation
+
+- **Known limitation**: the agent can't check the fps or run the visitor test (acceptance criteria 3 and 4). Its headless Chrome emulates graphics in software, and there are no visitors. Both are left for Carlo, with blanks to fill in the UI redesign entry of docs/PROCESS.md. Contrast (criterion 2) and the look (criterion 1) were checked by script and screenshot.
+- **Known limitation**: moving the sounds panel needs a mouse; the spec leaves keyboard moving out of scope, and S shrinks it to an icon. The side panel's resize bar works with ← → once it has focus. This is written in docs/PROCESS.md. Touch dragging is already on the backlog (B-17).

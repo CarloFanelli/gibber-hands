@@ -3,7 +3,7 @@ feature: ui-redesign
 version: 1.0
 status: approved
 base: bea553e90295e9bca68c7aab6a42ab4dae810f64
-completed: false
+completed: true
 ---
 
 # UI Redesign
