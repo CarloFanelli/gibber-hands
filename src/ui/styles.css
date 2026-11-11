@@ -152,20 +152,15 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 .code-number { color: var(--code-number); }
 .code-comment { color: var(--muted); font-style: italic; }
 .overlay-label { position: absolute; margin: 0; padding: 4px 10px; border-radius: 6px; background: rgb(11 15 20 / 0.9); font-size: 14px; pointer-events: none; }
-.overlay-hint { top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 18px; }
-/* Each hand's labels in a row on its own side: the right hand's under the frame rate. A label that doesn't
-   fit goes to a next line: the left hand's stop short of the frame rate. */
-.overlay-hand { position: absolute; display: flex; flex-wrap: wrap; gap: 6px; pointer-events: none; }
-.overlay-hand-left { top: 8px; left: 8px; max-width: calc(100% - 96px); }
-.overlay-hand-right { top: 40px; right: 8px; max-width: calc(100% - 16px); flex-direction: row-reverse; }
-.overlay-hand .overlay-label { position: static; white-space: nowrap; }
-.overlay-gesture { font-weight: 600; }
-.overlay-octave { color: var(--accent); font-weight: 600; }
-.overlay-fps { top: 8px; right: 8px; color: var(--muted); font-variant-numeric: tabular-nums; }
-/* Step hints: under the top labels, lower when the right hand's labels show. While a step hint shows, the
-   status cards and the sliders scroll in the space below it, so it never covers them. */
-.panel-camera { --hint-top: 44px; --hint-height: 52px; }
-.panel-camera:has(.overlay-hand-right:not([hidden])) { --hint-top: 76px; }
+/* A hand tag follows its hand (tagPlacement.ts): placed by transform from the panel's corner, one row of parts. */
+.hand-tag { top: 0; left: 0; display: flex; gap: 8px; white-space: nowrap; will-change: transform; }
+.tag-role { font: 600 12px/20px var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); }
+.tag-gesture { font-weight: 600; }
+.tag-octave { color: var(--accent); font-weight: 600; }
+.overlay-fps { top: 8px; right: 8px; color: var(--muted); font-family: var(--mono); font-variant-numeric: tabular-nums; }
+/* Step hints: at the top of the camera view. While a step hint shows, the status cards and the sliders scroll
+   in the space below it, so it never covers them. */
+.panel-camera { --hint-top: 12px; --hint-height: 52px; }
 .step-hint { position: absolute; top: var(--hint-top); left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; max-width: calc(100% - 24px); height: var(--hint-height); margin: 0; padding: 8px 14px; border-radius: 10px; background: rgb(11 15 20 / 0.85); font-size: 18px; font-weight: 600; white-space: nowrap; pointer-events: none; }
 .panel-camera:has(.step-hint:not([hidden])) .camera-status { top: calc(var(--hint-top) + var(--hint-height)); }
 .step-hint-icon { flex: none; width: 36px; height: 36px; color: var(--accent); }
@@ -182,8 +177,8 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 @keyframes hint-squeeze { 0%, 100% { transform: scale(1); } 50% { transform: scale(0.78, 0.9); } }
 @keyframes hint-sign { 0%, 100% { transform: rotate(-8deg); } 50% { transform: rotate(8deg); } }
 @media (prefers-reduced-motion: reduce) { .step-hint[data-step] .step-hint-icon { animation: none; } }
-/* A narrow camera view shows the icons only; the words stay for screen readers. The second hand's labels
-   in shape mode are about 490 px long with their words: a camera view of a phone's width shows their icons. */
+/* A narrow camera view shows the icons only; the words stay for screen readers. The second hand's tag in
+   shape mode is about 490 px long with its words: a camera view of a phone's width shows their icons. */
 @container camera (max-width: 559.98px) {
   .label-words { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 }

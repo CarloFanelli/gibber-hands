@@ -1,10 +1,10 @@
 /**
  * Draws over the video: the note lanes with the played ones highlighted, what the tracker sees of each
- * hand (21 landmarks, their connections and the palm center), each hand's gesture with its confidence on
- * its own side, the second hand's mode, and while it shapes the effect amount and the octave it changed,
- * beside its gesture, the "Raise your hand" hint and the frame rate. Landmarks and lanes are in the
- * player's mirrored view already, so nothing here flips them; they are placed inside the letterboxed
- * video's rectangle.
+ * hand (21 landmarks, their connections and the palm center), and a hand tag that follows each hand: its
+ * role and gesture with its confidence, and for the second hand its mode, and while it shapes the effect
+ * amount and the octave it changed. The frame rate shows in a corner on demand (the F key). Landmarks and
+ * lanes are in the player's mirrored view already, so nothing here flips them; they are placed inside the
+ * letterboxed video's rectangle.
  */
 import { HAND_CONNECTIONS } from '../hands/tracker';
 import { SIDES, type HandPair, type Point, type Side, type TrackedHand } from '../hands/types';
@@ -13,6 +13,7 @@ import type { Octave, SecondHand } from '../mapping/shape';
 import { EFFECT_NAME, type Effect } from '../synth/presets';
 import { createFpsMeter } from './fpsMeter';
 import { gestureText } from './gestureLabels';
+import { placeTags, type TagAnchor } from './tagPlacement';
 import { containRect, type Rect } from './zoneWidth';
 
 const NO_FPS = '— fps';
@@ -40,21 +41,20 @@ export interface Overlay {
   setVisible(visible: boolean): void;
   /** Names the note lanes, left to right: one name per lane, so as many lanes as names. */
   setLanes(names: readonly string[]): void;
-  /** Hides the "Raise your hand" label while a step hint says it. */
-  hideRaiseHand(hidden: boolean): void;
+  /** Shows the frame rate, or hides it: hidden on every page load. */
+  toggleFps(): void;
 }
 
 export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canvas: HTMLCanvasElement): Overlay {
   const ctx = canvas.getContext('2d')!;
   const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
-  const hint = label('overlay-hint', 'Raise your hand');
   const fps = label('overlay-fps', NO_FPS);
-  const hands = { right: handLabels('right'), left: handLabels('left') };
+  const tags = { right: handTag(), left: handTag() };
   let meter = createFpsMeter();
   let last: { pair: HandPair; played: readonly number[] } | null = null;
   let visible = false;
+  let fpsShown = false;
   let laneNames: readonly string[] = [];
-  let raiseHandHidden = false;
 
   // Canvas pixels follow the panel size and the screen density, so lines stay sharp and aligned.
   new ResizeObserver(() => {
@@ -72,32 +72,46 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
     return el;
   }
 
-  /** A side's labels in its top corner: its gesture, then for the second hand its mode, the effect amount and the octave. */
-  function handLabels(side: Side) {
-    const group = document.createElement('div');
-    group.className = `overlay-hand overlay-hand-${side}`;
-    group.hidden = true;
-    const pill = (name: string) => {
-      const el = document.createElement('p');
-      el.className = `overlay-label ${name}`;
+  /** A hand's tag: its role, its gesture, then for the second hand its mode, the effect amount and the octave. */
+  function handTag() {
+    const tag = document.createElement('p');
+    tag.className = 'overlay-label hand-tag';
+    tag.hidden = true;
+    const part = (name: string) => {
+      const el = document.createElement('span');
+      el.className = name;
       return el;
     };
-    const gesture = pill('overlay-gesture');
-    const mode = pill('overlay-mode');
+    const role = part('tag-role');
+    const gesture = part('tag-gesture');
+    const mode = part('tag-mode');
     // The effect's name is words a narrow view leaves out; its amount always shows.
-    const effect = pill('overlay-effect');
+    const effect = part('tag-effect');
     const effectName = document.createElement('span');
     effectName.className = 'label-words';
     const effectPercent = document.createElement('span');
     effect.append(effectName, ' ', effectPercent);
-    const octave = pill('overlay-octave');
-    group.append(gesture, mode, effect, octave);
-    panel.append(group);
-    return { group, gesture, mode, effect, effectName, effectPercent, octave };
+    const octave = part('tag-octave');
+    tag.append(role, gesture, mode, effect, octave);
+    panel.append(tag);
+    // Measured again only when its words change: reading a size on every frame would force a layout each time.
+    return { tag, role, gesture, mode, effect, effectName, effectPercent, octave, size: null as { w: number; h: number } | null };
   }
 
-  function anyHand() {
-    return SIDES.some((side) => last?.pair[side].state.present ?? false);
+  /** Moves each shown tag next to its palm, inside the picture, stacked when they would overlap. */
+  function placeHandTags(pair: HandPair) {
+    const shown = SIDES.filter((side) => !tags[side].tag.hidden);
+    if (shown.length === 0 || !video.videoWidth) return;
+    const r = videoRect();
+    const anchors: TagAnchor[] = shown.map((side) => {
+      const t = tags[side];
+      t.size ??= { w: t.tag.offsetWidth, h: t.tag.offsetHeight };
+      const palm = pair[side].state.palm;
+      return { x: r.x + palm.x * r.w, y: r.y + palm.y * r.h, ...t.size };
+    });
+    placeTags(anchors, r).forEach((at, i) => {
+      tags[shown[i]!].tag.style.transform = `translate(${Math.round(at.left)}px, ${Math.round(at.top)}px)`;
+    });
   }
 
   /** Where the video frame sits inside the canvas with object-fit: contain, in CSS pixels. */
@@ -202,33 +216,42 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
     draw(pair, played, second) {
       last = { pair, played };
       const reading = meter.tick(pair.right.state.t);
-      const fpsText = reading === null ? NO_FPS : `${reading} fps`;
-      setText(fps, fpsText);
-      hint.hidden = !visible || anyHand() || raiseHandHidden;
+      setText(fps, reading === null ? NO_FPS : `${reading} fps`);
       for (const side of SIDES) {
         const { state } = pair[side];
-        const labels = hands[side];
+        const t = tags[side];
         const isSecond = side === second.side;
-        labels.group.hidden = !visible || !state.present;
-        setText(labels.gesture, gestureText(state.gesture, state.gestureScore));
-        labels.mode.hidden = !isSecond;
-        if (isSecond && labels.mode.dataset.mode !== second.mode) {
-          labels.mode.dataset.mode = second.mode;
-          showWords(labels.mode, ...MODE_WORDS[second.mode]);
+        const wasHidden = t.tag.hidden;
+        t.tag.hidden = !visible || !state.present;
+        if (t.tag.hidden) continue;
+        let changed = wasHidden;
+        changed = setText(t.role, isSecond ? 'Second' : 'Lead') || changed;
+        changed = setText(t.gesture, gestureText(state.gesture, state.gestureScore)) || changed;
+        t.mode.hidden = !isSecond;
+        if (isSecond && t.mode.dataset.mode !== second.mode) {
+          t.mode.dataset.mode = second.mode;
+          showWords(t.mode, ...MODE_WORDS[second.mode]);
+          changed = true;
         }
         const shaping = isSecond && second.mode === 'shape';
-        labels.effect.hidden = !shaping;
+        if (t.effect.hidden === shaping) changed = true;
+        t.effect.hidden = !shaping;
         if (shaping) {
-          setText(labels.effectName, EFFECT_NAME[second.effect.kind]);
-          setText(labels.effectPercent, `${Math.round(second.effect.amount * 100)}%`);
+          changed = setText(t.effectName, EFFECT_NAME[second.effect.kind]) || changed;
+          changed = setText(t.effectPercent, `${Math.round(second.effect.amount * 100)}%`) || changed;
         }
-        labels.octave.hidden = !isSecond || second.octave === 0;
+        const octaveHidden = !isSecond || second.octave === 0;
+        if (t.octave.hidden !== octaveHidden) changed = true;
+        t.octave.hidden = octaveHidden;
         const shift = second.octave > 0 ? 'up' : 'down';
-        if (!labels.octave.hidden && labels.octave.dataset.shift !== shift) {
-          labels.octave.dataset.shift = shift;
-          showWords(labels.octave, ...OCTAVE_WORDS[shift]);
+        if (!octaveHidden && t.octave.dataset.shift !== shift) {
+          t.octave.dataset.shift = shift;
+          showWords(t.octave, ...OCTAVE_WORDS[shift]);
+          changed = true;
         }
+        if (changed) t.size = null;
       }
+      placeHandTags(pair);
       render();
     },
     setVisible(next) {
@@ -238,9 +261,7 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
       last = null;
       meter = createFpsMeter();
       fps.textContent = NO_FPS;
-      fps.hidden = !visible;
-      hint.hidden = !visible || raiseHandHidden;
-      for (const side of SIDES) hands[side].group.hidden = true;
+      for (const side of SIDES) tags[side].tag.hidden = true;
       render();
     },
     setLanes(names) {
@@ -249,17 +270,18 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
       laneNames = names;
       render();
     },
-    hideRaiseHand(hidden) {
-      if (hidden === raiseHandHidden) return;
-      raiseHandHidden = hidden;
-      hint.hidden = !visible || hidden || anyHand();
+    toggleFps() {
+      fpsShown = !fpsShown;
+      fps.hidden = !fpsShown;
     }
   };
 }
 
-/** Writes `text` only when it changed: draw() runs on every frame. */
-function setText(el: HTMLElement, text: string) {
-  if (el.textContent !== text) el.textContent = text;
+/** Writes `text` only when it changed, and says whether it did: draw() runs on every frame. */
+function setText(el: HTMLElement, text: string): boolean {
+  if (el.textContent === text) return false;
+  el.textContent = text;
+  return true;
 }
 
 /** An icon, and words that a narrow camera view hides except from screen readers. */

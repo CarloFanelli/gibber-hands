@@ -36,3 +36,7 @@ This clears the camera picture, the second half of the stage work after Task 02.
 - No hand in view → no tags; the step hint shows if still due (REQ-24, REQ-25)
 - Sounds panel open over the camera → allowed; tags and lanes under it are hidden by it (REQ-25)
 - F before tracking has started → the counter shows "— fps" until the first frame (REQ-26)
+
+## Notes from implementation
+
+- **Known limitation**: the frame-rate check with hand tags shown (AC 5) needs a real camera on the two reference laptops; the headless browser here has none. Tags are measured only when their words change and moved by transform only. The measurement is part of Task 07's fps check.

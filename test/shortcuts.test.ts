@@ -46,6 +46,12 @@ describe('shortcut', () => {
     expect(shortcut(press('s'), 'field')).toBeNull();
   });
 
+  it('shows or hides the frame rate with F, in either case', () => {
+    expect(shortcut(press('f'), 'other')).toEqual({ kind: 'fps' });
+    expect(shortcut(press('F', { shiftKey: true }), 'control')).toEqual({ kind: 'fps' });
+    expect(shortcut(press('f'), 'field')).toBeNull();
+  });
+
   it('starts or stops the drums with D, in either case, also while a button has focus', () => {
     expect(shortcut(press('d'), 'other')).toEqual({ kind: 'drums' });
     expect(shortcut(press('D', { shiftKey: true }), 'other')).toEqual({ kind: 'drums' });

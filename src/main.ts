@@ -7,7 +7,7 @@
  *   webcam frame ──► hands/tracker ──► HandPair ──► mapping ──► SynthParams ──► synth/engine
  *                                        │                          │ note lane       │
  *                                        └──► ui/overlay ◄──────────┘                 └──► ui/liveCode (Gibber code shown live)
- *                                             (landmarks, gesture labels, note lanes)
+ *                                             (landmarks, hand tags, note lanes)
  *
  * A HandPair holds a HandState per side, right and left, and each hand plays its own note: the engine
  * has a voice per side. mapping/roles says which side is the lead hand, and ui/leadHandSwitch swaps the
@@ -196,8 +196,7 @@ function boot() {
     const step = stepToShow(progress, { firstSound: hintsDone, shape: shapeSwitched || shapeHintOver });
     hints.show(step, otherSide(lead));
     shapeHint.update(step === 'shape');
-    // The camera view's own prompts for these steps give way while a step hint says them.
-    overlay.hideRaiseHand(step === 'hand');
+    // The camera view's own prompt for this step gives way while a step hint says it.
     panel.hidePrompt(step === 'camera');
   }
   startup.onStatus((status) => {
@@ -279,6 +278,7 @@ function boot() {
     else if (action.kind === 'drums') drumPanel.startOrStop();
     else if (action.kind === 'side-panel') ui.toggleSidePanel();
     else if (action.kind === 'sounds') ui.sounds.toggle();
+    else if (action.kind === 'fps') overlay.toggleFps();
     else help.toggle();
   });
 
