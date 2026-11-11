@@ -3,7 +3,7 @@
  * the mouse anywhere in the stage, never out of it; its "—" button, or the S key (ui/shortcuts), shrinks it to
  * an icon in the same corner, and the icon restores it. Where it sits and whether it is open are remembered
  * (panelPlacement). The preset cards inside keep their own drag onto "Now playing" (ui/presetList). In a
- * narrow window it is a bottom sheet instead (ui/bottomSheets, styles.css): always open there, and not dragged.
+ * narrow window it is a bottom sheet instead (ui/bottomSheets): always open there, and not dragged.
  */
 import { NARROW_QUERY } from './bottomSheets';
 import { fractionAt, placeAt, savedPlacement, storedPlacement, type Placement } from './panelPlacement';
@@ -25,15 +25,20 @@ export interface SoundsPanel {
 
 export function createSoundsPanel(stage: HTMLElement): SoundsPanel {
   const panel = document.createElement('section');
-  panel.className = 'sounds-panel';
+  // Below 720 px a bottom sheet: fixed above the bottom bar, shown while it is the open sheet, never moved.
+  panel.className = [
+    'sounds-panel group/sounds absolute top-0 left-0 z-2 flex max-h-[calc(100%-24px)] w-[300px] flex-col rounded-xl border border-line-strong bg-surface shadow-float',
+    'min-[720px]:[&.sounds-shrunk]:w-auto min-[720px]:[&.sounds-shrunk]:rounded-[50%] min-[720px]:[&.sounds-shrunk]:border-0 min-[720px]:[&.sounds-shrunk]:bg-transparent min-[720px]:[&.sounds-shrunk]:shadow-none',
+    'max-[720px]:fixed max-[720px]:inset-x-0 max-[720px]:top-auto max-[720px]:bottom-14 max-[720px]:z-3 max-[720px]:hidden max-[720px]:max-h-[70vh] max-[720px]:w-auto max-[720px]:max-w-none max-[720px]:rounded-t-xl max-[720px]:rounded-b-none max-[720px]:border-b-0 max-[720px]:shadow-sheet max-[720px]:transform-none! max-[720px]:group-data-[sheet=sounds]/app:flex'
+  ].join(' ');
   panel.setAttribute('aria-label', 'Sounds');
   panel.innerHTML = `
-    <div class="sounds-title">
-      <h2 class="sounds-name">Sounds</h2>
-      <button type="button" class="sounds-shrink" aria-label="Shrink the sounds panel">—</button>
+    <div class="sounds-title flex flex-none cursor-grab items-center justify-between border-b border-line pr-1 pl-3.5 select-none active:cursor-grabbing min-[720px]:group-[.sounds-shrunk]/sounds:hidden max-[720px]:cursor-default">
+      <h2 class="font-mono text-xs font-semibold tracking-[0.08em] text-muted uppercase" title="Drag the title bar to move the panel">Sounds</h2>
+      <button type="button" class="sounds-shrink min-h-11 min-w-11 cursor-pointer rounded-lg border-0 bg-transparent font-[inherit] text-base text-muted hover:text-fg active:bg-bg max-[720px]:hidden" aria-label="Shrink the sounds panel" title="Shrink to an icon (S)">—</button>
     </div>
-    <div class="sounds-body"></div>
-    <button type="button" class="sounds-icon"><span aria-hidden="true">♫</span></button>
+    <div class="sounds-body flex min-h-0 flex-col gap-2.5 overflow-y-auto p-3 min-[720px]:group-[.sounds-shrunk]/sounds:hidden"></div>
+    <button type="button" class="sounds-icon hidden size-13 cursor-pointer rounded-[50%] border border-line-strong bg-surface text-[22px] text-accent shadow-icon hover:border-accent active:bg-bg min-[720px]:group-[.sounds-shrunk]/sounds:inline-block"><span aria-hidden="true">♫</span></button>
   `;
   stage.append(panel);
   const title = panel.querySelector<HTMLElement>('.sounds-title')!;
@@ -54,7 +59,7 @@ export function createSoundsPanel(stage: HTMLElement): SoundsPanel {
     // Shrinking from a control inside the panel would drop focus to the page: it goes to the icon.
     const refocus = !open && panel.contains(document.activeElement);
     placement = { ...placement, open };
-    // The class hides the title and the body or the icon (styles.css): a bottom sheet shows them all the same.
+    // The class hides the title and the body or the icon: a bottom sheet shows them all the same.
     panel.classList.toggle('sounds-shrunk', !open);
     place();
     save();
@@ -99,7 +104,7 @@ export function createSoundsPanel(stage: HTMLElement): SoundsPanel {
     body,
     toggle: () => show(!placement.open),
     setNowPlaying(name) {
-      icon.title = `Sounds · Now playing: ${name}`;
+      icon.title = `Open the sounds panel (S) · Now playing: ${name}`;
       icon.setAttribute('aria-label', `Open the sounds panel. Now playing: ${name}`);
     },
     onShrink(callback) {

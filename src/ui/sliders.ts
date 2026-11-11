@@ -87,13 +87,14 @@ export function createSliderFallback(root: HTMLElement, leadSide: Side): SliderF
   let lead = leadSide;
   const values: SliderValues = { ...INITIAL_SLIDERS };
   const container = document.createElement('div');
-  container.className = 'sliders';
+  container.className = 'sliders grid w-[min(100%,360px)] gap-1.5 rounded-lg bg-bg px-4.5 py-3';
   const note = document.createElement('output');
-  note.className = 'slider-note';
+  note.className = 'font-mono font-semibold text-fg';
 
   const slider = (key: SliderKey) => {
     const input = document.createElement('input');
     Object.assign(input, { type: 'range', min: '0', max: '1', step: '0.01', value: String(values[key]) });
+    input.className = 'm-0 h-11 w-full accent-accent';
     input.addEventListener('input', () => {
       values[key] = input.valueAsNumber;
       emit();
@@ -103,6 +104,7 @@ export function createSliderFallback(root: HTMLElement, leadSide: Side): SliderF
   for (const { key, label } of SLIDERS) container.append(field(label, slider(key), key === 'x' ? note : undefined));
 
   const select = document.createElement('select');
+  select.className = 'min-h-11 rounded-lg border border-line-strong bg-surface px-2.5 py-0 font-[inherit] text-sm text-fg';
   select.append(new Option('None', ''), ...GESTURE_NAMES.map((name) => new Option(GESTURE_LABELS[name], name)));
   select.addEventListener('input', () => {
     values.gesture = gestureName(select.value);
@@ -112,18 +114,21 @@ export function createSliderFallback(root: HTMLElement, leadSide: Side): SliderF
 
   // Radio buttons in a fieldset: Tab reaches the group, the arrow keys pick within it.
   const octave = document.createElement('fieldset');
-  octave.className = 'slider-octave';
+  octave.className = 'm-0 flex min-w-0 flex-wrap gap-x-4 border-0 p-0';
   const legend = document.createElement('legend');
+  legend.className = 'p-0 text-sm text-muted';
   legend.textContent = 'Octave';
   octave.append(legend);
   for (const { value, label } of OCTAVES) {
     const input = document.createElement('input');
     Object.assign(input, { type: 'radio', name: 'slider-octave', checked: value === values.octave });
+    input.className = 'm-0 size-5.5 accent-accent';
     input.addEventListener('input', () => {
       values.octave = value;
       emit();
     });
     const choice = document.createElement('label');
+    choice.className = 'flex min-h-11 items-center gap-2 text-sm text-fg';
     choice.append(input, label);
     octave.append(choice);
   }
@@ -157,9 +162,11 @@ export function createSliderFallback(root: HTMLElement, leadSide: Side): SliderF
 /** A labelled control; `readout` shows at the end of the caption line. */
 function field(text: string, control: HTMLElement, readout?: HTMLElement) {
   const caption = document.createElement('span');
+  caption.className = 'flex justify-between';
   caption.append(text);
   if (readout) caption.append(readout);
   const label = document.createElement('label');
+  label.className = 'grid text-sm text-muted';
   label.append(caption, control);
   return label;
 }

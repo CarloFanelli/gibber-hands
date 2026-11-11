@@ -91,7 +91,7 @@ export interface StepHints {
 }
 
 /** An open hand: four fingers over a rounded palm, the thumb to the side. */
-const HAND_ICON = `<svg class="step-hint-icon step-hint-hand" viewBox="0 0 32 32" aria-hidden="true" fill="currentColor">
+const HAND_ICON = `<svg class="step-hint-icon size-9 flex-none text-accent group-data-[step=shape]/hint:hidden" viewBox="0 0 32 32" aria-hidden="true" fill="currentColor">
   <rect x="9" y="6" width="3.6" height="12" rx="1.8"/>
   <rect x="13.4" y="3" width="3.6" height="15" rx="1.8"/>
   <rect x="17.8" y="4" width="3.6" height="14" rx="1.8"/>
@@ -101,7 +101,7 @@ const HAND_ICON = `<svg class="step-hint-icon step-hint-hand" viewBox="0 0 32 32
 </svg>`;
 
 /** The Victory sign: index and middle finger up and apart over the palm, the thumb to the side. */
-const VICTORY_ICON = `<svg class="step-hint-icon step-hint-victory" viewBox="0 0 32 32" aria-hidden="true" fill="currentColor">
+const VICTORY_ICON = `<svg class="step-hint-icon hidden size-9 flex-none text-accent group-data-[step=shape]/hint:block" viewBox="0 0 32 32" aria-hidden="true" fill="currentColor">
   <rect x="10.2" y="2" width="3.6" height="15" rx="1.8" transform="rotate(-14 12 17)"/>
   <rect x="17.6" y="2" width="3.6" height="15" rx="1.8" transform="rotate(14 19.4 17)"/>
   <rect x="3.5" y="14" width="3.6" height="10" rx="1.8" transform="rotate(-35 5.3 19)"/>
@@ -110,12 +110,14 @@ const VICTORY_ICON = `<svg class="step-hint-icon step-hint-victory" viewBox="0 0
 
 export function createStepHints(root: HTMLElement): StepHints {
   const hint = document.createElement('div');
-  hint.className = 'step-hint';
+  // At the top of the camera view; a very narrow one shows the icon only, the words staying for screen readers.
+  hint.className =
+    'step-hint group/hint pointer-events-none absolute top-(--hint-top) left-1/2 m-0 flex h-(--hint-height) max-w-[calc(100%-24px)] -translate-x-1/2 items-center gap-2.5 rounded-hint bg-bg px-3.5 py-2 text-lg font-semibold whitespace-nowrap @max-[320px]/camera:p-2';
   hint.setAttribute('role', 'status');
-  // Both icons, the step picking one (styles.css).
+  // Both icons, the step picking one: the Victory sign for the shape step, the open hand for every other.
   hint.innerHTML = HAND_ICON + VICTORY_ICON;
   const words = document.createElement('span');
-  words.className = 'step-hint-words';
+  words.className = '@max-[320px]/camera:sr-only';
   hint.append(words);
   hint.hidden = true;
   root.append(hint);
@@ -128,7 +130,7 @@ export function createStepHints(root: HTMLElement): StepHints {
         shown = null;
         return;
       }
-      // The icon and its animation follow the step (styles.css).
+      // The icon and its animation (styles.css) follow the step.
       if (step !== shown) hint.dataset.step = shown = step;
       const text = stepWords(step, secondSide);
       if (words.textContent !== text) words.textContent = text;

@@ -1,239 +1,68 @@
-:root {
-  color-scheme: dark;
-  /* The studio look: solid dark surfaces, one accent, monospace for names, numbers and code. */
-  --bg: #0b0f14;
-  --surface: #121820;
-  --line: #1f2937;
-  --line-strong: #334155;
-  --line-hover: #64748b;
-  --fg: #e6edf3;
-  --muted: #8b98a5;
-  --accent: #7dd3fc;
-  --accent-ink: #0b0f14;
-  --warn: #fca5a5;
-  --code-number: #fcd34d;
-  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+@import "tailwindcss" source("..");
+/* The root element's classes are in the page itself. */
+@source "../../index.html";
+
+/* The studio look: solid dark surfaces, one accent, monospace for names, numbers and code. Static: overlay.ts
+   reads the colours from the page, so they exist whether or not a utility uses them. */
+@theme static {
+  --color-bg: #0b0f14;
+  --color-surface: #121820;
+  --color-line: #1f2937;
+  --color-line-strong: #334155;
+  --color-line-hover: #64748b;
+  --color-fg: #e6edf3;
+  --color-muted: #8b98a5;
+  --color-accent: #7dd3fc;
+  --color-accent-hover: #bae6fd;
+  --color-accent-ink: #0b0f14;
+  --color-warn: #fca5a5;
+  --color-code-number: #fcd34d;
+  --font-sans: system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --radius-hint: 10px;
+  --shadow-float: 0 12px 32px rgb(0 0 0 / 0.5);
+  --shadow-icon: 0 8px 24px rgb(0 0 0 / 0.5);
+  --shadow-lift: 0 6px 20px rgb(0 0 0 / 0.5);
+  --shadow-sheet: 0 -12px 32px rgb(0 0 0 / 0.5);
+  --shadow-glow: 0 0 0 3px rgb(125 211 252 / 0.35);
 }
-* { box-sizing: border-box; }
-[hidden] { display: none !important; }
-html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font-family: system-ui, sans-serif; }
-/* One focus outline for every control, shown when the keyboard moves focus. */
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-#app { position: relative; display: flex; flex-direction: column; height: 100%; }
-.panels { display: flex; flex: 1 1 auto; min-height: 0; }
-/* Widths are the flex basis, so the widths Resizer sets apply. */
-.panel { position: relative; flex: 1 1 auto; min-width: 160px; background: var(--surface); overflow: hidden; }
-.panel-camera { width: 70%; container: camera / inline-size; }
-/* The side panel: 360 px on a first visit, then the width Resizer saved, between 280 px and half the row. */
-.panel-side { flex: 0 1 auto; width: 360px; min-width: 280px; max-width: 50%; }
-.panel-hidden { display: none; }
-/* The handle beside a collapsed side panel has nothing to resize. */
-.resize-handle:has(+ .panel-hidden) { display: none; }
-/* Negative margins: the handle takes no room in the row, so the widths add up to 100% and grabbing it moves nothing. */
-.resize-handle { position: relative; z-index: 1; flex: none; width: 6px; margin: 0 -3px; background: var(--line); cursor: col-resize; }
-.resize-handle:hover { background: var(--accent); }
-.panel-camera video, .panel-camera canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
-/* The only CSS mirror: the overlay is mirrored in the hand coordinates instead. Contain = letterbox, never crop. */
-.panel-camera video { object-fit: contain; transform: scaleX(-1); background: #000; }
-.camera-status { position: absolute; inset: 0; display: flex; flex-direction: column; gap: 12px; align-items: center; justify-content: safe center; padding: 16px 16px 40px; overflow-y: auto; pointer-events: none; }
-/* The sliders take the video's place; video and overlay stay in the page for a successful Try again. */
-.panel-camera:has(.sliders) video, .panel-camera:has(.sliders) canvas { visibility: hidden; }
-.camera-status:has(.sliders) { pointer-events: auto; }
-.sliders { display: grid; gap: 6px; width: min(100%, 360px); padding: 12px 18px; border-radius: 8px; background: rgb(11 15 20 / 0.85); }
-.sliders label { display: grid; font-size: 14px; color: var(--muted); }
-.sliders label > span { display: flex; justify-content: space-between; }
-.slider-note { color: var(--fg); font-weight: 600; }
-.sliders input[type="range"] { width: 100%; height: 44px; margin: 0; accent-color: var(--accent); }
-.slider-octave { display: flex; flex-wrap: wrap; column-gap: 16px; min-width: 0; margin: 0; padding: 0; border: 0; }
-.slider-octave legend { padding: 0; font-size: 14px; color: var(--muted); }
-.sliders .slider-octave label { display: flex; align-items: center; gap: 8px; min-height: 44px; color: var(--fg); }
-.slider-octave input { width: 22px; height: 22px; margin: 0; accent-color: var(--accent); }
-.sliders select { min-height: 44px; padding: 0 10px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--surface); color: var(--fg); font: inherit; }
-.status-card { display: flex; flex-direction: column; align-items: center; gap: 10px; max-width: 36ch; padding: 14px 18px; border-radius: 8px; background: rgb(11 15 20 / 0.9); text-align: center; pointer-events: auto; }
-.status-card p { margin: 0; }
-.status-hint { color: var(--muted); font-size: 14px; }
-/* The sounds panel floats over the stage at the place soundsPanel.ts gives it; it scrolls inside when the stage
-   is short. Its body is not positioned, so a dragged preset card is placed from the panel and never clipped. */
-.sounds-panel { position: absolute; top: 0; left: 0; z-index: 2; display: flex; flex-direction: column; width: 300px; max-height: calc(100% - 24px); border: 1px solid var(--line-strong); border-radius: 12px; background: var(--surface); box-shadow: 0 12px 32px rgb(0 0 0 / 0.5); }
-.sounds-title { display: flex; flex: none; align-items: center; justify-content: space-between; padding: 0 4px 0 14px; border-bottom: 1px solid var(--line); cursor: grab; user-select: none; }
-.sounds-title:active { cursor: grabbing; }
-.sounds-name { margin: 0; font: 600 12px var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
-.sounds-shrink { min-width: 44px; min-height: 44px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); font: inherit; cursor: pointer; }
-.sounds-shrink:hover { color: var(--fg); }
-.sounds-body { display: flex; flex-direction: column; gap: 10px; min-height: 0; padding: 12px; overflow-y: auto; }
-@media (min-width: 720px) { .sounds-panel.sounds-shrunk { width: auto; border: 0; border-radius: 50%; background: none; box-shadow: none; } }
-.sounds-shrunk .sounds-title, .sounds-shrunk .sounds-body, .sounds-panel:not(.sounds-shrunk) .sounds-icon { display: none; }
-.sounds-icon { width: 52px; height: 52px; border: 1px solid var(--line-strong); border-radius: 50%; background: var(--surface); color: var(--accent); font-size: 22px; box-shadow: 0 8px 24px rgb(0 0 0 / 0.5); cursor: pointer; }
-.sounds-icon:hover { border-color: var(--accent); }
-.now-playing { display: grid; padding: 8px 10px; border: 1px dashed var(--line-strong); border-radius: 8px; }
-.now-playing-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
-.now-playing-name { font-weight: 600; }
-.now-playing-scale { font-size: 13px; color: var(--muted); }
-.now-playing.drop-ready { border-color: var(--accent); }
-.now-playing.drop-over { border-style: solid; border-color: var(--accent); background: rgb(125 211 252 / 0.12); }
-/* The cards are in block flow, not a grid: a grid would start a dragged card from its corner, not its place. */
-.preset-cell + .preset-cell { padding-top: 6px; }
-.preset { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; column-gap: 10px; align-items: baseline; width: 100%; padding: 6px 10px; border: 1px solid var(--line-strong); border-radius: 8px; background: transparent; color: var(--fg); font: inherit; text-align: left; cursor: pointer; user-select: none; }
-.preset:hover { border-color: var(--line-hover); }
-.preset[aria-pressed="true"], .lead-hand[aria-pressed="true"] { border-color: var(--accent); background: rgb(125 211 252 / 0.12); }
-.preset.preset-dragging { z-index: 1; background: var(--surface); box-shadow: 0 6px 20px rgb(0 0 0 / 0.5); }
-/* The faded copy drag-kit leaves after a pressed card sits on top of it: a release there must still click the card. */
-.preset + .preset { pointer-events: none; }
-.preset-key { grid-row: span 2; color: var(--muted); font-variant-numeric: tabular-nums; }
-.preset[aria-pressed="true"] .preset-key { color: var(--accent); }
-.preset-name { grid-column: 2 / 4; font-weight: 600; }
-/* Character and scale share the card's second line, the scale on the right; a long character gives way to it. */
-.preset-character, .preset-scale { font-size: 13px; color: var(--muted); white-space: nowrap; }
-.preset-character { overflow: hidden; text-overflow: ellipsis; }
-.dialog-close, .code-copy, .code-open, .lead-hand, .drum-toggle { align-self: flex-start; min-height: 44px; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--line-strong); background: transparent; color: var(--fg); font: inherit; cursor: pointer; }
-.audio-toggle, .retry { min-height: 44px; padding: 10px 14px; border-radius: 8px; border: 0; background: var(--accent); color: var(--accent-ink); font-weight: 600; cursor: pointer; }
-.audio-toggle:disabled, .retry:disabled { opacity: 0.5; cursor: default; }
-/* The top bar: one row that never wraps; narrower bars keep the icons and drop words (container queries below). */
-.top-bar { container: top-bar / inline-size; display: flex; flex: none; align-items: center; gap: 16px; height: 72px; padding: 0 16px; border-bottom: 1px solid var(--line); background: var(--surface); white-space: nowrap; }
-.top-name { font: 600 16px var(--mono); letter-spacing: 0.02em; }
-.top-audio { display: flex; min-width: 0; }
-.top-bar .status-card { flex-direction: row; gap: 10px; max-width: none; min-width: 0; padding: 0; background: none; text-align: left; }
-.top-bar .status-card p { overflow: hidden; text-overflow: ellipsis; color: var(--warn); }
-/* Until audio first starts, the button that starts it is the page's largest, highest-contrast control. */
-.audio-toggle.prominent, .retry.prominent { min-height: 60px; padding: 0 36px; font-size: 22px; box-shadow: 0 0 0 3px rgb(125 211 252 / 0.35); }
-.status-line { display: flex; gap: 14px; margin: 0; font-size: 13px; color: var(--muted); }
-.status-part { display: inline-flex; align-items: center; gap: 6px; }
-.status-icon { font-size: 15px; }
-.status-part[data-state="on"] .status-icon { color: var(--accent); }
-.status-part[data-state="failed"] { color: var(--warn); }
-.top-privacy { display: inline-flex; align-items: center; gap: 6px; margin: 0; font-size: 13px; color: var(--muted); }
-.top-icon { width: 14px; height: 14px; flex: none; }
-.top-lead { margin-left: auto; }
-.top-help { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px; border: 1px solid var(--line-strong); border-radius: 8px; background: transparent; color: var(--fg); font: inherit; cursor: pointer; }
-.top-help > :first-child { display: inline-grid; place-items: center; width: 22px; height: 22px; border: 1.5px solid currentColor; border-radius: 50%; font-weight: 700; font-size: 13px; }
-.top-help:hover, .lead-hand:hover { border-color: var(--line-hover); }
-/* Words that a narrow top bar drops: they stay as the tooltip, and as the label for screen readers. */
-@container top-bar (max-width: 1099.98px) {
-  .top-privacy .top-words { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+
+/* Text sizes; no line height of their own, so the browser's normal one stays. */
+@theme {
+  --text-*: initial;
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-base: 16px;
+  --text-lg: 18px;
+  --text-xl: 20px;
 }
-@container top-bar (max-width: 899.98px) {
-  .status-words { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
-  .top-help .top-words { display: none; }
-  .audio-toggle.prominent, .retry.prominent { padding: 0 24px; font-size: 20px; }
+
+/* Tailwind's base styles, set back where the page was built on the browser's own, and the page's own. */
+@layer base {
+  :root { color-scheme: dark; }
+  html { line-height: normal; }
+  h2, h3 { font-weight: bold; }
+  button, input, select { margin: revert; padding: revert; border: revert; border-radius: revert; background-color: revert; color: revert; font: revert; letter-spacing: revert; opacity: revert; }
+  dialog { margin: revert; padding: revert; }
+  html, body { height: 100%; background: var(--color-bg); color: var(--color-fg); font-family: var(--font-sans); }
+  /* One focus outline for every control, shown when the keyboard moves focus. */
+  :focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 }
-@container top-bar (max-width: 719.98px) {
-  .top-name { display: none; }
-}
-/* Phone width: smaller gaps and a smaller Start button, so the whole row still fits in 360 px. */
-@media (max-width: 479.98px) { .top-bar { gap: 6px; padding: 0 12px; } }
-@container top-bar (max-width: 479.98px) {
-  .top-audio { flex: none; }
-  .audio-toggle.prominent, .retry.prominent { min-height: 52px; padding: 0 14px; font-size: 17px; }
-  .lead-hand { padding: 10px 8px; }
-  .top-help { padding: 0 10px; }
-}
-/* ◀ Start drums ▶, then − and + for the drum layers; in a narrow panel the layers wrap to the next row. */
-.drum-panel { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.drum-step { min-width: 44px; min-height: 44px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--line-strong); background: transparent; color: var(--fg); font: inherit; font-size: 18px; line-height: 1; cursor: pointer; }
-.drum-layers { display: inline-flex; gap: 8px; margin-left: 8px; }
-.drum-toggle:disabled, .drum-step:disabled { opacity: 0.5; cursor: default; }
-.drum-line { flex-basis: 100%; margin: 0; font-size: 13px; color: var(--muted); }
-/* The side panel: its tab bar on top, then the selected tab at the full height left. The code's tools sit on
-   top of it, the snippet scrolls under them, wrapped so it never scrolls sideways. */
-.panel-side { display: flex; flex-direction: column; }
-.side-tabs { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 8px 0 16px; border-bottom: 1px solid var(--line); }
-.side-tabs [role="tablist"] { display: flex; gap: 4px; }
-.side-tab { min-height: 44px; padding: 0 14px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--muted); font: inherit; font-weight: 600; cursor: pointer; }
-.side-tab[aria-selected="true"] { border-bottom-color: var(--accent); color: var(--fg); }
-.side-collapse { min-width: 44px; min-height: 44px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); font: inherit; cursor: pointer; }
-.side-collapse:hover, .side-tab:hover { color: var(--fg); }
-.code-part, .guide-part { flex: 1 1 auto; min-height: 0; }
-/* Collapsed, the side panel leaves a narrow strip whose button expands it again. */
-.side-strip { display: flex; flex: none; width: 44px; background: var(--surface); border-left: 1px solid var(--line); }
-.side-expand { flex: 1; padding: 16px 0; border: 0; background: transparent; color: var(--fg); font: inherit; font-weight: 600; writing-mode: vertical-rl; cursor: pointer; }
-.side-expand:hover { color: var(--accent); }
-.code-part { display: flex; flex-direction: column; }
-.guide-part { overflow-y: auto; padding: 16px; font-size: 14px; }
-.guide-part p { margin: 0 0 8px; }
-.guide-part dl { margin: 0; }
-.guide-part dt { font-weight: 600; }
-.guide-part dd { margin: 0 0 8px; color: var(--muted); }
-.code-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 16px 16px 0; }
-.code-open { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
-.code-note { font-size: 13px; color: var(--muted); }
-.code-part pre { flex: 1 1 auto; margin: 0; padding: 16px; overflow-y: auto; font: 13px/1.5 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; }
-.code-keyword { color: var(--accent); }
-.code-number { color: var(--code-number); }
-.code-comment { color: var(--muted); font-style: italic; }
-.overlay-label { position: absolute; margin: 0; padding: 4px 10px; border-radius: 6px; background: rgb(11 15 20 / 0.9); font-size: 14px; pointer-events: none; }
-/* A hand tag follows its hand (tagPlacement.ts): placed by transform from the panel's corner, one row of parts. */
-.hand-tag { top: 0; left: 0; display: flex; gap: 8px; white-space: nowrap; will-change: transform; }
-.tag-role { font: 600 12px/20px var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); }
-.tag-gesture { font-weight: 600; }
-.tag-octave { color: var(--accent); font-weight: 600; }
-.overlay-fps { top: 8px; right: 8px; color: var(--muted); font-family: var(--mono); font-variant-numeric: tabular-nums; }
-/* Step hints: at the top of the camera view. While a step hint shows, the status cards and the sliders scroll
-   in the space below it, so it never covers them. */
-.panel-camera { --hint-top: 12px; --hint-height: 52px; }
-.step-hint { position: absolute; top: var(--hint-top); left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; max-width: calc(100% - 24px); height: var(--hint-height); margin: 0; padding: 8px 14px; border-radius: 10px; background: rgb(11 15 20 / 0.85); font-size: 18px; font-weight: 600; white-space: nowrap; pointer-events: none; }
-.panel-camera:has(.step-hint:not([hidden])) .camera-status { top: calc(var(--hint-top) + var(--hint-height)); }
-.step-hint-icon { flex: none; width: 36px; height: 36px; color: var(--accent); }
-.step-hint[data-step="hand"] .step-hint-icon { animation: hint-rise 1.4s ease-in-out infinite; }
-.step-hint[data-step="pinch-slider"] .step-hint-icon { animation: hint-lower 1.4s ease-in-out infinite; }
-.step-hint[data-step="camera"] .step-hint-icon, .step-hint[data-step="audio"] .step-hint-icon { animation: hint-tap 1.2s ease-in-out infinite; }
-.step-hint[data-step="squeeze"] .step-hint-icon { animation: hint-squeeze 1s ease-in-out infinite; }
-/* The shape step shows the Victory sign, rocking; every other step the open hand. */
-.step-hint[data-step="shape"] .step-hint-hand, .step-hint:not([data-step="shape"]) .step-hint-victory { display: none; }
-.step-hint[data-step="shape"] .step-hint-icon { animation: hint-sign 1.4s ease-in-out infinite; }
-@keyframes hint-rise { 0%, 100% { transform: translateY(4px); } 50% { transform: translateY(-4px); } }
-@keyframes hint-lower { 0%, 100% { transform: translateY(-4px); } 50% { transform: translateY(4px); } }
-@keyframes hint-tap { 0%, 100% { transform: scale(1); } 50% { transform: scale(0.82); } }
-@keyframes hint-squeeze { 0%, 100% { transform: scale(1); } 50% { transform: scale(0.78, 0.9); } }
-@keyframes hint-sign { 0%, 100% { transform: rotate(-8deg); } 50% { transform: rotate(8deg); } }
-@media (prefers-reduced-motion: reduce) { .step-hint[data-step] .step-hint-icon { animation: none; } }
-/* A narrow camera view shows the icons only; the words stay for screen readers. The second hand's tag in
-   shape mode is about 490 px long with its words: a camera view of a phone's width shows their icons. */
-@container camera (max-width: 559.98px) {
-  .label-words { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
-}
-@container camera (max-width: 319.98px) {
-  .step-hint { padding: 8px; }
-  .step-hint-words { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
-}
-/* Dialogs: modal over the page, scrolling inside when the window is short. */
-.dialog { width: min(560px, 100% - 32px); padding: 20px 24px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--surface); color: var(--fg); }
-.dialog::backdrop { background: rgb(0 0 0 / 0.6); }
-.dialog-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-.dialog h2 { margin: 0; font-size: 20px; }
-.help-dialog h3 { margin: 16px 0 6px; font: 600 12px var(--mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
-.help-dialog dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0; }
-.help-dialog dt { font-weight: 600; }
-.help-dialog dd { margin: 0; }
-.help-dialog kbd { display: inline-block; min-width: 1.6em; padding: 0 6px; border: 1px solid var(--line-strong); border-radius: 4px; font: 13px/1.5 var(--mono); text-align: center; }
-.help-gestures { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 12px 0 0; color: var(--muted); }
-.help-show-gestures { min-height: 44px; padding: 0 14px; border: 1px solid var(--accent); border-radius: 8px; background: transparent; color: var(--accent); font: inherit; font-weight: 600; cursor: pointer; }
-/* The welcome dialog's content fills it, so a click on the dialog element itself is on the backdrop. */
-.welcome-dialog { width: min(480px, 100% - 32px); padding: 0; }
-.welcome { display: grid; gap: 16px; padding: 24px; }
-.welcome p { margin: 0; color: var(--muted); line-height: 1.5; }
-.welcome-start { min-height: 60px; border: 0; border-radius: 8px; background: var(--accent); color: var(--accent-ink); font: inherit; font-size: 20px; font-weight: 600; cursor: pointer; box-shadow: 0 0 0 3px rgb(125 211 252 / 0.35); }
-.welcome .dialog-close { align-self: auto; min-width: 44px; padding: 0; font-size: 20px; }
-@media (max-width: 479.98px) {
-  .help-dialog { padding: 16px; }
-  .help-dialog dl { grid-template-columns: 1fr; gap: 2px; }
-  .help-dialog dd + dt { margin-top: 8px; }
-}
-/* The bottom bar and the sheets' × buttons exist for narrow windows only. */
-.bottom-bar, .sheet-close { display: none; }
-/* Narrow: the camera fills the room between the top bar and the bottom bar; the sounds panel and the side panel
-   are bottom sheets over it, one at a time (bottomSheets.ts). Saved widths and places stay for wide windows. */
-@media (max-width: 719.98px) {
-  .panel-camera { width: auto !important; }
-  .resize-handle, .side-strip, .side-collapse, .sounds-shrink, .sounds-icon { display: none !important; }
-  .panel-side, .sounds-panel { position: fixed; left: 0; right: 0; bottom: 56px; z-index: 3; display: none; width: auto !important; max-width: none; max-height: 70vh; border: 1px solid var(--line-strong); border-bottom: 0; border-radius: 12px 12px 0 0; background: var(--surface); box-shadow: 0 -12px 32px rgb(0 0 0 / 0.5); transform: none !important; }
-  .sounds-panel { top: auto; }
-  #app[data-sheet="side"] .panel-side, #app[data-sheet="sounds"] .sounds-panel { display: flex !important; }
-  .sounds-shrunk .sounds-title, .sounds-shrunk .sounds-body { display: flex; }
-  .sounds-title { cursor: default; }
-  .sheet-close { display: block; position: absolute; top: 4px; right: 4px; z-index: 1; min-width: 44px; min-height: 44px; border: 0; border-radius: 8px; background: transparent; color: var(--fg); font-size: 22px; cursor: pointer; }
-  .side-tabs { padding-right: 52px; }
-  .bottom-bar { display: flex; flex: none; height: 56px; border-top: 1px solid var(--line); background: var(--surface); }
-  .bottom-button { flex: 1; border: 0; background: transparent; color: var(--muted); font: inherit; font-weight: 600; cursor: pointer; }
-  .bottom-button[aria-expanded="true"] { color: var(--fg); box-shadow: inset 0 2px 0 var(--accent); }
-  .panel { border-bottom: 0; }
+
+/* What utilities can't say: a selector on drag-kit's copy, and keyframes. */
+@layer components {
+  /* The faded copy drag-kit leaves after a pressed card sits on top of it: a release there must still click the card. */
+  .preset + .preset { pointer-events: none; }
+  /* The step hint's icon moves with the step. */
+  .step-hint[data-step="hand"] .step-hint-icon { animation: hint-rise 1.4s ease-in-out infinite; }
+  .step-hint[data-step="pinch-slider"] .step-hint-icon { animation: hint-lower 1.4s ease-in-out infinite; }
+  .step-hint[data-step="camera"] .step-hint-icon, .step-hint[data-step="audio"] .step-hint-icon { animation: hint-tap 1.2s ease-in-out infinite; }
+  .step-hint[data-step="squeeze"] .step-hint-icon { animation: hint-squeeze 1s ease-in-out infinite; }
+  .step-hint[data-step="shape"] .step-hint-icon { animation: hint-sign 1.4s ease-in-out infinite; }
+  @keyframes hint-rise { 0%, 100% { transform: translateY(4px); } 50% { transform: translateY(-4px); } }
+  @keyframes hint-lower { 0%, 100% { transform: translateY(-4px); } 50% { transform: translateY(4px); } }
+  @keyframes hint-tap { 0%, 100% { transform: scale(1); } 50% { transform: scale(0.82); } }
+  @keyframes hint-squeeze { 0%, 100% { transform: scale(1); } 50% { transform: scale(0.78, 0.9); } }
+  @keyframes hint-sign { 0%, 100% { transform: rotate(-8deg); } 50% { transform: rotate(8deg); } }
+  @media (prefers-reduced-motion: reduce) { .step-hint[data-step] .step-hint-icon { animation: none; } }
 }

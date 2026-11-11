@@ -1,0 +1,8 @@
+# Task Progress - tailwind-styles
+
+01-tailwind-foundation: DONE
+02-top-bar-dialogs: DONE
+03-sounds-panel: DONE
+04-camera-stage: DONE
+05-side-panel-sheets: DONE
+06-hover-press-text: DONE

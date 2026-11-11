@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { CameraFailure } from '../src/hands/camera';
 import type { StartupStatus } from '../src/hands/startup';
 import type { EngineStatus } from '../src/synth/engine';
-import { cameraMode, statusParts } from '../src/ui/statusLine';
+import { cameraMode, statusHows, statusParts } from '../src/ui/statusLine';
 
 /** The status as one line of words, camera first. */
 const statusWords = (startup: StartupStatus, engine: EngineStatus) =>
@@ -54,6 +54,36 @@ describe('statusParts', () => {
       { icon: '◉', words: 'No camera · Sliders', state: 'failed' },
       { icon: '♪', words: 'Audio failed', state: 'failed' }
     ]);
+  });
+});
+
+describe('statusHows', () => {
+  it('says how to turn the camera and the audio on or off', () => {
+    expect(statusHows(TRACKING, { kind: 'off' })).toEqual([
+      "To turn it off, block the camera in the browser's site settings (the camera icon in the address bar)",
+      'To turn it on, press Start audio or Space'
+    ]);
+    expect(statusHows(TRACKING, { kind: 'on' })[1]).toBe('To turn it off, press Stop audio or Space');
+    expect(statusHows({ camera: { kind: 'pending' }, model: { kind: 'ready' }, tracking: false }, { kind: 'off' })[0]).toBe(
+      'To turn it on, allow the camera when the browser asks'
+    );
+  });
+
+  it('says how to turn on a camera that failed, by its reason', () => {
+    const blocked: StartupStatus = { camera: { kind: 'failed', failure: { reason: 'blocked' } }, model: { kind: 'ready' }, tracking: false };
+    expect(statusHows(blocked, { kind: 'off' })[0]).toBe(
+      'To turn it on, click the camera icon in the address bar, allow the camera, then press Try again'
+    );
+    expect(statusHows(SLIDERS, { kind: 'off' })[0]).toBe('To turn it on, connect a camera, then press Try again');
+  });
+
+  it('offers no retry where the browser cannot run the hand model or the audio engine', () => {
+    const noModel: StartupStatus = { camera: { kind: 'live' }, model: { kind: 'failed', failure: { reason: 'unsupported' } }, tracking: false };
+    expect(statusHows(noModel, { kind: 'failed', failure: { reason: 'unsupported' } })).toEqual([
+      "This browser can't run hand tracking: try a current Chrome",
+      "This browser can't run the audio engine: try a current Chrome"
+    ]);
+    expect(statusHows(TRACKING, { kind: 'failed', failure: { reason: 'network' } })[1]).toBe('To turn it on, press Try again or Space');
   });
 });
 

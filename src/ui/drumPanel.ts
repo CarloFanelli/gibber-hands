@@ -6,6 +6,7 @@
 import type { DrumLoop } from '../mapping/drumLoop';
 import type { EngineStatus } from '../synth/engine';
 import { DRUM_PATTERNS } from '../synth/drumPatterns';
+import { OUTLINED } from './look';
 
 /** The loop in words, naming the drum pattern chosen at once: a new one is heard from the next bar. */
 export function drumWords(loop: DrumLoop): string {
@@ -45,7 +46,7 @@ export interface DrumPanel {
 
 export function createDrumPanel(root: HTMLElement, actions: DrumActions): DrumPanel {
   const box = document.createElement('div');
-  box.className = 'drum-panel';
+  box.className = 'flex flex-wrap items-center gap-2';
   const button = (className: string, text: string, name: string | null, onClick: () => void) => {
     const b = document.createElement('button');
     b.type = 'button';
@@ -58,17 +59,19 @@ export function createDrumPanel(root: HTMLElement, actions: DrumActions): DrumPa
     b.addEventListener('click', onClick);
     return b;
   };
+  const DISABLED = 'disabled:cursor-default disabled:opacity-50';
+  const step = `${OUTLINED} ${DISABLED} min-w-11 px-2.5 text-lg leading-none`;
   const buttons: Record<DrumButton, HTMLButtonElement> = {
-    previous: button('drum-step', '◀', 'Previous drum pattern', () => actions.pattern(-1)),
-    toggle: button('drum-toggle', '', null, actions.toggle),
-    next: button('drum-step', '▶', 'Next drum pattern', () => actions.pattern(1)),
-    fewer: button('drum-step', '−', 'Fewer drum layers', () => actions.layers(-1)),
-    more: button('drum-step', '+', 'More drum layers', () => actions.layers(1))
+    previous: button(step, '◀', 'Previous drum pattern; it comes in on the next bar', () => actions.pattern(-1)),
+    toggle: button(`${OUTLINED} ${DISABLED} self-start px-3.5 py-2.5 text-base`, '', null, actions.toggle),
+    next: button(step, '▶', 'Next drum pattern; it comes in on the next bar', () => actions.pattern(1)),
+    fewer: button(step, '−', 'Fewer drum layers, down to the kick alone', () => actions.layers(-1)),
+    more: button(step, '+', 'More drum layers, up to the full pattern', () => actions.layers(1))
   };
   const line = document.createElement('p');
-  line.className = 'drum-line';
+  line.className = 'basis-full text-sm text-muted';
   const layers = document.createElement('span');
-  layers.className = 'drum-layers';
+  layers.className = 'ml-2 inline-flex gap-2';
   layers.append(buttons.fewer, buttons.more);
   box.append(buttons.previous, buttons.toggle, buttons.next, layers, line);
   root.append(box);
@@ -77,6 +80,7 @@ export function createDrumPanel(root: HTMLElement, actions: DrumActions): DrumPa
     show(loop, engine) {
       const { label, disabled } = drumControls(loop, engine);
       buttons.toggle.textContent = label;
+      buttons.toggle.title = `${loop.playing ? 'Stop the drum loop' : 'Start a drum loop to play over; you hear it once audio is on'} (D)`;
       for (const name of Object.keys(buttons) as DrumButton[]) buttons[name].disabled = disabled[name];
       const words = drumWords(loop);
       if (line.textContent !== words) line.textContent = words;

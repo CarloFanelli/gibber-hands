@@ -79,3 +79,7 @@
 ### B-18 · open
 - **What**: A "Reset layout" control that puts the side panel and the sounds panel back where a first visit places them, without clearing site data.
 - **From**: ui-redesign (interview, 2026-11-10)
+
+### B-19 · open
+- **What**: Without a camera, in a 1280×800 window, the sounds panel's first position covers the left edge of the sliders ("Palm center" reads "alm center"); its first position should avoid them.
+- **From**: tailwind-styles (interview, 2026-11-11)

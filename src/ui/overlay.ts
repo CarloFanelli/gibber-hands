@@ -45,10 +45,19 @@ export interface Overlay {
   toggleFps(): void;
 }
 
+/** A label over the video: on the page's darkest colour, never in the way of the pointer. */
+const LABEL = 'pointer-events-none absolute m-0 rounded-md bg-bg px-2.5 py-1 text-sm';
+/** Words a narrow camera view hides, except from screen readers: the second hand's tag in shape mode is about
+ * 490 px long with them, so a camera view of a phone's width shows its icons only. */
+const NARROW_HIDDEN = '@max-[560px]/camera:sr-only';
+
 export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canvas: HTMLCanvasElement): Overlay {
   const ctx = canvas.getContext('2d')!;
-  const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
-  const fps = label('overlay-fps', NO_FPS);
+  const tokens = getComputedStyle(document.documentElement);
+  const accent = tokens.getPropertyValue('--color-accent').trim();
+  const foreground = tokens.getPropertyValue('--color-fg').trim();
+  const background = tokens.getPropertyValue('--color-bg').trim();
+  const fps = label('top-2 right-2 font-mono text-muted tabular-nums', NO_FPS);
   const tags = { right: handTag(), left: handTag() };
   let meter = createFpsMeter();
   let last: { pair: HandPair; played: readonly number[] } | null = null;
@@ -56,16 +65,18 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
   let fpsShown = false;
   let laneNames: readonly string[] = [];
 
-  // Canvas pixels follow the panel size and the screen density, so lines stay sharp and aligned.
+  // Canvas pixels follow the panel size and the screen density, so lines stay sharp and aligned. A new width
+  // can also show or hide a tag's words, so the tags are measured again.
   new ResizeObserver(() => {
     canvas.width = Math.round(canvas.clientWidth * devicePixelRatio);
     canvas.height = Math.round(canvas.clientHeight * devicePixelRatio);
+    for (const side of SIDES) tags[side].size = null;
     render();
   }).observe(canvas);
 
   function label(className: string, text: string) {
     const el = document.createElement('p');
-    el.className = `overlay-label ${className}`;
+    el.className = `${LABEL} ${className}`;
     el.textContent = text;
     el.hidden = true;
     panel.append(el);
@@ -74,24 +85,25 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
 
   /** A hand's tag: its role, its gesture, then for the second hand its mode, the effect amount and the octave. */
   function handTag() {
+    // Placed by its inline transform from the panel's corner (tagPlacement.ts): no transform utility on it.
     const tag = document.createElement('p');
-    tag.className = 'overlay-label hand-tag';
+    tag.className = `${LABEL} top-0 left-0 flex gap-2 whitespace-nowrap will-change-transform`;
     tag.hidden = true;
-    const part = (name: string) => {
+    const part = (className: string) => {
       const el = document.createElement('span');
-      el.className = name;
+      el.className = className;
       return el;
     };
-    const role = part('tag-role');
-    const gesture = part('tag-gesture');
-    const mode = part('tag-mode');
+    const role = part('font-mono text-xs/5 font-semibold tracking-[0.06em] text-accent uppercase');
+    const gesture = part('font-semibold');
+    const mode = part('');
     // The effect's name is words a narrow view leaves out; its amount always shows.
-    const effect = part('tag-effect');
+    const effect = part('');
     const effectName = document.createElement('span');
-    effectName.className = 'label-words';
+    effectName.className = NARROW_HIDDEN;
     const effectPercent = document.createElement('span');
     effect.append(effectName, ' ', effectPercent);
-    const octave = part('tag-octave');
+    const octave = part('font-mono font-semibold text-accent');
     tag.append(role, gesture, mode, effect, octave);
     panel.append(tag);
     // Measured again only when its words change: reading a size on every frame would force a layout each time.
@@ -197,16 +209,15 @@ export function createOverlay(panel: HTMLElement, video: HTMLVideoElement, canva
     ctx.font = '600 14px system-ui, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'bottom';
-    // A dark outline keeps the names readable over a bright background.
+    // Each name on a solid dark plate, like the hand tags: readable over any video, a white wall included.
     ctx.save();
-    ctx.lineWidth = 4;
-    ctx.lineJoin = 'round';
-    ctx.strokeStyle = 'rgb(11 15 20 / 0.9)';
     laneNames.forEach((name, i) => {
       const x = zone.x + (i + 0.5) * laneWidth;
       const y = zone.y + zone.h - 6;
-      ctx.strokeText(name, x, y);
-      ctx.fillStyle = played.includes(i) ? accent : 'rgb(255 255 255 / 0.75)';
+      const w = ctx.measureText(name).width + 10;
+      ctx.fillStyle = background;
+      ctx.fillRect(x - w / 2, y - 19, w, 22);
+      ctx.fillStyle = played.includes(i) ? accent : foreground;
       ctx.fillText(name, x, y);
     });
     ctx.restore();
@@ -287,11 +298,10 @@ function setText(el: HTMLElement, text: string): boolean {
 /** An icon, and words that a narrow camera view hides except from screen readers. */
 function showWords(el: HTMLElement, icon: string, words: string) {
   const glyph = document.createElement('span');
-  glyph.className = 'label-icon';
   glyph.setAttribute('aria-hidden', 'true');
   glyph.textContent = icon;
   const text = document.createElement('span');
-  text.className = 'label-words';
+  text.className = NARROW_HIDDEN;
   text.textContent = words;
   el.replaceChildren(glyph, ' ', text);
 }

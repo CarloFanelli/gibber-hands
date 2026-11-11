@@ -4,6 +4,7 @@
  * "Show gestures" closes this dialog and opens it. The Close button comes first, so the dialog opens on its
  * top even when it has to scroll.
  */
+import { OUTLINED } from './look';
 import { showModal } from './modal';
 
 export interface HelpDialog {
@@ -11,14 +12,19 @@ export interface HelpDialog {
   toggle(): void;
 }
 
+/** The look of the two section headings and their lists of terms; a phone's width puts each term above its meaning. */
+const HEADING = 'mt-4 mb-1.5 font-mono text-xs font-semibold uppercase tracking-[0.08em] text-muted';
+const LIST =
+  'grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1.5 max-[480px]:grid-cols-1 max-[480px]:gap-0.5 [&_dt]:font-semibold max-[480px]:[&_dd+dt]:mt-2 [&_kbd]:inline-block [&_kbd]:min-w-[1.6em] [&_kbd]:rounded-sm [&_kbd]:border [&_kbd]:border-line-strong [&_kbd]:px-1.5 [&_kbd]:text-center [&_kbd]:font-mono [&_kbd]:text-sm [&_kbd]:leading-[1.5] [&_kbd]:font-normal';
+
 const CONTENT = `
-  <div class="dialog-head">
-    <h2 id="help-title">How to play</h2>
-    <form method="dialog"><button class="dialog-close">Close</button></form>
+  <div class="flex items-center justify-between gap-4">
+    <h2 id="help-title" class="text-xl">How to play</h2>
+    <form method="dialog"><button class="dialog-close ${OUTLINED} self-start px-3.5 py-2.5 text-base">Close</button></form>
   </div>
-  <p class="help-gestures">Your hands play the notes. <button type="button" class="help-show-gestures">Show gestures</button></p>
-  <h3>Keys</h3>
-  <dl>
+  <p class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-muted">Your hands play the notes. <button type="button" class="help-show-gestures min-h-11 cursor-pointer rounded-lg border border-accent bg-transparent px-3.5 font-[inherit] text-base font-semibold text-accent hover:bg-accent/12 active:bg-bg">Show gestures</button></p>
+  <h3 class="${HEADING}">Keys</h3>
+  <dl class="${LIST}">
     <dt><kbd>1</kbd>–<kbd>6</kbd></dt><dd>Pick a preset</dd>
     <dt><kbd>Space</kbd></dt><dd>Start or stop audio</dd>
     <dt><kbd>D</kbd></dt><dd>Start or stop the drums</dd>
@@ -30,8 +36,8 @@ const CONTENT = `
     <dt><kbd>Tab</kbd></dt><dd>Move between controls; <kbd>Space</kbd> or <kbd>Enter</kbd> presses one</dd>
     <dt><kbd>←</kbd> <kbd>→</kbd></dt><dd>Move the bar beside the side panel, once it has focus; switch the side panel's tab, once a tab has focus</dd>
   </dl>
-  <h3>Buttons</h3>
-  <dl>
+  <h3 class="${HEADING}">Buttons</h3>
+  <dl class="${LIST}">
     <dt>Start audio / Stop audio</dt><dd>Starts the sound, or silences it</dd>
     <dt>Left-handed</dt><dd>Swaps the hands: the left hand leads; remembered for your next visit</dd>
     <dt>Start drums / Stop drums</dt><dd>Starts or stops a drum loop to play over; you hear it once audio is on</dd>
@@ -52,7 +58,8 @@ const CONTENT = `
 /** `fallback` takes focus on close when the control that opened the dialog is gone; `onShowGestures` opens the guide. */
 export function createHelpDialog(root: HTMLElement, fallback: () => HTMLElement | null, onShowGestures: () => void): HelpDialog {
   const dialog = document.createElement('dialog');
-  dialog.className = 'dialog help-dialog';
+  dialog.className =
+    'w-[min(560px,100%_-_32px)] rounded-xl border border-line-strong bg-surface px-6 py-5 text-fg backdrop:bg-black/60 max-[480px]:p-4';
   dialog.setAttribute('aria-labelledby', 'help-title');
   dialog.innerHTML = CONTENT;
   root.append(dialog);

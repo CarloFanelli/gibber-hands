@@ -17,6 +17,7 @@ export interface SidePanelState {
 const SIDE_PANEL_KEY = 'gibber-hands-side-panel';
 const FIRST_VISIT: SidePanelState = { open: true, tab: 'code' };
 const TAB_NAME: Record<SideTab, string> = { code: 'Code', gestures: 'Gestures' };
+const TAB_TIP: Record<SideTab, string> = { code: 'The Gibber code for the sound you hear, updated as you play', gestures: 'What each hand shape does' };
 
 /** The saved state; open on the Code tab when nothing readable is saved. */
 export function savedSidePanel(stored: string | null): SidePanelState {
@@ -39,8 +40,8 @@ export function storedSidePanel(state: SidePanelState): string {
 export interface SidePanel {
   /** Collapses the panel, or expands it if it is collapsed. */
   toggle(): void;
-  /** Expands the panel on `tab`, and gives that tab focus. */
-  showTab(tab: SideTab): void;
+  /** Shows `tab` and gives it focus; with `expand`, expands the panel too, else keeps its open state. */
+  showTab(tab: SideTab, expand: boolean): void;
 }
 
 /**
@@ -50,19 +51,22 @@ export interface SidePanel {
 export function createSidePanel(panel: HTMLElement, strip: HTMLElement, code: HTMLElement, guide: HTMLElement, hiddenClass: string): SidePanel {
   const parts: Record<SideTab, HTMLElement> = { code, gestures: guide };
   const bar = document.createElement('div');
-  bar.className = 'side-tabs';
+  bar.className = 'flex items-center justify-between gap-2 border-b border-line pt-2 pr-2 pl-4 max-[720px]:pr-13';
   const tablist = document.createElement('div');
+  tablist.className = 'flex gap-1';
   tablist.setAttribute('role', 'tablist');
   tablist.setAttribute('aria-label', 'Side panel');
   const tabs = {} as Record<SideTab, HTMLButtonElement>;
   for (const tab of ['code', 'gestures'] as const) {
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = 'side-tab';
+    button.className =
+      'min-h-11 cursor-pointer border-0 border-b-2 border-transparent bg-transparent px-3.5 py-0 font-[inherit] text-base font-semibold text-muted hover:text-fg active:bg-bg aria-selected:border-accent aria-selected:text-fg';
     button.id = `side-tab-${tab}`;
     button.setAttribute('role', 'tab');
     button.setAttribute('aria-controls', parts[tab].id);
     button.textContent = TAB_NAME[tab];
+    button.title = TAB_TIP[tab];
     button.addEventListener('click', () => show({ ...state, tab }));
     parts[tab].setAttribute('role', 'tabpanel');
     parts[tab].setAttribute('aria-labelledby', button.id);
@@ -79,16 +83,20 @@ export function createSidePanel(panel: HTMLElement, strip: HTMLElement, code: HT
   });
   const collapse = document.createElement('button');
   collapse.type = 'button';
-  collapse.className = 'side-collapse';
+  collapse.className =
+    'side-collapse min-h-11 min-w-11 cursor-pointer rounded-lg border-0 bg-transparent font-[inherit] text-base text-muted hover:text-fg active:bg-bg max-[720px]:hidden!';
   collapse.setAttribute('aria-label', 'Collapse side panel');
+  collapse.title = 'Collapse the side panel (C)';
   collapse.textContent = '❯';
   bar.append(tablist, collapse);
   panel.prepend(bar);
 
   const expand = document.createElement('button');
   expand.type = 'button';
-  expand.className = 'side-expand';
+  expand.className =
+    'flex-1 cursor-pointer border-0 bg-transparent pt-4 pr-0 pb-4 pl-0 font-[inherit] text-base font-semibold text-fg [writing-mode:vertical-rl] hover:text-accent active:bg-bg';
   expand.setAttribute('aria-label', 'Expand side panel');
+  expand.title = 'Expand the side panel (C)';
   strip.append(expand);
 
   let state = savedSidePanel(readStored(SIDE_PANEL_KEY));
@@ -117,8 +125,8 @@ export function createSidePanel(panel: HTMLElement, strip: HTMLElement, code: HT
 
   return {
     toggle: () => show({ ...state, open: !state.open }),
-    showTab(tab) {
-      show({ open: true, tab });
+    showTab(tab, expand) {
+      show({ open: expand || state.open, tab });
       tabs[tab].focus();
     }
   };

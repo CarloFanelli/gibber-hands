@@ -4,6 +4,7 @@
  */
 import type { EngineStatus, SynthEngine } from '../synth/engine';
 import type { EngineFailure } from '../synth/engineFailure';
+import { FILLED } from './look';
 import { statusCard } from './statusCard';
 
 const FAILURE_TEXT: Record<Exclude<EngineFailure['reason'], 'other'>, string> = {
@@ -11,8 +12,10 @@ const FAILURE_TEXT: Record<Exclude<EngineFailure['reason'], 'other'>, string> = 
   network: "Audio engine couldn't load: network"
 };
 
-/** The class of the button that starts audio, until it first does: larger, with a ring. */
+/** The class of the button that starts audio, until it first does: with a ring, and larger in a mid-width top bar. */
 const PROMINENT = 'prominent';
+const PROMINENT_LOOK =
+  '[&.prominent]:min-h-[38px] [&.prominent]:px-4 [&.prominent]:py-0 [&.prominent]:text-base [&.prominent]:shadow-glow @max-[900px]/top-bar:[&.prominent]:px-6 @max-[900px]/top-bar:[&.prominent]:text-xl @max-[480px]/top-bar:[&.prominent]:min-h-11 @max-[480px]/top-bar:[&.prominent]:px-3.5 @max-[480px]/top-bar:[&.prominent]:text-base';
 
 export interface AudioPanel {
   show(status: EngineStatus): void;
@@ -25,10 +28,18 @@ export function createAudioPanel(root: HTMLElement, engine: Pick<SynthEngine, 's
   let started = false;
   const toggle = document.createElement('button');
   toggle.type = 'button';
-  toggle.className = 'audio-toggle';
-  toggle.addEventListener('click', () => (current.kind === 'on' ? engine.stop() : engine.start()));
+  toggle.className = `${FILLED} px-3.5 py-2.5 aria-disabled:cursor-default aria-disabled:opacity-50 ${PROMINENT_LOOK}`;
+  toggle.addEventListener('click', () => {
+    if (current.kind === 'starting') return;
+    if (current.kind === 'on') engine.stop();
+    else engine.start();
+  });
   root.append(toggle);
-  const failure = statusCard(root, () => engine.start());
+  // In the top bar the card is one row of words and the button, with no card around them.
+  const failure = statusCard(root, () => engine.start(), 'flex min-w-0 items-center gap-2.5 pointer-events-auto');
+  failure.message.classList.add('overflow-hidden', 'text-ellipsis', 'text-warn');
+  failure.retry.classList.add(...PROMINENT_LOOK.split(' '));
+  failure.retry.title = 'Try to start the audio engine again (Space)';
 
   return {
     show(status) {
@@ -40,9 +51,12 @@ export function createAudioPanel(root: HTMLElement, engine: Pick<SynthEngine, 's
       failure.retry.classList.toggle(PROMINENT, !started);
       failure.card.hidden = !(status.kind === 'failed' || retrying);
       toggle.hidden = !failure.card.hidden;
-      toggle.disabled = status.kind === 'starting';
+      // Not `disabled` while starting: a dialog closing as audio starts gives focus back to this button.
+      toggle.setAttribute('aria-disabled', String(status.kind === 'starting'));
       toggle.textContent =
         status.kind === 'on' ? 'Stop audio' : status.kind === 'starting' ? 'Starting audio…' : 'Start audio';
+      toggle.title =
+        status.kind === 'on' ? 'Silence the sound (Space)' : status.kind === 'starting' ? 'The audio engine is loading' : 'Start the sound, then play with your hands (Space)';
       if (status.kind === 'failed') {
         const f = status.failure;
         failure.message.textContent = f.reason === 'other' ? `Audio engine couldn't start (${f.errorName})` : FAILURE_TEXT[f.reason];

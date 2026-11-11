@@ -30,13 +30,16 @@ export interface CameraPanel {
   hidePrompt(hidden: boolean): void;
 }
 
+/** A card centred on the camera view, on the page's darkest colour. */
+const CARD = 'pointer-events-auto flex max-w-[36ch] flex-col items-center gap-2.5 rounded-lg bg-bg px-4.5 py-3.5 text-center';
+
 export function createCameraPanel(root: HTMLElement, startup: Pick<Startup, 'retryCamera' | 'retryModel'>): CameraPanel {
-  const camera = statusCard(root, () => startup.retryCamera());
+  const camera = statusCard(root, () => startup.retryCamera(), CARD);
   const hint = document.createElement('p');
-  hint.className = 'status-hint';
+  hint.className = 'text-sm text-muted';
   hint.textContent = UNBLOCK_HINT;
   camera.message.after(hint);
-  const model = statusCard(root, () => startup.retryModel());
+  const model = statusCard(root, () => startup.retryModel(), CARD);
   let last: StartupStatus | null = null;
   let promptHidden = false;
 

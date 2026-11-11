@@ -21,15 +21,15 @@ const DRAGGING = 'preset-dragging';
 
 export function createPresetList(root: HTMLElement, onPick: (index: number) => void): PresetList {
   const nowPlaying = document.createElement('div');
-  nowPlaying.className = 'now-playing';
+  nowPlaying.className =
+    'grid rounded-lg border border-dashed border-line-strong px-2.5 py-2 [&.drop-ready]:border-accent [&.drop-over]:border-solid [&.drop-over]:border-accent [&.drop-over]:bg-accent/12';
   // Read out when it changes.
   nowPlaying.setAttribute('role', 'status');
-  const playingName = text('now-playing-name', '');
-  const playingScale = text('now-playing-scale', '');
-  nowPlaying.append(text('now-playing-label', 'Now playing'), playingName, playingScale);
+  const playingName = text('font-semibold', '');
+  const playingScale = text('text-sm text-muted', '');
+  nowPlaying.append(text('text-xs tracking-[0.06em] text-muted uppercase', 'Now playing'), playingName, playingScale);
 
   const list = document.createElement('div');
-  list.className = 'presets';
   list.setAttribute('role', 'group');
   list.setAttribute('aria-label', 'Presets');
   // The dragged card stays under the pointer, so releasing it anywhere clicks it: remember whether the
@@ -38,18 +38,22 @@ export function createPresetList(root: HTMLElement, onPick: (index: number) => v
   // drag-kit leaves a faded copy of a dragged card after it, in the card's parent: each card has its own.
   const cells = PRESETS.map(() => {
     const cell = document.createElement('div');
-    cell.className = 'preset-cell';
+    // The cards are in block flow, not a grid: a grid would start a dragged card from its corner, not its place.
+    cell.className = 'not-first:pt-1.5';
     return cell;
   });
   const buttons = PRESETS.map((preset, i) => {
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = 'preset';
+    // Character and scale share the second line, the scale on the right; a long character gives way to it.
+    button.className =
+      'preset group/card grid w-full cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-baseline gap-x-2.5 rounded-lg border border-line-strong bg-transparent px-2.5 py-1.5 text-left font-[inherit] text-base text-fg select-none hover:border-line-hover active:brightness-90 aria-pressed:border-accent aria-pressed:bg-accent/12 [&.preset-dragging]:z-1 [&.preset-dragging]:bg-surface! [&.preset-dragging]:shadow-lift';
+    button.title = `${preset.name}: ${preset.character}, ${preset.scale}. Press ${i + 1}, or drag onto Now playing`;
     button.append(
-      text('preset-key', String(i + 1)),
-      text('preset-name', preset.name),
-      text('preset-character', preset.character),
-      text('preset-scale', preset.scale)
+      text('row-span-2 font-mono text-muted group-aria-pressed/card:text-accent', String(i + 1)),
+      text('col-[2/4] font-semibold', preset.name),
+      text('overflow-hidden text-sm text-ellipsis whitespace-nowrap text-muted', preset.character),
+      text('text-sm whitespace-nowrap text-muted', preset.scale)
     );
     // A keyboard click (detail 0) always picks; a mouse click only if the press didn't drag the card.
     button.addEventListener('click', (e) => {
